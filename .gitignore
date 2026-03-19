@@ -11,4 +11,7 @@
 
 cham-equality.iml
 
-
+chamApp/node_modules
+chamApi/.gradle
+chamApi/build
+chamApi/chamApi.iml
