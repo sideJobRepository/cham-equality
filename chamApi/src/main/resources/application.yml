@@ -1,6 +1,6 @@
 spring:
   config:
-    import: optional:file:.env[.yml]
+    import: optional:file:../../.env[.properties]
   jpa:
     hibernate:
       ddl-auto: none
