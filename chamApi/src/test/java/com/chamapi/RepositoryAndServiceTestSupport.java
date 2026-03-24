@@ -1,6 +1,6 @@
 package com.chamapi;
 
-import com.chamapi.file.S3FileService;
+import com.chamapi.file.service.S3FileService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
