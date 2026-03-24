@@ -34,7 +34,7 @@ public class S3FileService {
     public PresignedUrlResponse getUploadPresignedUrl(UploadRequest request) {
         
         // Object Key 생성 (UUID를 사용하여 고유한 파일명 생성)
-        String objectKey = String.format("%s%s", UUID.randomUUID(), FilenameUtils.getExtension(request.getFileName()));
+        String objectKey = String.format("%s%s%s", UUID.randomUUID(),".", FilenameUtils.getExtension(request.getFileName()));
         
         String contentType = request.getContentType();
         
