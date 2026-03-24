@@ -15,7 +15,7 @@ chamApp/node_modules
 chamApi/.gradle
 chamApi/build
 chamApi/chamApi.iml
-chamApi/.env
+chamApi/src/main/resources/.env
 chamApi/src/test/resources/.env
 
 chamApp/android/.gradle
