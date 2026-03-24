@@ -68,6 +68,9 @@ dependencies {
     //스프링 시큐리티 리소스 서버
     // implementation 'org.springframework.boot:spring-boot-starter-oauth2-resource-server'
 
+    //파일 유틸
+    implementation 'commons-io:commons-io:2.15.1'
+
 }
 
 tasks.named('test') {
