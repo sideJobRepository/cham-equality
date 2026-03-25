@@ -18,6 +18,12 @@ public class ApiResponse<T> {
         this.message = message;
     }
     
+    public ApiResponse(int code, boolean success, T data) {
+        this.code = code;
+        this.success = success;
+        this.data = data;
+    }
+    
     public ApiResponse(int code, boolean success, String message, T data) {
         this.code = code;
         this.success = success;

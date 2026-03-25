@@ -69,9 +69,9 @@ class S3FileServiceTest extends RepositoryAndServiceTestSupport {
                 .build();
         
         // when
-        ApiResponse<List<FileUploadResponse>> response = s3FileService.uploadFile(request);
+        List<FileUploadResponse> fileUploadResponses = s3FileService.uploadFile(request);
         
-        System.out.println(response);
+        System.out.println(fileUploadResponses);
     
     }
 }

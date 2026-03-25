@@ -14,8 +14,11 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
+import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
+import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.model.PresignedPutObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignRequest;
 
@@ -53,9 +56,9 @@ public class S3FileService {
                     .build();
             
             PutObjectPresignRequest presignRequest = PutObjectPresignRequest.builder()
-                            .signatureDuration(Duration.ofMinutes(5))
-                            .putObjectRequest(objectRequest)
-                            .build();
+                    .signatureDuration(Duration.ofMinutes(5))
+                    .putObjectRequest(objectRequest)
+                    .build();
             
             PresignedPutObjectRequest presignedRequest = s3Presigner.presignPutObject(presignRequest);
             
@@ -69,9 +72,9 @@ public class S3FileService {
         }).toList();
     }
     
-    public ApiResponse<List<FileUploadResponse>> uploadFile(UploadRequest request) {
+    public List<FileUploadResponse> uploadFile(UploadRequest request) {
         FileType fileType = request.getFileType();
-        List<FileUploadResponse> result = request.getFiles()
+        return request.getFiles()
                 .stream()
                 .map(file -> {
                     CommonFile save = CommonFile
@@ -84,10 +87,24 @@ public class S3FileService {
                             .bucketName(file.getBucketName())
                             .fileStatus(FileStatus.TEMPORARY)
                             .build();
-                     commonFileRepository.save(save);
+                    commonFileRepository.save(save);
                     return FileUploadResponse.from(save);
                 }).toList();
-        return new ApiResponse<>(200, true, "파일 저장 성공", result);
+    }
+    
+    @Transactional(readOnly = true)
+    public String fileDownload(Long id) {
+        CommonFile file = commonFileRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("존재 하지 않는 파일 ID 입니다 : " + id));
+        
+        GetObjectRequest getObjectRequest = GetObjectRequest.builder().bucket(bucket)
+                .key(file.getFilePath())
+                .responseContentDisposition("attachment; filename=\"" + file.getFileName() + "\"").build();
+        
+        GetObjectPresignRequest presignRequest = GetObjectPresignRequest.builder().signatureDuration(Duration.ofMinutes(5)).getObjectRequest(getObjectRequest).build();
+        
+        PresignedGetObjectRequest presignedGetObjectRequest = s3Presigner.presignGetObject(presignRequest);
+        
+        return presignedGetObjectRequest.url().toString();
     }
     
 }

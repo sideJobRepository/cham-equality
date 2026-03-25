@@ -3,13 +3,11 @@ package com.chamapi.file.controller;
 
 import com.chamapi.apiresponse.ApiResponse;
 import com.chamapi.file.controller.request.UploadRequest;
+import com.chamapi.file.controller.response.FileUploadResponse;
 import com.chamapi.file.controller.response.PresignedUrlResponse;
 import com.chamapi.file.service.S3FileService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -27,7 +25,14 @@ public class S3Controller {
     }
     
     @PostMapping("/upload-file")
-    public ApiResponse uploadFile(@RequestBody UploadRequest request) {
-        return s3FileService.uploadFile(request);
+    public ApiResponse<List<FileUploadResponse>> uploadFile(@RequestBody UploadRequest request) {
+        List<FileUploadResponse> fileUploadResponses = s3FileService.uploadFile(request);
+        return new ApiResponse<>(200,true,fileUploadResponses);
+    }
+    
+    @GetMapping("/download-file/{id}")
+    public ApiResponse<String> downloadFile(@PathVariable Long id) {
+        String url = s3FileService.fileDownload(id);
+        return new ApiResponse<>(200,true,url);
     }
 }
