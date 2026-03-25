@@ -1,7 +1,7 @@
 package com.chamapi.file.service;
 
 import com.chamapi.RepositoryAndServiceTestSupport;
-import com.chamapi.file.dto.request.FileUploadInfo;
+import com.chamapi.file.dto.request.UploadRequest.FileUploadInfo;
 import com.chamapi.file.dto.request.UploadRequest;
 import com.chamapi.file.dto.response.FileUploadResponse;
 import com.chamapi.file.dto.response.PresignedUrlResponse;

@@ -14,13 +14,26 @@ import java.util.List;
 @NoArgsConstructor
 @Builder
 public class UploadRequest {
+
     private FileType fileType;
     private List<FileUploadInfo> files;
-    
+
     public List<FileUploadInfo> getFiles() {
-        if(this.files == null){
+        if (this.files == null) {
             this.files = new ArrayList<>();
         }
         return this.files;
+    }
+
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @Builder
+    public static class FileUploadInfo {
+        private String fileName;
+        private String objectKey;
+        private String contentType;
+        private String bucketName;
+        private Integer fileSize;
     }
 }
