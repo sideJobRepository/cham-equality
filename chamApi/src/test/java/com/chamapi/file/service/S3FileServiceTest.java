@@ -1,7 +1,6 @@
-package com.chamapi.file;
+package com.chamapi.file.service;
 
 import com.chamapi.RepositoryAndServiceTestSupport;
-import com.chamapi.apiresponse.ApiResponse;
 import com.chamapi.file.controller.request.FileUploadInfo;
 import com.chamapi.file.controller.request.UploadRequest;
 import com.chamapi.file.controller.response.FileUploadResponse;
