@@ -8,4 +8,6 @@ import java.util.List;
 public interface CommonFileQueryRepository {
 
     List<CommonFile> findTemporaryFilesBefore(LocalDateTime targetDateTime);
+    
+    List<CommonFile> findFilesIds(List<Long> ids);
 }

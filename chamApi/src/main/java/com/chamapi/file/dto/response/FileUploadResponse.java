@@ -1,6 +1,7 @@
 package com.chamapi.file.dto.response;
 
 import com.chamapi.file.entity.CommonFile;
+import com.chamapi.file.enums.FileProcessStatus;
 import com.chamapi.file.enums.FileStatus;
 import com.chamapi.file.enums.FileType;
 import lombok.AllArgsConstructor;
@@ -20,6 +21,7 @@ public class FileUploadResponse {
     private String bucketName;
     private FileType fileType;
     private FileStatus fileStatus;
+    private FileProcessStatus fileProcessStatus;
     
     public static FileUploadResponse from(CommonFile file) {
         return FileUploadResponse.builder()
@@ -31,6 +33,7 @@ public class FileUploadResponse {
                 .bucketName(file.getBucketName())
                 .fileType(file.getFileType())
                 .fileStatus(file.getFileStatus())
+                .fileProcessStatus(FileProcessStatus.CREATE)
                 .build();
     }
 }

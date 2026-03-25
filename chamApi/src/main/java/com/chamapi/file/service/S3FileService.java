@@ -1,9 +1,11 @@
 package com.chamapi.file.service;
 
+import com.chamapi.file.dto.request.FileRequest;
 import com.chamapi.file.dto.request.FileUploadRequest;
 import com.chamapi.file.dto.response.FileUploadResponse;
 import com.chamapi.file.dto.response.PresignedUrlResponse;
 import com.chamapi.file.entity.CommonFile;
+import com.chamapi.file.enums.FileProcessStatus;
 import com.chamapi.file.enums.FileStatus;
 import com.chamapi.file.enums.FileType;
 import com.chamapi.file.repository.CommonFileRepository;
@@ -103,5 +105,25 @@ public class S3FileService {
         PresignedGetObjectRequest presignedGetObjectRequest = s3Presigner.presignGetObject(presignRequest);
         
         return presignedGetObjectRequest.url().toString();
+    }
+    
+    public void modifyFileStatus(FileRequest request,Long targetId) {
+        List<FileRequest.FileChangeRequest> files = request.getFiles();
+        if(files.isEmpty()) {
+            return;
+        }
+        List<Long> createFileIds = files.stream().filter(item -> item.getFileProcessStatus() == FileProcessStatus.CREATE)
+                .map(FileRequest.FileChangeRequest::getId)
+                .toList();
+        
+        List<Long> deleteFileIds = files.stream().filter(item -> item.getFileProcessStatus() == FileProcessStatus.DELETE)
+                .map(FileRequest.FileChangeRequest::getId)
+                .toList();
+        
+        List<CommonFile> createFile = commonFileRepository.findFilesIds(createFileIds);
+        createFile.forEach(item -> item.createTargetIdAndModifyCompleteFileStatus(targetId));
+        
+        List<CommonFile> deleteFile = commonFileRepository.findFilesIds(deleteFileIds);
+        deleteFile.forEach(CommonFile::modifyTemporaryFileStatus);
     }
 }

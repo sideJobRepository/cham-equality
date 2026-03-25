@@ -53,4 +53,13 @@ public class CommonFile extends DateSuperClass {
     @Enumerated(EnumType.STRING)
     @Column(name = "FILE_STATUS")
     private FileStatus fileStatus;
+    
+    public void createTargetIdAndModifyCompleteFileStatus(Long targetId){
+        this.targetId = targetId;
+        this.fileStatus = FileStatus.COMPLETE;
+    }
+    
+    public void modifyTemporaryFileStatus(){
+        this.fileStatus = FileStatus.TEMPORARY;
+    }
 }

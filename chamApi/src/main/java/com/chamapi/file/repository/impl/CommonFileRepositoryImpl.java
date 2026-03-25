@@ -26,4 +26,12 @@ public class CommonFileRepositoryImpl implements CommonFileQueryRepository {
                 )
                 .fetch();
     }
+    
+    @Override
+    public List<CommonFile> findFilesIds(List<Long> ids) {
+        return queryFactory
+                .selectFrom(commonFile)
+                .where(commonFile.id.in(ids))
+                .fetch();
+    }
 }
