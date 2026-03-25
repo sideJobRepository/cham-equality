@@ -18,15 +18,15 @@ public class CommonFile extends DateSuperClass {
     // 공통 파일 ID
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "COMMON_FILE_ID")
+    @Column(name = "FILE_ID")
     private Long id;
     
     // 공통 파일 타겟 ID
-    @Column(name = "COMMON_FILE_TARGET_ID")
+    @Column(name = "FILE_TARGET_ID")
     private Long targetId;
     
     // 공통 파일 이름
-    @Column(name = "COMMON_FILE_NAME")
+    @Column(name = "FILE_NAME")
     private String fileName;
     
     // 공통 파일 크기
@@ -34,23 +34,23 @@ public class CommonFile extends DateSuperClass {
     private Integer fileSize;
     
     // 공통 파일 콘텐트 타입
-    @Column(name = "COMMON_FILE_CONTENT_TYPE")
+    @Column(name = "FILE_CONTENT_TYPE")
     private String fileContentType;
     
     // 공통 파일 경로 (오브젝트 키로 넣으면될듯)
-    @Column(name = "COMMON_FILE_PATH")
+    @Column(name = "FILE_PATH")
     private String filePath;
     
     @Enumerated(EnumType.STRING)
-    @Column(name = "COMMON_FILE_TYPE")
+    @Column(name = "FILE_TYPE")
     private FileType fileType;
     
     // 공통 파일 버킷 이름
-    @Column(name = "COMMON_FILE_BUCKET_NAME")
+    @Column(name = "FILE_BUCKET_NAME")
     private String bucketName;
     
     // 공통 파일 상태
     @Enumerated(EnumType.STRING)
-    @Column(name = "COMMON_FILE_STATUS")
+    @Column(name = "FILE_STATUS")
     private FileStatus fileStatus;
 }
