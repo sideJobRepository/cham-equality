@@ -1,7 +1,7 @@
 package com.chamapi.file.controller;
 
 
-import com.chamapi.apiresponse.ApiResponse;
+import com.chamapi.dto.ApiResponse;
 import com.chamapi.file.dto.request.FileUploadRequest;
 import com.chamapi.file.dto.response.FileUploadResponse;
 import com.chamapi.file.dto.response.PresignedUrlResponse;
