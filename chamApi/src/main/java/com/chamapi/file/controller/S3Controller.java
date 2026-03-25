@@ -2,7 +2,7 @@ package com.chamapi.file.controller;
 
 
 import com.chamapi.apiresponse.ApiResponse;
-import com.chamapi.file.dto.request.UploadRequest;
+import com.chamapi.file.dto.request.FileUploadRequest;
 import com.chamapi.file.dto.response.FileUploadResponse;
 import com.chamapi.file.dto.response.PresignedUrlResponse;
 import com.chamapi.file.service.S3FileService;
@@ -20,12 +20,12 @@ public class S3Controller {
     
     
     @PostMapping("/presigned-url")
-    public List<PresignedUrlResponse> getPresignedUrl(@RequestBody UploadRequest request) {
+    public List<PresignedUrlResponse> getPresignedUrl(@RequestBody FileUploadRequest request) {
         return s3FileService.getUploadPresignedUrl(request);
     }
     
     @PostMapping("/upload-file")
-    public ApiResponse<List<FileUploadResponse>> uploadFile(@RequestBody UploadRequest request) {
+    public ApiResponse<List<FileUploadResponse>> uploadFile(@RequestBody FileUploadRequest request) {
         List<FileUploadResponse> fileUploadResponses = s3FileService.uploadFile(request);
         return new ApiResponse<>(200,true,fileUploadResponses);
     }

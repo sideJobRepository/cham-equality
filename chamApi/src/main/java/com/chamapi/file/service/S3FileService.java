@@ -1,6 +1,6 @@
 package com.chamapi.file.service;
 
-import com.chamapi.file.dto.request.UploadRequest;
+import com.chamapi.file.dto.request.FileUploadRequest;
 import com.chamapi.file.dto.response.FileUploadResponse;
 import com.chamapi.file.dto.response.PresignedUrlResponse;
 import com.chamapi.file.entity.CommonFile;
@@ -40,7 +40,7 @@ public class S3FileService {
     @Value("${spring.cloud.aws.s3.bucket}")
     private String bucket;
     
-    public List<PresignedUrlResponse> getUploadPresignedUrl(UploadRequest request) {
+    public List<PresignedUrlResponse> getUploadPresignedUrl(FileUploadRequest request) {
         
         return request.getFiles().stream().map(file -> {
             
@@ -70,7 +70,7 @@ public class S3FileService {
         }).toList();
     }
     
-    public List<FileUploadResponse> uploadFile(UploadRequest request) {
+    public List<FileUploadResponse> uploadFile(FileUploadRequest request) {
         FileType fileType = request.getFileType();
         return request.getFiles()
                 .stream()

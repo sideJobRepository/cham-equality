@@ -13,7 +13,7 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class UploadRequest {
+public class FileUploadRequest {
 
     private FileType fileType;
     private List<FileUploadInfo> files;

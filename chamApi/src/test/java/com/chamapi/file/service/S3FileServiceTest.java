@@ -1,8 +1,8 @@
 package com.chamapi.file.service;
 
 import com.chamapi.RepositoryAndServiceTestSupport;
-import com.chamapi.file.dto.request.UploadRequest.FileUploadInfo;
-import com.chamapi.file.dto.request.UploadRequest;
+import com.chamapi.file.dto.request.FileUploadRequest.FileUploadInfo;
+import com.chamapi.file.dto.request.FileUploadRequest;
 import com.chamapi.file.dto.response.FileUploadResponse;
 import com.chamapi.file.dto.response.PresignedUrlResponse;
 import com.chamapi.file.enums.FileType;
@@ -33,7 +33,7 @@ class S3FileServiceTest extends RepositoryAndServiceTestSupport {
         
         List<FileUploadInfo> build3 = List.of(build1,build2);
         
-        UploadRequest uploadRequest = UploadRequest
+        FileUploadRequest uploadRequest = FileUploadRequest
                 .builder()
                 .files (build3)
                 .build();
@@ -62,7 +62,7 @@ class S3FileServiceTest extends RepositoryAndServiceTestSupport {
                 .bucketName("test")
                 .build();
         
-        UploadRequest request = UploadRequest.builder()
+        FileUploadRequest request = FileUploadRequest.builder()
                 .fileType(FileType.NOTICE)
                 .files(List.of(file1, file2))
                 .build();
