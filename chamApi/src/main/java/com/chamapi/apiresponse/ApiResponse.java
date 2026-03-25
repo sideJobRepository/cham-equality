@@ -12,11 +12,6 @@ public class ApiResponse<T> {
     private String message;
     private T data;
     
-    public ApiResponse(int code, boolean success, String message) {
-        this.code = code;
-        this.success = success;
-        this.message = message;
-    }
     
     public ApiResponse(int code, boolean success, T data) {
         this.code = code;

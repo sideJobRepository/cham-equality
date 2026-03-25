@@ -30,7 +30,7 @@ public class CommonFile extends DateSuperClass {
     private String fileName;
     
     // 공통 파일 크기
-    @Column(name = "COMMON_FILE_SIZE")
+    @Column(name = "FILE_SIZE")
     private Integer fileSize;
     
     // 공통 파일 콘텐트 타입
