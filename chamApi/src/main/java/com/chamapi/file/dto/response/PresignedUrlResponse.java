@@ -1,4 +1,4 @@
-package com.chamapi.file.controller.response;
+package com.chamapi.file.dto.response;
 
 
 import lombok.AllArgsConstructor;

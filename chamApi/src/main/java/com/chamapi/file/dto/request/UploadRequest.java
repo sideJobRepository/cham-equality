@@ -1,4 +1,4 @@
-package com.chamapi.file.controller.request;
+package com.chamapi.file.dto.request;
 
 import com.chamapi.file.enums.FileType;
 import lombok.AllArgsConstructor;

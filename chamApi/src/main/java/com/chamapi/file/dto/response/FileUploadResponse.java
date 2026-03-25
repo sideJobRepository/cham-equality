@@ -1,4 +1,4 @@
-package com.chamapi.file.controller.response;
+package com.chamapi.file.dto.response;
 
 import com.chamapi.file.entity.CommonFile;
 import com.chamapi.file.enums.FileStatus;

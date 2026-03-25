@@ -1,10 +1,10 @@
 package com.chamapi.file.service;
 
 import com.chamapi.RepositoryAndServiceTestSupport;
-import com.chamapi.file.controller.request.FileUploadInfo;
-import com.chamapi.file.controller.request.UploadRequest;
-import com.chamapi.file.controller.response.FileUploadResponse;
-import com.chamapi.file.controller.response.PresignedUrlResponse;
+import com.chamapi.file.dto.request.FileUploadInfo;
+import com.chamapi.file.dto.request.UploadRequest;
+import com.chamapi.file.dto.response.FileUploadResponse;
+import com.chamapi.file.dto.response.PresignedUrlResponse;
 import com.chamapi.file.enums.FileType;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

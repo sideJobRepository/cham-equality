@@ -2,9 +2,9 @@ package com.chamapi.file.controller;
 
 
 import com.chamapi.apiresponse.ApiResponse;
-import com.chamapi.file.controller.request.UploadRequest;
-import com.chamapi.file.controller.response.FileUploadResponse;
-import com.chamapi.file.controller.response.PresignedUrlResponse;
+import com.chamapi.file.dto.request.UploadRequest;
+import com.chamapi.file.dto.response.FileUploadResponse;
+import com.chamapi.file.dto.response.PresignedUrlResponse;
 import com.chamapi.file.service.S3FileService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;

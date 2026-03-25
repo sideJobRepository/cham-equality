@@ -1,4 +1,4 @@
-package com.chamapi.file.controller.request;
+package com.chamapi.file.dto.request;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

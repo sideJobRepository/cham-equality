@@ -1,8 +1,8 @@
 package com.chamapi.file.service;
 
-import com.chamapi.file.controller.request.UploadRequest;
-import com.chamapi.file.controller.response.FileUploadResponse;
-import com.chamapi.file.controller.response.PresignedUrlResponse;
+import com.chamapi.file.dto.request.UploadRequest;
+import com.chamapi.file.dto.response.FileUploadResponse;
+import com.chamapi.file.dto.response.PresignedUrlResponse;
 import com.chamapi.file.entity.CommonFile;
 import com.chamapi.file.enums.FileStatus;
 import com.chamapi.file.enums.FileType;
