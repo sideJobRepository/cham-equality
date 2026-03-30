@@ -1,0 +1,21 @@
+package com.chamapi.security.service.social;
+
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+
+import java.util.Arrays;
+
+@Getter
+@RequiredArgsConstructor
+public enum LoginRequestSocialLoginUrl {
+    
+    KAKAO("/api/kakao-login"),
+    NAVER("/api/naver-login");
+    
+    private final String path;
+    
+    public static LoginRequestSocialLoginUrl getSocialType(String uri) {
+        return Arrays.stream(LoginRequestSocialLoginUrl.values()).filter(type -> type.path.equals(uri))
+                .findFirst().orElseThrow(() -> new IllegalArgumentException("존재 하지 않는 소셜 로그인 입니다."));
+    }
+}

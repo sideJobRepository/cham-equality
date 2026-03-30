@@ -2,8 +2,10 @@ package com.chamapi.member.entrity;
 
 import com.chamapi.mapperd.DateSuperClass;
 import com.chamapi.member.enums.SocialType;
+import com.chamapi.security.service.social.SocialProfile;
 import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.util.StringUtils;
 
 import static jakarta.persistence.GenerationType.IDENTITY;
 
@@ -43,4 +45,11 @@ public class Member extends DateSuperClass {
     private String phoneNo;
     
     
+    public Member(SocialProfile socialProfile) {
+        this.email = socialProfile.email();
+        this.memberName = socialProfile.name();
+        this.socialType = SocialType.valueOf( socialProfile.provider().getValue());
+        this.socialId = String.valueOf(socialProfile.sub());
+        this.phoneNo = socialProfile.phone();
+    }
 }
