@@ -4,7 +4,6 @@ package com.chamapi.security.filter;
 import com.chamapi.security.dto.request.SocialAuthenticationRequest;
 import com.chamapi.security.service.social.LoginRequestSocialLoginUrl;
 import com.chamapi.security.token.SocialAuthenticationToken;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -15,6 +14,7 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.authentication.AbstractAuthenticationProcessingFilter;
 import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
 import org.springframework.security.web.util.matcher.OrRequestMatcher;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.io.IOException;
 
@@ -33,8 +33,8 @@ public class ChamEqualityAuthenticationFilter extends AbstractAuthenticationProc
         
         String uri = request.getRequestURI();
         
-        ObjectMapper objectMapper = new ObjectMapper();
-        SocialAuthenticationRequest loginRequest = objectMapper.readValue(request.getReader(), SocialAuthenticationRequest.class);
+        JsonMapper jsonMapper = new JsonMapper();
+        SocialAuthenticationRequest loginRequest = jsonMapper.readValue(request.getReader(), SocialAuthenticationRequest.class);
         
         if (loginRequest.getCode() == null || loginRequest.getCode().isBlank()) {
             throw new AuthenticationServiceException("code 값이 없습니다.");
