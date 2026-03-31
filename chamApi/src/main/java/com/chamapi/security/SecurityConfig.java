@@ -76,7 +76,4 @@ public class SecurityConfig {
         converter.setJwtGrantedAuthoritiesConverter(authoritiesConverter);
         return converter;
     }
-
-    
-    
 }

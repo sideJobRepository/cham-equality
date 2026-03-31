@@ -19,9 +19,6 @@ import java.security.interfaces.RSAPublicKey;
 @RequiredArgsConstructor
 public class SignatureConfig {
     
-    @Value("${jwt.secret}")
-    private String secret;
-    
     private final RsaRepository repository;
     
     
