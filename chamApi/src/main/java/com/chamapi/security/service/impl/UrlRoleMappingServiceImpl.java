@@ -11,9 +11,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.chamapi.resources.entity.QUrlResources.urlResources;
-import static com.chamapi.resourcesrole.entity.QUrlResourcesRole.urlResourcesRole;
-import static com.chamapi.role.entity.QRole.role;
+import static com.chamapi.authorization.entity.QUrlResources.urlResources;
+import static com.chamapi.authorization.entity.QRole.role;
+import static com.chamapi.authorization.entity.QUrlResourcesRole.urlResourcesRole;
 
 
 @Service

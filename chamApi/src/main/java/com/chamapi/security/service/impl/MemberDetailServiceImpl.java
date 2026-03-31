@@ -3,10 +3,10 @@ package com.chamapi.security.service.impl;
 
 import com.chamapi.member.entity.Member;
 import com.chamapi.member.repository.MemberRepository;
-import com.chamapi.role.entity.MemberRole;
-import com.chamapi.role.repository.MemberRoleRepository;
-import com.chamapi.role.entity.Role;
-import com.chamapi.role.repository.RoleRepository;
+import com.chamapi.authorization.entity.MemberRole;
+import com.chamapi.authorization.repository.MemberRoleRepository;
+import com.chamapi.authorization.entity.Role;
+import com.chamapi.authorization.repository.RoleRepository;
 import com.chamapi.security.context.MemberContext;
 import com.chamapi.security.service.social.SocialProfile;
 import lombok.RequiredArgsConstructor;

@@ -3,7 +3,7 @@ package com.chamapi.security.handler;
 
 
 import com.chamapi.member.entity.Member;
-import com.chamapi.refresh.service.RefreshTokenService;
+import com.chamapi.authentication.service.RefreshTokenService;
 import com.chamapi.security.dto.MemberResponseDto;
 import com.chamapi.security.jwt.RsaSecuritySigner;
 import com.chamapi.security.token.SocialAuthenticationToken;
