@@ -1,4 +1,4 @@
-package com.chamapi.security.handler;
+package com.chamapi.security.token;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;

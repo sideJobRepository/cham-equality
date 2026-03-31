@@ -1,7 +1,6 @@
-package com.chamapi.security.service;
+package com.chamapi.security.service.impl;
 
 
-import com.chamapi.security.role.UrlRoleMapping;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,7 +13,7 @@ import java.util.Map;
 public class DynamicAuthorizationServiceImpl {
     
     
-    private final UrlRoleMapping urlRoleMapping;
+    private final UrlRoleMappingServiceImpl urlRoleMapping;
     
     
     @Transactional(readOnly = true)

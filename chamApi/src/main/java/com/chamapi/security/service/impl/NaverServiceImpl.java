@@ -1,7 +1,8 @@
-package com.chamapi.security.service;
+package com.chamapi.security.service.impl;
 
-import com.chamapi.security.service.response.AccessTokenResponse;
-import com.chamapi.security.service.response.NaverProfileResponse;
+import com.chamapi.security.service.SocialService;
+import com.chamapi.security.dto.response.AccessTokenResponse;
+import com.chamapi.security.dto.response.NaverProfileResponse;
 import com.chamapi.security.service.social.LoginRequestSocialType;
 import com.chamapi.security.service.social.SocialProfile;
 import lombok.RequiredArgsConstructor;
@@ -18,16 +19,15 @@ import java.util.UUID;
 @Service("naverService")
 @Transactional
 @RequiredArgsConstructor
-public class NaverServiceImpl implements SocialService{
+public class NaverServiceImpl implements SocialService {
     
     @Value("${naver.clientId}")
     private String naverClientId;
     @Value("${naver.redirecturi}")
     private String naverRedirectUri;
-    @Value("${naver.redirecturi2}")
-    private String naverRedirectUri2;
     @Value("${naver.client-secret}")
     private String naverClientSecret;
+    
     @Override
     public AccessTokenResponse getAccessToken(String code, String socialType) {
         RestClient restClient = RestClient.create();
@@ -36,13 +36,9 @@ public class NaverServiceImpl implements SocialService{
         
         params.add("code", code);
         params.add("client_id", naverClientId);
-        if("NAVER".equals(socialType)){
-            params.add("redirect_uri", naverRedirectUri);
-        }else {
-            params.add("redirect_uri", naverRedirectUri2);
-        }
+        params.add("redirect_uri", naverRedirectUri);
         params.add("grant_type", "authorization_code");
-        params.add("client_secret",naverClientSecret);
+        params.add("client_secret", naverClientSecret);
         params.add("state", UUID.randomUUID().toString());
         
         ResponseEntity<AccessTokenResponse> response = restClient.post()
@@ -58,26 +54,26 @@ public class NaverServiceImpl implements SocialService{
     @Override
     public SocialProfile getProfile(String accessToken) {
         RestClient restClient = RestClient.create();
-               
-               NaverProfileResponse np = restClient.get()
-                       .uri("https://openapi.naver.com/v1/nid/me")
-                       .header("Content-Type", "application/x-www-form-urlencoded")
-                       .header("Authorization", "Bearer " + accessToken)
-                       .retrieve()
-                       .body(NaverProfileResponse.class);
-               
-               
-               String id = np != null ? np.getResponse().getId() : null;
-               String email = np   != null ? np.getResponse().getEmail() : null;
-               String name = np != null  ? np.getResponse().getName()  : null;
-               String phone = np != null  ? np.getResponse().getMobile() : null;
-               
-               return new SocialProfile(
-                       LoginRequestSocialType.NAVER,
-                        id ,
-                       email,
-                       name,
-                       phone
-               );
+        
+        NaverProfileResponse np = restClient.get()
+                .uri("https://openapi.naver.com/v1/nid/me")
+                .header("Content-Type", "application/x-www-form-urlencoded")
+                .header("Authorization", "Bearer " + accessToken)
+                .retrieve()
+                .body(NaverProfileResponse.class);
+        
+        
+        String id = np != null ? np.getResponse().getId() : null;
+        String email = np != null ? np.getResponse().getEmail() : null;
+        String name = np != null ? np.getResponse().getName() : null;
+        String phone = np != null ? np.getResponse().getMobile() : null;
+        
+        return new SocialProfile(
+                LoginRequestSocialType.NAVER,
+                id,
+                email,
+                name,
+                phone
+        );
     }
 }

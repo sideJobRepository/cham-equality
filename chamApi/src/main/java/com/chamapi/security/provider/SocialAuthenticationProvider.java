@@ -2,9 +2,9 @@ package com.chamapi.security.provider;
 
 
 import com.chamapi.security.context.MemberContext;
-import com.chamapi.security.service.MemberDetailService;
+import com.chamapi.security.service.impl.MemberDetailServiceImpl;
 import com.chamapi.security.service.SocialService;
-import com.chamapi.security.service.response.AccessTokenResponse;
+import com.chamapi.security.dto.response.AccessTokenResponse;
 import com.chamapi.security.service.social.SocialProfile;
 import com.chamapi.security.token.SocialAuthenticationToken;
 import lombok.RequiredArgsConstructor;
@@ -20,7 +20,7 @@ public class SocialAuthenticationProvider implements AuthenticationProvider {
     
     private final SocialService kakaoService;
     private final SocialService naverService;
-    private final MemberDetailService bgmAgitMemberDetailService;
+    private final MemberDetailServiceImpl bgmAgitMemberDetailService;
     
     
     @Override

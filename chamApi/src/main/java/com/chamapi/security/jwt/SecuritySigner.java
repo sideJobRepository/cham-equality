@@ -2,7 +2,7 @@ package com.chamapi.security.jwt;
 
 
 import com.chamapi.member.entrity.Member;
-import com.chamapi.security.handler.TokenPair;
+import com.chamapi.security.token.TokenPair;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.JWSHeader;

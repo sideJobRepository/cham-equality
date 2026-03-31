@@ -3,7 +3,7 @@ package com.chamapi.refresh.contoller;
 
 import com.chamapi.dto.ApiResponse;
 import com.chamapi.refresh.service.RefreshTokenService;
-import com.chamapi.security.dto.TokenAndUser;
+import com.chamapi.security.token.TokenAndUser;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;

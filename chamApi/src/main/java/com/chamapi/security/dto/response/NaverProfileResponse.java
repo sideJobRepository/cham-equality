@@ -1,4 +1,4 @@
-package com.chamapi.security.service.response;
+package com.chamapi.security.dto.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

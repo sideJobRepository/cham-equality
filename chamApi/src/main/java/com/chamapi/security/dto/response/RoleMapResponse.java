@@ -1,4 +1,4 @@
-package com.chamapi.security.role.response;
+package com.chamapi.security.dto.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class RoleMapResponse {
     
-    private String bgmAgitUrlResourcesPath;
-    private String bgmAgitRoleName;
+    private String uResourcesPath;
+    private String roleName;
     private String httpMethod;
 }

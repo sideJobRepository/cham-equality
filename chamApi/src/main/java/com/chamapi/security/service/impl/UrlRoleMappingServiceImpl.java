@@ -1,7 +1,7 @@
-package com.chamapi.security.role;
+package com.chamapi.security.service.impl;
 
 
-import com.chamapi.security.role.response.RoleMapResponse;
+import com.chamapi.security.dto.response.RoleMapResponse;
 import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import org.springframework.stereotype.Service;
@@ -18,12 +18,12 @@ import static com.chamapi.role.entity.QRole.role;
 
 @Service
 @Transactional(readOnly = true)
-public class UrlRoleMapping {
+public class UrlRoleMappingServiceImpl {
     
     private LinkedHashMap<String, String> urlRoleMappings = new LinkedHashMap<>();
     private final JPAQueryFactory queryFactory;
     
-    public UrlRoleMapping(JPAQueryFactory queryFactory) {
+    public UrlRoleMappingServiceImpl(JPAQueryFactory queryFactory) {
         this.queryFactory = queryFactory;
     }
     
@@ -43,8 +43,8 @@ public class UrlRoleMapping {
 
         resourcesList
                 .forEach(resources -> {
-                    String key = resources.getHttpMethod().toUpperCase() + " " + resources.getBgmAgitUrlResourcesPath(); // "POST /bgm-agit/notice"
-                    urlRoleMappings.put(key, "ROLE_" + resources.getBgmAgitRoleName());
+                    String key = resources.getHttpMethod().toUpperCase() + " " + resources.getUResourcesPath(); // "POST /api/notice"
+                    urlRoleMappings.put(key, "ROLE_" + resources.getRoleName());
                 });
         return urlRoleMappings;
     }

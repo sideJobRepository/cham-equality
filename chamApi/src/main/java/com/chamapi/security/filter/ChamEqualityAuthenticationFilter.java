@@ -1,7 +1,7 @@
 package com.chamapi.security.filter;
 
 
-import com.chamapi.security.service.request.SocialAuthenticationRequest;
+import com.chamapi.security.dto.request.SocialAuthenticationRequest;
 import com.chamapi.security.service.social.LoginRequestSocialLoginUrl;
 import com.chamapi.security.token.SocialAuthenticationToken;
 import com.fasterxml.jackson.databind.ObjectMapper;

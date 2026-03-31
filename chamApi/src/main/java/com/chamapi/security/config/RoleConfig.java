@@ -1,4 +1,4 @@
-package com.chamapi.security.role;
+package com.chamapi.security.config;
 
 
 import com.chamapi.hierarchy.service.RoleHierarchyService;

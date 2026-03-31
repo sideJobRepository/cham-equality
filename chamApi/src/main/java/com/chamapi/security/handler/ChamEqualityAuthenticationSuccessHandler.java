@@ -7,6 +7,7 @@ import com.chamapi.refresh.service.RefreshTokenService;
 import com.chamapi.security.dto.MemberResponseDto;
 import com.chamapi.security.jwt.RsaSecuritySigner;
 import com.chamapi.security.token.SocialAuthenticationToken;
+import com.chamapi.security.token.TokenPair;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.jwk.JWK;
 import jakarta.servlet.ServletException;

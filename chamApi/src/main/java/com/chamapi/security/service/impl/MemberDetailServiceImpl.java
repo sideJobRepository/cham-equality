@@ -1,4 +1,4 @@
-package com.chamapi.security.service;
+package com.chamapi.security.service.impl;
 
 
 import com.chamapi.member.entrity.Member;
@@ -24,7 +24,7 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 @Transactional
-public class MemberDetailService implements UserDetailsService {
+public class MemberDetailServiceImpl implements UserDetailsService {
     
     private final MemberRepository memberRepository;
     

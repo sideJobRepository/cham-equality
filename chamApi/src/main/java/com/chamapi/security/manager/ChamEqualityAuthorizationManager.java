@@ -1,7 +1,7 @@
 package com.chamapi.security.manager;
 
 
-import com.chamapi.security.service.DynamicAuthorizationServiceImpl;
+import com.chamapi.security.service.impl.DynamicAuthorizationServiceImpl;
 import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
