@@ -2,7 +2,7 @@ package com.chamapi.security.handler;
 
 
 
-import com.chamapi.member.entrity.Member;
+import com.chamapi.member.entity.Member;
 import com.chamapi.refresh.service.RefreshTokenService;
 import com.chamapi.security.dto.MemberResponseDto;
 import com.chamapi.security.jwt.RsaSecuritySigner;

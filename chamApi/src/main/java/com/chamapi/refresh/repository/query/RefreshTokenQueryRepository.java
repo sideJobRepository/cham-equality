@@ -2,7 +2,7 @@ package com.chamapi.refresh.repository.query;
 
 
 
-import com.chamapi.member.entrity.Member;
+import com.chamapi.member.entity.Member;
 import com.chamapi.refresh.entity.RefreshToken;
 
 import java.util.Optional;

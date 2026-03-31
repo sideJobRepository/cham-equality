@@ -1,6 +1,6 @@
 package com.chamapi.security.context;
 
-import com.chamapi.member.entrity.Member;
+import com.chamapi.member.entity.Member;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;

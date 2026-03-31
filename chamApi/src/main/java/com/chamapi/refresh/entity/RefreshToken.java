@@ -1,7 +1,7 @@
 package com.chamapi.refresh.entity;
 
-import com.chamapi.mapperd.DateSuperClass;
-import com.chamapi.member.entrity.Member;
+import com.chamapi.common.entity.DateSuperClass;
+import com.chamapi.member.entity.Member;
 import jakarta.persistence.*;
 import lombok.*;
 

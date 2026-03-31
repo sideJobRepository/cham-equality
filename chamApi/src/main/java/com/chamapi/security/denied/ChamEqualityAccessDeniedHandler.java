@@ -1,7 +1,7 @@
 package com.chamapi.security.denied;
 
 
-import com.chamapi.advice.response.ErrorMessageResponse;
+import com.chamapi.common.dto.ErrorMessageResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;

@@ -1,8 +1,8 @@
 package com.chamapi.refresh.service.impl;
 
-import com.chamapi.dto.ApiResponse;
-import com.chamapi.member.entrity.Member;
-import com.chamapi.memberrole.service.MemberRoleService;
+import com.chamapi.common.dto.ApiResponse;
+import com.chamapi.member.entity.Member;
+import com.chamapi.role.service.MemberRoleService;
 import com.chamapi.refresh.entity.RefreshToken;
 import com.chamapi.refresh.repository.RefreshTokenRepository;
 import com.chamapi.refresh.service.RefreshTokenService;

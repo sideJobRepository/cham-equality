@@ -3,7 +3,7 @@ package com.chamapi.file.entity;
 
 import com.chamapi.file.enums.FileStatus;
 import com.chamapi.file.enums.FileType;
-import com.chamapi.mapperd.DateSuperClass;
+import com.chamapi.common.entity.DateSuperClass;
 import jakarta.persistence.*;
 import lombok.*;
 

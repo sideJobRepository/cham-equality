@@ -1,6 +1,6 @@
 package com.chamapi.security.dto;
 
-import com.chamapi.member.entrity.Member;
+import com.chamapi.member.entity.Member;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;

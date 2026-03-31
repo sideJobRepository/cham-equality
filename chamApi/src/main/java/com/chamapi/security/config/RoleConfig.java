@@ -1,7 +1,7 @@
 package com.chamapi.security.config;
 
 
-import com.chamapi.hierarchy.service.RoleHierarchyService;
+import com.chamapi.role.service.RoleHierarchyService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.access.hierarchicalroles.RoleHierarchyImpl;

@@ -1,7 +1,7 @@
 package com.chamapi.security.entrypoint;
 
 
-import com.chamapi.advice.response.ErrorMessageResponse;
+import com.chamapi.common.dto.ErrorMessageResponse;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;

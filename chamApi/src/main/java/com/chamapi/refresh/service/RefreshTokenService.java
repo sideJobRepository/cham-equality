@@ -2,8 +2,8 @@ package com.chamapi.refresh.service;
 
 
 
-import com.chamapi.dto.ApiResponse;
-import com.chamapi.member.entrity.Member;
+import com.chamapi.common.dto.ApiResponse;
+import com.chamapi.member.entity.Member;
 import com.chamapi.security.token.TokenAndUser;
 
 import java.time.LocalDateTime;

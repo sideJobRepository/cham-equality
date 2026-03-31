@@ -1,10 +1,10 @@
 package com.chamapi.security.service.impl;
 
 
-import com.chamapi.member.entrity.Member;
+import com.chamapi.member.entity.Member;
 import com.chamapi.member.repository.MemberRepository;
-import com.chamapi.memberrole.entity.MemberRole;
-import com.chamapi.memberrole.repository.MemberRoleRepository;
+import com.chamapi.role.entity.MemberRole;
+import com.chamapi.role.repository.MemberRoleRepository;
 import com.chamapi.role.entity.Role;
 import com.chamapi.role.repository.RoleRepository;
 import com.chamapi.security.context.MemberContext;

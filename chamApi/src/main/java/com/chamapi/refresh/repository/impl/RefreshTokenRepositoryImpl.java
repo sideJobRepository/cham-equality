@@ -1,6 +1,6 @@
 package com.chamapi.refresh.repository.impl;
 
-import com.chamapi.member.entrity.Member;
+import com.chamapi.member.entity.Member;
 import com.chamapi.refresh.entity.RefreshToken;
 import com.chamapi.refresh.repository.query.RefreshTokenQueryRepository;
 import com.querydsl.jpa.impl.JPAQueryFactory;
