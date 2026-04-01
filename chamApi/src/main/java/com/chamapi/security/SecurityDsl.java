@@ -52,12 +52,12 @@ public class SecurityDsl<H extends HttpSecurityBuilder<H>> extends AbstractAuthe
         http.addFilterBefore(getAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
     }
     
-    public SecurityDsl<H> bgmAgitSuccessHandler(AuthenticationSuccessHandler successHandler) {
+    public SecurityDsl<H> chamEqualitySuccessHandler(AuthenticationSuccessHandler successHandler) {
         this.successHandler = successHandler;
         return this;
     }
     
-    public SecurityDsl<H> bgmAgitFailureHandler(AuthenticationFailureHandler authenticationFailureHandler) {
+    public SecurityDsl<H> chamEqualityFailureHandler(AuthenticationFailureHandler authenticationFailureHandler) {
         this.failureHandler = authenticationFailureHandler;
         return this;
     }

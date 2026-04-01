@@ -39,7 +39,7 @@ public class SecurityConfig {
     
     
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) {
         
         AuthenticationManagerBuilder managerBuilder = http.getSharedObject(AuthenticationManagerBuilder.class);
         managerBuilder.authenticationProvider(socialAuthenticationProvider);
@@ -60,9 +60,9 @@ public class SecurityConfig {
                 .exceptionHandling(e ->
                         e.authenticationEntryPoint(chamEqualityAuthenticationEntryPoint).
                     accessDeniedHandler(ChamEqualityAccessDeniedHandler))
-                .with(new SecurityDsl<>(), bgmAgitSecurityDsl -> bgmAgitSecurityDsl
-                        .bgmAgitSuccessHandler(chamEqualityAuthenticationSuccessHandler)
-                        .bgmAgitFailureHandler(chamEqualityAuthenticationFailureHandler)
+                .with(new SecurityDsl<>(), securitySecurityDsl -> securitySecurityDsl
+                        .chamEqualitySuccessHandler(chamEqualityAuthenticationSuccessHandler)
+                        .chamEqualityFailureHandler(chamEqualityAuthenticationFailureHandler)
                 );
         return http.build();
     }
