@@ -19,20 +19,14 @@ public class RefreshTokenController {
     private final RefreshCookieFactory refreshCookieFactory;
 
     @PostMapping("/refresh")
-    public TokenResponse refreshToken(
-            @CookieValue(value = "${auth.cookie.name:refreshToken}", required = false) String refreshToken,
-            HttpServletResponse response
-    ) {
+    public TokenResponse refreshToken(@CookieValue(value = "${auth.cookie.name:refreshToken}", required = false) String refreshToken, HttpServletResponse response) {
         TokenAndUser tokenPair = refreshTokenService.reissueTokenWithUser(refreshToken);
         response.addHeader("Set-Cookie", refreshCookieFactory.create(tokenPair.token().getRefreshToken()).toString());
         return new TokenResponse(tokenPair.token().getAccessToken(), tokenPair.user());
     }
 
     @DeleteMapping("/refresh")
-    public ApiResponse<Void> deleteRefreshToken(
-            @CookieValue(value = "${auth.cookie.name:refreshToken}", required = false) String refreshToken,
-            HttpServletResponse response
-    ) {
+    public ApiResponse<Void> deleteRefreshToken(@CookieValue(value = "${auth.cookie.name:refreshToken}", required = false) String refreshToken, HttpServletResponse response) {
         ApiResponse<Void> apiResponse = refreshToken == null
                 ? ApiResponse.of(200, true, "정상 삭제")
                 : refreshTokenService.deleteRefresh(refreshToken);

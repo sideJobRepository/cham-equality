@@ -16,10 +16,9 @@ import static com.chamapi.authentication.entity.QRefreshToken.refreshToken;
 public class RefreshTokenRepositoryImpl implements RefreshTokenQueryRepository {
 
     private final JPAQueryFactory queryFactory;
-    private final EntityManager em;
     
     @Override
-    public Optional<RefreshToken> findPortfolioMember(Member member) {
+    public Optional<RefreshToken> findMember(Member member) {
         RefreshToken token = queryFactory
                 .selectFrom(refreshToken)
                 .where(refreshToken.member.eq(member))
@@ -28,20 +27,11 @@ public class RefreshTokenRepositoryImpl implements RefreshTokenQueryRepository {
     }
     
     @Override
-    public Optional<RefreshToken> findPortfolioRefreshTokenValue(String refreshTokenValue) {
+    public Optional<RefreshToken> findRefreshTokenValue(String refreshTokenValue) {
         RefreshToken tone = queryFactory
                 .selectFrom(refreshToken)
                 .where(refreshToken.refreshTokenValue.eq(refreshTokenValue))
                 .fetchOne();
         return Optional.ofNullable(tone);
-    }
-    
-    @Override
-    public void deleteByMember(Long id) {
-        em.flush();
-        queryFactory
-                .delete(refreshToken)
-                .where(refreshToken.member.id.eq(id))
-                .execute();
     }
 }

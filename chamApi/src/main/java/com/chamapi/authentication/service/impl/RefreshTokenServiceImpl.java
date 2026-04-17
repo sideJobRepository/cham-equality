@@ -44,7 +44,7 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
 
     private void saveOrUpdateInternal(Member member, String refreshTokenValue) {
         LocalDateTime expiresAt = LocalDateTime.now().plus(authProperties.getRefreshToken().getExpiry());
-        RefreshToken token = refreshTokenRepository.findPortfolioMember(member)
+        RefreshToken token = refreshTokenRepository.findMember(member)
                 .map(existing -> {
                     existing.updateToken(refreshTokenValue, expiresAt);
                     return existing;
@@ -92,7 +92,7 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
     @Override
     @Transactional
     public ApiResponse<Void> deleteRefresh(String request) {
-        refreshTokenRepository.findPortfolioRefreshTokenValue(request)
+        refreshTokenRepository.findRefreshTokenValue(request)
                 .ifPresent(refreshTokenRepository::delete);
         return ApiResponse.of(200, true, "정상 삭제");
     }
@@ -100,7 +100,7 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
     @Override
     public Member validateRefreshToken(String refreshToken) {
         RefreshToken token = refreshTokenRepository
-                .findPortfolioRefreshTokenValue(refreshToken)
+                .findRefreshTokenValue(refreshToken)
                 .orElseThrow(() -> new RefreshTokenExpiredException("리프레시 토큰이 유효하지 않습니다."));
 
         if (token.getRefreshExpiresDate().isBefore(LocalDateTime.now())) {
