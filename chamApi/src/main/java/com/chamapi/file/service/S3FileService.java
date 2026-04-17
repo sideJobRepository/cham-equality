@@ -15,7 +15,6 @@ import org.apache.commons.io.FilenameUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
@@ -25,7 +24,6 @@ import software.amazon.awssdk.services.s3.presigner.model.PresignedPutObjectRequ
 import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignRequest;
 
 import java.time.Duration;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -39,6 +37,7 @@ public class S3FileService {
     
     private final S3Presigner s3Presigner;
     private final CommonFileRepository commonFileRepository;
+    private final FileViewUrlCache fileViewUrlCache;
     
     @Value("${spring.cloud.aws.s3.bucket}")
     private String bucket;
@@ -129,39 +128,13 @@ public class S3FileService {
         deleteFile.forEach(CommonFile::modifyTemporaryFileStatus);
     }
     
-    @Transactional(readOnly = true)
     public List<FileViewResponse> getFilesForView(List<Long> ids) {
         if (ids == null || ids.isEmpty()) {
             return List.of();
         }
-        
-        Duration expiry = Duration.ofHours(1);
-        LocalDateTime expiresAt = LocalDateTime.now().plus(expiry);
-        
-        return commonFileRepository.findFilesIds(ids).stream()
-                .map(file -> {
-                    GetObjectRequest getObjectRequest = GetObjectRequest.builder()
-                            .bucket(bucket)
-                            .key(file.getFilePath())
-                            .build();
-                    
-                    GetObjectPresignRequest presignRequest = GetObjectPresignRequest.builder()
-                            .signatureDuration(expiry)
-                            .getObjectRequest(getObjectRequest)
-                            .build();
-                    
-                    PresignedGetObjectRequest presigned = s3Presigner.presignGetObject(presignRequest);
-                    
-                    return new FileViewResponse(
-                            file.getId(),
-                            file.getFileName(),
-                            file.getFileSize(),
-                            file.getFileContentType(),
-                            file.getFileType(),
-                            presigned.url().toString(),
-                            expiresAt
-                    );
-                })
+
+        return ids.stream()
+                .map(fileViewUrlCache::getFileUrl)
                 .toList();
     }
     

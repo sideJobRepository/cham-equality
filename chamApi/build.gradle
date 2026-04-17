@@ -74,6 +74,10 @@ dependencies {
     // .env 파일을 Spring Boot에서 읽어서 환경변수처럼 사용할 수 있게 해주는 라이브러리
     implementation 'me.paulschwarz:spring-dotenv:3.0.0'
 
+    //캐시 (Caffeine)
+    implementation 'org.springframework.boot:spring-boot-starter-cache'
+    implementation 'com.github.ben-manes.caffeine:caffeine'
+
 }
 
 tasks.named('test') {
