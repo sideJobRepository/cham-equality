@@ -3,6 +3,7 @@ package com.chamapi.file.service;
 import com.chamapi.file.dto.request.FileRequest;
 import com.chamapi.file.dto.request.FileUploadRequest;
 import com.chamapi.file.dto.response.FileUploadResponse;
+import com.chamapi.file.dto.response.FileViewResponse;
 import com.chamapi.file.dto.response.PresignedUrlResponse;
 import com.chamapi.file.entity.CommonFile;
 import com.chamapi.file.enums.FileProcessStatus;
@@ -24,6 +25,7 @@ import software.amazon.awssdk.services.s3.presigner.model.PresignedPutObjectRequ
 import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignRequest;
 
 import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -91,6 +93,7 @@ public class S3FileService {
                 }).toList();
     }
     
+
     @Transactional(readOnly = true)
     public String fileDownload(Long id) {
         CommonFile file = commonFileRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("존재 하지 않는 파일 ID 입니다 : " + id));
@@ -125,4 +128,41 @@ public class S3FileService {
         List<CommonFile> deleteFile = commonFileRepository.findFilesIds(deleteFileIds);
         deleteFile.forEach(CommonFile::modifyTemporaryFileStatus);
     }
+    
+    @Transactional(readOnly = true)
+    public List<FileViewResponse> getFilesForView(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return List.of();
+        }
+        
+        Duration expiry = Duration.ofHours(1);
+        LocalDateTime expiresAt = LocalDateTime.now().plus(expiry);
+        
+        return commonFileRepository.findFilesIds(ids).stream()
+                .map(file -> {
+                    GetObjectRequest getObjectRequest = GetObjectRequest.builder()
+                            .bucket(bucket)
+                            .key(file.getFilePath())
+                            .build();
+                    
+                    GetObjectPresignRequest presignRequest = GetObjectPresignRequest.builder()
+                            .signatureDuration(expiry)
+                            .getObjectRequest(getObjectRequest)
+                            .build();
+                    
+                    PresignedGetObjectRequest presigned = s3Presigner.presignGetObject(presignRequest);
+                    
+                    return new FileViewResponse(
+                            file.getId(),
+                            file.getFileName(),
+                            file.getFileSize(),
+                            file.getFileContentType(),
+                            file.getFileType(),
+                            presigned.url().toString(),
+                            expiresAt
+                    );
+                })
+                .toList();
+    }
+    
 }
