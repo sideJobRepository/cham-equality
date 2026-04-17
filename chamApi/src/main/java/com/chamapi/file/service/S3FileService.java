@@ -35,7 +35,6 @@ import java.util.UUID;
 public class S3FileService {
     
     
-    private final S3Client s3Client;
     private final S3Presigner s3Presigner;
     private final CommonFileRepository commonFileRepository;
     
