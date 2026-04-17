@@ -21,5 +21,10 @@ public class ApiResponse<T> {
     public ApiResponse(int code, boolean success, T data) {
         this(code, success, "", data);
     }
+    
+
+    public static ApiResponse<Void> of(int code, boolean success, String message) {
+        return new ApiResponse<>(code, success, message, null);
+    }
 
 }

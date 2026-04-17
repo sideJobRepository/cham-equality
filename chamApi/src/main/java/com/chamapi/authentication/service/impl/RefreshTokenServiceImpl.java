@@ -3,7 +3,10 @@ package com.chamapi.authentication.service.impl;
 import com.chamapi.common.dto.ApiResponse;
 import com.chamapi.member.entity.Member;
 import com.chamapi.authorization.service.MemberRoleService;
+import com.chamapi.authentication.config.AuthProperties;
 import com.chamapi.authentication.entity.RefreshToken;
+import com.chamapi.authentication.exception.JwtGenerationException;
+import com.chamapi.authentication.exception.RefreshTokenExpiredException;
 import com.chamapi.authentication.repository.RefreshTokenRepository;
 import com.chamapi.authentication.service.RefreshTokenService;
 import com.chamapi.security.dto.MemberResponseDto;
@@ -23,7 +26,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
-@Transactional
+@Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class RefreshTokenServiceImpl implements RefreshTokenService {
     
@@ -31,36 +34,40 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
     private final MemberRoleService memberRoleService;
     private final RsaSecuritySigner rsaSecuritySigner;
     private final JWK jwk;
+    private final AuthProperties authProperties;
     
     @Override
-    public void refreshTokenSaveOrUpdate(Member member, String refreshTokenValue, LocalDateTime expiresAt) {
-        RefreshToken token = refreshTokenRepository
-                .findPortfolioMember(member)
-                .orElse(RefreshToken.builder()
+    @Transactional
+    public void refreshTokenSaveOrUpdate(Member member, String refreshTokenValue) {
+        saveOrUpdateInternal(member, refreshTokenValue);
+    }
+
+    private void saveOrUpdateInternal(Member member, String refreshTokenValue) {
+        LocalDateTime expiresAt = LocalDateTime.now().plus(authProperties.getRefreshToken().getExpiry());
+        RefreshToken token = refreshTokenRepository.findPortfolioMember(member)
+                .map(existing -> {
+                    existing.updateToken(refreshTokenValue, expiresAt);
+                    return existing;
+                })
+                .orElseGet(() -> RefreshToken.builder()
                         .member(member)
                         .refreshTokenValue(refreshTokenValue)
                         .refreshExpiresDate(expiresAt)
                         .build()
                 );
-        if (token.getId() != null) {
-            token.updateToken(refreshTokenValue, expiresAt);
-        }
         refreshTokenRepository.save(token);
     }
     
     
     @Override
+    @Transactional
     public TokenAndUser reissueTokenWithUser(String refreshToken) {
         if (refreshToken == null || refreshToken.isBlank()) {
-            return null;
+            throw new RefreshTokenExpiredException("리프레시 토큰이 없습니다.");
         }
-        
+
         Member member = validateRefreshToken(refreshToken);
-        
-        if(member == null) {
-            return null;
-        }
-        
+
         String roleName = memberRoleService
                 .getMemberRole(member.getId())
                 .getRole()
@@ -71,42 +78,35 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
         try {
             TokenPair token = rsaSecuritySigner.getToken(member, jwk, authorities);
             
-            refreshTokenSaveOrUpdate(
-                    member,
-                    token.getRefreshToken(),
-                    LocalDateTime.now().plusDays(1)
-            );
+            saveOrUpdateInternal(member, token.getRefreshToken());
             
             // 로그인 때와 동일하게 DTO 생성
             MemberResponseDto user = MemberResponseDto.create(member, authorities);
             
             return new TokenAndUser(token, user);
         } catch (JOSEException e) {
-            throw new RuntimeException("JWT 생성 실패", e);
+            throw new JwtGenerationException("JWT 생성 실패", e);
         }
     }
     
     @Override
-    public ApiResponse deleteRefresh(String request) {
-        RefreshToken bgmAgitRefreshToken = refreshTokenRepository.findPortfolioRefreshTokenValue(request).orElseThrow(() -> new RuntimeException("존재하지않는 리프레쉬 토큰입니다."));
-        refreshTokenRepository.delete(bgmAgitRefreshToken);
-        return new ApiResponse(200,true,"정상 삭제");
+    @Transactional
+    public ApiResponse<Void> deleteRefresh(String request) {
+        refreshTokenRepository.findPortfolioRefreshTokenValue(request)
+                .ifPresent(refreshTokenRepository::delete);
+        return ApiResponse.of(200, true, "정상 삭제");
     }
     
     @Override
     public Member validateRefreshToken(String refreshToken) {
         RefreshToken token = refreshTokenRepository
                 .findPortfolioRefreshTokenValue(refreshToken)
-                .orElse(null);
-        
-        if (token == null) {
-            return null;
-        }
-        
+                .orElseThrow(() -> new RefreshTokenExpiredException("리프레시 토큰이 유효하지 않습니다."));
+
         if (token.getRefreshExpiresDate().isBefore(LocalDateTime.now())) {
-            throw new RuntimeException("리프레시 토큰이 만료되었습니다.");
+            throw new RefreshTokenExpiredException("리프레시 토큰이 만료되었습니다.");
         }
-        
+
         return token.getMember(); // fetch join 필요시 수정
     }
 }

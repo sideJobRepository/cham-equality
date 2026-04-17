@@ -24,3 +24,12 @@ spring:
         static: ${AWS_REGION}
       s3:
         bucket: ${AWS_BUCKET}
+
+auth:
+  cookie:
+    name: refreshToken
+    secure: ${COOKIE_SECURE:false}
+    path: /
+    same-site: Strict
+  refresh-token:
+    expiry: 1d

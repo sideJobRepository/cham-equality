@@ -7,6 +7,7 @@ import com.chamapi.common.dto.ErrorMessageResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -61,16 +62,14 @@ public class ExceptionController {
         );
     }
     
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(CustomException.class)
-    public ErrorMessageResponse handleRefreshTokenExpiredExceptionException(CustomException e) {
+    public ResponseEntity<ErrorMessageResponse> handleCustomException(CustomException e) {
         log.info("공통 예외 ", e);
+        HttpStatus status = e.getStatus();
+        ErrorMessageResponse body = new ErrorMessageResponse(String.valueOf(status.value()), e.getMessage());
         if (e.getField() != null) {
-            ErrorMessageResponse errorMessageResponse = new ErrorMessageResponse(String.valueOf(e.getStatus()), e.getMessage());
-            errorMessageResponse.addValidation(e.getField(),e.getMessage());
-            return errorMessageResponse;
-        }else {
-            return new ErrorMessageResponse(String.valueOf(e.getStatus()), e.getMessage());
+            body.addValidation(e.getField(), e.getMessage());
         }
+        return ResponseEntity.status(status).body(body);
     }
 }
