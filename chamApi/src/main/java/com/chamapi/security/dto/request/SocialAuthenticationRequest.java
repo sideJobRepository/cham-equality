@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class SocialAuthenticationRequest {
-    
+
     private String code;
+    private String accessToken;
 }

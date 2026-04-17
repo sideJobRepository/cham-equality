@@ -22,7 +22,9 @@ public class SecurityDsl<H extends HttpSecurityBuilder<H>> extends AbstractAuthe
     
     private static final RequestMatcher LOGIN_MATCHER = new OrRequestMatcher(
             PathPatternRequestMatcher.withDefaults().matcher(HttpMethod.POST, "/api/kakao-login"),
-            PathPatternRequestMatcher.withDefaults().matcher(HttpMethod.POST, "/api/naver-login")
+            PathPatternRequestMatcher.withDefaults().matcher(HttpMethod.POST, "/api/naver-login"),
+            PathPatternRequestMatcher.withDefaults().matcher(HttpMethod.POST, "/api/app/kakao-login"),
+            PathPatternRequestMatcher.withDefaults().matcher(HttpMethod.POST, "/api/app/naver-login")
     );
     
     

@@ -8,11 +8,13 @@ import com.chamapi.security.service.social.SocialProfile;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientResponseException;
 
 import java.util.UUID;
 
@@ -75,5 +77,29 @@ public class NaverServiceImpl implements SocialService {
                 name,
                 phone
         );
+    }
+
+    /**
+     * 앱 SDK로 받은 access token이 유효한 네이버 토큰인지 검증.
+     * 네이버는 access_token_info 같은 app_id 확인 엔드포인트가 없어서,
+     * /v1/nid/me 호출로 유효성만 확인한다.
+     * (네이버 access token은 Client ID/Secret 쌍에 묶여 발급되므로,
+     *  다른 네이버 앱의 토큰으로는 이 호출이 유효한 응답을 돌려주지 않는다.)
+     */
+    @Override
+    public void verifyAccessToken(String accessToken) {
+        try {
+            NaverProfileResponse resp = RestClient.create().get()
+                    .uri("https://openapi.naver.com/v1/nid/me")
+                    .header("Authorization", "Bearer " + accessToken)
+                    .retrieve()
+                    .body(NaverProfileResponse.class);
+
+            if (resp == null || resp.getResponse() == null || resp.getResponse().getId() == null) {
+                throw new BadCredentialsException("유효하지 않은 네이버 토큰입니다.");
+            }
+        } catch (RestClientResponseException e) {
+            throw new BadCredentialsException("유효하지 않은 네이버 토큰입니다.", e);
+        }
     }
 }
