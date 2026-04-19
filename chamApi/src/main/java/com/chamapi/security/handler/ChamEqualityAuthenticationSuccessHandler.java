@@ -7,7 +7,7 @@ import com.chamapi.authentication.config.RefreshCookieFactory;
 import com.chamapi.authentication.dto.TokenResponse;
 import com.chamapi.authentication.exception.JwtGenerationException;
 import com.chamapi.authentication.service.RefreshTokenService;
-import com.chamapi.security.dto.MemberResponseDto;
+import com.chamapi.member.dto.MemberResponseDto;
 import com.chamapi.security.jwt.RsaSecuritySigner;
 import com.chamapi.security.token.SocialAuthenticationToken;
 import com.chamapi.security.token.TokenPair;

@@ -9,7 +9,7 @@ import com.chamapi.authentication.exception.JwtGenerationException;
 import com.chamapi.authentication.exception.RefreshTokenExpiredException;
 import com.chamapi.authentication.repository.RefreshTokenRepository;
 import com.chamapi.authentication.service.RefreshTokenService;
-import com.chamapi.security.dto.MemberResponseDto;
+import com.chamapi.member.dto.MemberResponseDto;
 import com.chamapi.security.token.TokenAndUser;
 import com.chamapi.security.token.TokenPair;
 import com.chamapi.security.jwt.RsaSecuritySigner;

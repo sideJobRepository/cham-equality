@@ -1,4 +1,4 @@
-package com.chamapi.security.pem;
+package com.chamapi.security.jwt;
 
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;

@@ -1,4 +1,4 @@
-package com.chamapi.rsa.entity;
+package com.chamapi.security.jwt;
 
 import com.chamapi.common.entity.DateSuperClass;
 import jakarta.persistence.*;

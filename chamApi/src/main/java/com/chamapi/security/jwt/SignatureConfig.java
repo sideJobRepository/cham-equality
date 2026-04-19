@@ -1,12 +1,9 @@
 package com.chamapi.security.jwt;
 
-import com.chamapi.rsa.repository.RsaRepository;
-import com.chamapi.security.pem.PemKey;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.jwk.RSAKey;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
@@ -18,15 +15,15 @@ import java.security.interfaces.RSAPublicKey;
 @Configuration
 @RequiredArgsConstructor
 public class SignatureConfig {
-    
+
     private final RsaRepository repository;
-    
-    
+
+
     @Bean
-    public RsaSecuritySigner rsaSigner() throws JOSEException {
+    public RsaSecuritySigner rsaSigner() {
         return new RsaSecuritySigner();
     }
-    
+
     @Bean
     public RSAKey rsaKey() throws Exception {
         InputStream publicKeyStream = new ClassPathResource("keys/public.pem").getInputStream();

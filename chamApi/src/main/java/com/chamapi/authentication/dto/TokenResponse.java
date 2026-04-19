@@ -1,6 +1,6 @@
 package com.chamapi.authentication.dto;
 
-import com.chamapi.security.dto.MemberResponseDto;
+import com.chamapi.member.dto.MemberResponseDto;
 
 public record TokenResponse(String token, MemberResponseDto user) {
 }

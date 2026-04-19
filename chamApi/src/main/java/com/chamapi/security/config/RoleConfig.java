@@ -9,9 +9,8 @@ import org.springframework.security.access.hierarchicalroles.RoleHierarchyImpl;
 @Configuration
 public class RoleConfig {
 
-    
     @Bean
-    public RoleHierarchyImpl roleHierarchy(RoleHierarchyService bgmAgitRoleHierarchyService) {
-        return RoleHierarchyImpl.fromHierarchy(bgmAgitRoleHierarchyService.findAllHierarchy());
+    public RoleHierarchyImpl roleHierarchy(RoleHierarchyService roleHierarchyService) {
+        return RoleHierarchyImpl.fromHierarchy(roleHierarchyService.findAllHierarchy());
     }
 }

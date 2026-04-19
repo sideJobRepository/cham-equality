@@ -1,4 +1,4 @@
-package com.chamapi.security.dto;
+package com.chamapi.member.dto;
 
 
 import com.chamapi.member.entity.Member;
@@ -14,8 +14,7 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 public class MemberResponseDto {
-    
-    
+
     private Long id;
     private String name;
     private List<String> roles;

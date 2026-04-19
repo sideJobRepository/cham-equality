@@ -1,6 +1,5 @@
-package com.chamapi.rsa.repository;
+package com.chamapi.security.jwt;
 
-import com.chamapi.rsa.entity.Rsa;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface RsaRepository extends JpaRepository<Rsa, Long> {

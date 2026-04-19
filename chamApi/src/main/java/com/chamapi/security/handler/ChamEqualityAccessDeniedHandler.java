@@ -1,4 +1,4 @@
-package com.chamapi.security.denied;
+package com.chamapi.security.handler;
 
 
 import com.chamapi.common.dto.ErrorMessageResponse;
