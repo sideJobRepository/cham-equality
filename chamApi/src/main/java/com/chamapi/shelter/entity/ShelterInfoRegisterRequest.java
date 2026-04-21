@@ -27,35 +27,39 @@ public class ShelterInfoRegisterRequest extends DateSuperClass {
 
     // 현장 확인 시설명
     @Column(name = "SHELTER_NAME")
-    private String shelterName;
+    private String name;
 
     // 건축 연도
     @Column(name = "SHELTER_BUILT_YEAR")
-    private Integer shelterBuiltYear;
+    private Integer builtYear;
 
     // 안전 등급(내진설계)
     @Column(name = "SHELTER_SAFETY_GRADE")
-    private Integer shelterSafetyGrade;
+    private Integer safetyGrade;
 
     // 장애인 화장실 여부
     @Column(name = "SHELTER_ACCESSIBLE_TOILET_WHETHER")
-    private Boolean shelterAccessibleToiletWhether;
+    private Boolean accessibleToiletWhether;
 
     // 경사로 여부
     @Column(name = "SHELTER_RAMP_WHETHER")
-    private Boolean shelterRampWhether;
+    private Boolean rampWhether;
 
     // 엘리베이터 여부
     @Column(name = "SHELTER_ELEVATOR_WHETHER")
-    private Boolean shelterElevatorWhether;
+    private Boolean elevatorWhether;
+    
+    // 대피소 기타 접근성 시설
+    @Column(name = "SHELTER_ETC_ACCESSIBILITY_FACILITIES")
+    private String etcAccessibilityFacilities;
 
     // 점자 블록 여부
     @Column(name = "SHELTER_BRAILLE_BLOCK_WHETHER")
-    private Boolean shelterBrailleBlockWhether;
+    private Boolean brailleBlockWhether;
 
     // 안내문 언어
     @Column(name = "SHELTER_SIGNAGE_LANGUAGE")
-    private String shelterSignageLanguage;
+    private String signageLanguage;
 
     // 조사자 메모
     @Column(name = "REQUEST_NOTE", length = 4000)

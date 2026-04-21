@@ -26,5 +26,5 @@ public class ShelterImage extends DateSuperClass {
 
     // 대피소 사진 설명. 간단 설명. 출입구, 계단 등
     @Column(name = "SHELTER_IMAGE_DESCRIPTION")
-    private String shelterImageDescription;
+    private String imageDescription;
 }
