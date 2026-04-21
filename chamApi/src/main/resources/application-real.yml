@@ -31,3 +31,6 @@ auth:
     same-site: Strict
   refresh-token:
     expiry: 1d
+
+cors:
+  url: https://cham-monimap.com

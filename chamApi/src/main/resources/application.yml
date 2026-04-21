@@ -33,3 +33,6 @@ auth:
     same-site: Strict
   refresh-token:
     expiry: 1d
+
+cors:
+  url: http://localhost:5173
