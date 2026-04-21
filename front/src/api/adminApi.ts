@@ -68,6 +68,13 @@ export async function approveReport(id: number): Promise<void> {
   await http.post(`/admin/reports/${id}/approve`)
 }
 
+export async function downloadFileBlob(fileId: number): Promise<Blob> {
+  const { data } = await http.get<Blob>(`/download-file/${fileId}`, {
+    responseType: 'blob',
+  })
+  return data
+}
+
 export async function rejectReport(id: number): Promise<void> {
   await http.post(`/admin/reports/${id}/reject`)
 }

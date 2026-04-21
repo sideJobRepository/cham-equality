@@ -1,11 +1,14 @@
 import { useEffect, useState } from 'react'
 import {
   approveReport,
+  downloadFileBlob,
   fetchReportDetail,
   rejectReport,
   UnauthorizedError,
   type ShelterReportDetail,
+  type ShelterReportImageView,
 } from '../api/adminApi'
+import { saveBlob, zipBlobs } from '../lib/fileDownload'
 import './AdminReportDetailModal.css'
 
 type Props = {
@@ -42,6 +45,8 @@ export default function AdminReportDetailModal({
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [processing, setProcessing] = useState(false)
+  const [downloadingId, setDownloadingId] = useState<number | null>(null)
+  const [zipping, setZipping] = useState(false)
 
   useEffect(() => {
     setLoading(true)
@@ -80,6 +85,38 @@ export default function AdminReportDetailModal({
       else alert(e instanceof Error ? e.message : '승인 실패')
     } finally {
       setProcessing(false)
+    }
+  }
+
+  const handleDownload = async (img: ShelterReportImageView) => {
+    setDownloadingId(img.fileId)
+    try {
+      const blob = await downloadFileBlob(img.fileId)
+      saveBlob(blob, img.fileName)
+    } catch (e: unknown) {
+      if (e instanceof UnauthorizedError) onUnauthorized()
+      else alert(e instanceof Error ? e.message : '다운로드 실패')
+    } finally {
+      setDownloadingId(null)
+    }
+  }
+
+  const handleDownloadAll = async () => {
+    if (!detail || detail.images.length === 0) return
+    setZipping(true)
+    try {
+      const items = await Promise.all(
+        detail.images.map(async (img) => ({
+          blob: await downloadFileBlob(img.fileId),
+          fileName: img.fileName,
+        })),
+      )
+      await zipBlobs(items, `report-${detail.id}.zip`)
+    } catch (e: unknown) {
+      if (e instanceof UnauthorizedError) onUnauthorized()
+      else alert(e instanceof Error ? e.message : '일괄 다운로드 실패')
+    } finally {
+      setZipping(false)
     }
   }
 
@@ -141,7 +178,19 @@ export default function AdminReportDetailModal({
               </section>
 
               <section className="images-section">
-                <h3>첨부 사진 ({detail.images.length}장)</h3>
+                <div className="images-header">
+                  <h3>첨부 사진 ({detail.images.length}장)</h3>
+                  {detail.images.length > 0 && (
+                    <button
+                      type="button"
+                      className="zip-btn"
+                      disabled={zipping}
+                      onClick={handleDownloadAll}
+                    >
+                      {zipping ? '압축 중…' : '전체 다운로드 (ZIP)'}
+                    </button>
+                  )}
+                </div>
                 {detail.images.length === 0 ? (
                   <p className="no-images">첨부된 사진이 없습니다.</p>
                 ) : (
@@ -156,6 +205,14 @@ export default function AdminReportDetailModal({
                             <span className="cat-tag">{CATEGORY_LABEL[img.category] ?? img.category}</span>
                           )}
                           {img.description && <span className="desc">{img.description}</span>}
+                          <button
+                            type="button"
+                            className="download-btn"
+                            disabled={downloadingId === img.fileId}
+                            onClick={() => handleDownload(img)}
+                          >
+                            {downloadingId === img.fileId ? '받는 중…' : '다운로드'}
+                          </button>
                         </figcaption>
                       </figure>
                     ))}

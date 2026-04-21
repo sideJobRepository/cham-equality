@@ -26,10 +26,25 @@ export class UnauthorizedError extends Error {
   }
 }
 
+function isAdminPath(url: string | undefined): boolean {
+  if (!url) return false
+  return url.startsWith('/admin') || url.startsWith('/download-file')
+}
+
+let oneShotUserPassword: string | null = null
+
+export function useNextUserPassword(pw: string): void {
+  oneShotUserPassword = pw
+}
+
 http.interceptors.request.use((config) => {
-  const pw = getAdminPassword()
-  if (pw && config.url?.startsWith('/admin')) {
-    config.headers.set('X-Admin-Password', pw)
+  const adminPw = getAdminPassword()
+  if (adminPw && isAdminPath(config.url)) {
+    config.headers.set('X-Admin-Password', adminPw)
+  }
+  if (oneShotUserPassword) {
+    config.headers.set('X-User-Password', oneShotUserPassword)
+    oneShotUserPassword = null
   }
   return config
 })
@@ -37,7 +52,7 @@ http.interceptors.request.use((config) => {
 http.interceptors.response.use(
   (res) => res,
   (err: AxiosError) => {
-    if (err.response?.status === 401 && err.config?.url?.startsWith('/admin')) {
+    if (err.response?.status === 401 && isAdminPath(err.config?.url)) {
       return Promise.reject(new UnauthorizedError())
     }
     return Promise.reject(err)

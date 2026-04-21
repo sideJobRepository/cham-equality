@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import {
   clearAdminPassword,
   fetchReports,
@@ -79,9 +79,12 @@ export default function AdminReportsPage() {
             총 {data?.totalElements ?? 0}건 · 페이지 {(data?.page ?? 0) + 1} / {data?.totalPages ?? 0}
           </p>
         </div>
-        <button type="button" className="logout-btn" onClick={logout}>
-          로그아웃
-        </button>
+        <div className="admin-header-actions">
+          <Link to="/shelters" className="shelter-link-btn">← 대피소 목록</Link>
+          <button type="button" className="logout-btn" onClick={logout}>
+            로그아웃
+          </button>
+        </div>
       </header>
 
       <div className="filter-bar">

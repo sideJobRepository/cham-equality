@@ -115,10 +115,58 @@
   color: #c0392b;
 }
 
+.images-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
 .images-section h3 {
-  margin: 0 0 12px;
+  margin: 0;
   font-size: 14px;
   font-weight: 600;
+}
+
+.zip-btn {
+  padding: 6px 12px;
+  border: 1px solid #2c5fa8;
+  background: #2c5fa8;
+  color: #fff;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.zip-btn:hover:not(:disabled) {
+  background: #234a85;
+}
+
+.zip-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.download-btn {
+  align-self: flex-start;
+  margin-top: 2px;
+  padding: 3px 8px;
+  font-size: 11px;
+  border: 1px solid #d0d0d0;
+  background: #fff;
+  color: #444;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.download-btn:hover:not(:disabled) {
+  background: #f0f0f0;
+}
+
+.download-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .no-images {

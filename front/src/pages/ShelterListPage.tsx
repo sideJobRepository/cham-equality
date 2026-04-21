@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { fetchShelters } from '../api/shelterApi'
 import { getAdminPassword } from '../api/adminApi'
 import ShelterReportModal from '../components/ShelterReportModal'
+import PendingReportsListModal from '../components/PendingReportsListModal'
 import type { PageResponse, Shelter } from '../types/shelter'
 import './ShelterListPage.css'
 
@@ -14,6 +15,10 @@ function yn(value: boolean | null): string {
   return value ? 'O' : 'X'
 }
 
+type ReportModalState =
+  | { mode: 'create'; shelter: Shelter }
+  | { mode: 'edit'; shelter: Shelter; reportId: number }
+
 export default function ShelterListPage() {
   const [keyword, setKeyword] = useState('')
   const [debouncedKeyword, setDebouncedKeyword] = useState('')
@@ -21,7 +26,8 @@ export default function ShelterListPage() {
   const [data, setData] = useState<PageResponse<Shelter> | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [selected, setSelected] = useState<Shelter | null>(null)
+  const [reportModal, setReportModal] = useState<ReportModalState | null>(null)
+  const [pendingList, setPendingList] = useState<Shelter | null>(null)
   const [flash, setFlash] = useState<string | null>(null)
 
   useEffect(() => {
@@ -112,13 +118,25 @@ export default function ShelterListPage() {
               </thead>
               <tbody>
                 {data.content.map((s) => (
-                  <tr key={s.id} className="clickable" onClick={() => setSelected(s)}>
+                  <tr
+                    key={s.id}
+                    className="clickable"
+                    onClick={() => setReportModal({ mode: 'create', shelter: s })}
+                  >
                     <td>{s.id}</td>
                     <td className="center">
                       {s.pendingReportCount > 0 ? (
-                        <span className="badge badge-pending">
+                        <button
+                          type="button"
+                          className="badge badge-pending badge-btn"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setPendingList(s)
+                          }}
+                          title="제출된 내용 보기/수정"
+                        >
                           제출됨{s.pendingReportCount > 1 ? ` ${s.pendingReportCount}` : ''}
-                        </span>
+                        </button>
                       ) : (
                         <span className="badge badge-empty">-</span>
                       )}
@@ -155,13 +173,26 @@ export default function ShelterListPage() {
         </>
       )}
 
-      {selected && (
+      {pendingList && (
+        <PendingReportsListModal
+          shelter={pendingList}
+          onClose={() => setPendingList(null)}
+          onSelect={(reportId) => {
+            const shelter = pendingList
+            setPendingList(null)
+            setReportModal({ mode: 'edit', shelter, reportId })
+          }}
+        />
+      )}
+
+      {reportModal && (
         <ShelterReportModal
-          shelter={selected}
-          onClose={() => setSelected(null)}
-          onSubmitted={() => {
-            setSelected(null)
-            setFlash('조사 정보가 접수되었습니다 (승인 대기)')
+          shelter={reportModal.shelter}
+          reportId={reportModal.mode === 'edit' ? reportModal.reportId : undefined}
+          onClose={() => setReportModal(null)}
+          onSubmitted={(msg) => {
+            setReportModal(null)
+            setFlash(msg)
             load()
           }}
         />

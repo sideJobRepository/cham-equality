@@ -329,6 +329,64 @@
   cursor: not-allowed;
 }
 
+.modal-loading {
+  padding: 60px 20px;
+  text-align: center;
+  color: #666;
+  font-size: 14px;
+}
+
+.modal-error-state {
+  color: #c0392b;
+}
+
+.image-item.status-removed {
+  opacity: 0.55;
+}
+
+.existing-cat-tag {
+  display: inline-block;
+  padding: 2px 8px;
+  background: #2c5fa8;
+  color: #fff;
+  border-radius: 10px;
+  font-size: 10px;
+  align-self: flex-start;
+}
+
+.existing-desc {
+  font-size: 11px;
+  color: #666;
+  line-height: 1.4;
+}
+
+.existing-toggle {
+  font-size: 11px;
+  color: #c0392b;
+  padding: 4px 10px;
+  border: 1px solid #c0392b;
+  border-radius: 3px;
+  background: #fff;
+  align-self: flex-start;
+}
+
+.status-removed .existing-toggle {
+  color: #2c5fa8;
+  border-color: #2c5fa8;
+}
+
+.edit-password {
+  margin-top: 14px;
+  padding: 12px 14px;
+  background: #fff8e1;
+  border: 1px solid #f5d774;
+  border-radius: 6px;
+}
+
+.edit-password label {
+  color: #8a6d00;
+}
+
 @media (max-width: 640px) {
   .modal-backdrop {
     padding: 0;

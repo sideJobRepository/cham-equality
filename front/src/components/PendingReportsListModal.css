@@ -1,0 +1,147 @@
+.pending-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  z-index: 1000;
+  padding: 40px 20px;
+  overflow-y: auto;
+}
+
+.pending-modal {
+  background: #fff;
+  border-radius: 8px;
+  width: 100%;
+  max-width: 560px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  font-size: 14px;
+  color: #222;
+}
+
+.pending-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid #eee;
+}
+
+.pending-header h2 {
+  margin: 0 0 4px;
+  font-size: 18px;
+}
+
+.pending-sub {
+  margin: 0;
+  font-size: 12px;
+  color: #666;
+}
+
+.pending-close {
+  background: none;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  color: #888;
+  padding: 4px 8px;
+}
+
+.pending-body {
+  padding: 16px 20px;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.pending-state {
+  padding: 40px;
+  text-align: center;
+  color: #666;
+  font-size: 13px;
+}
+
+.pending-error {
+  color: #c0392b;
+}
+
+.pending-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pending-item {
+  border: 1px solid #e5e5e5;
+  border-radius: 6px;
+  padding: 12px 14px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.pending-item:hover {
+  background: #f6f9fd;
+  border-color: #2c5fa8;
+}
+
+.pending-item-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 6px;
+}
+
+.pending-item-id {
+  font-size: 12px;
+  color: #2c5fa8;
+  font-weight: 600;
+}
+
+.pending-item-date {
+  font-size: 11px;
+  color: #999;
+}
+
+.pending-item-name {
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 6px;
+}
+
+.pending-item-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-size: 12px;
+  color: #555;
+  margin-bottom: 4px;
+}
+
+.pending-item-note {
+  font-size: 12px;
+  color: #666;
+  margin-top: 4px;
+  padding-top: 6px;
+  border-top: 1px dashed #eee;
+  line-height: 1.45;
+}
+
+@media (max-width: 640px) {
+  .pending-backdrop {
+    padding: 0;
+    align-items: stretch;
+  }
+
+  .pending-modal {
+    border-radius: 0;
+    max-width: none;
+    min-height: 100vh;
+  }
+
+  .pending-body {
+    max-height: none;
+  }
+}

@@ -1,16 +1,21 @@
 import { useEffect, useState } from 'react'
 import {
   createShelterReport,
+  fetchShelterReportDetail,
+  updateShelterReport,
   uploadShelterImage,
+  type ImageChange,
   type ShelterImageCategory,
+  type ShelterReportImageView,
 } from '../api/shelterApi'
 import type { Shelter } from '../types/shelter'
 import './ShelterReportModal.css'
 
 type Props = {
   shelter: Shelter
+  reportId?: number
   onClose: () => void
-  onSubmitted: () => void
+  onSubmitted: (flash: string) => void
 }
 
 type TriBool = 'true' | 'false' | ''
@@ -28,6 +33,10 @@ type PendingImage = {
   description: string
 }
 
+type ExistingImage = ShelterReportImageView & {
+  removed: boolean
+}
+
 const CATEGORY_OPTIONS: { value: ShelterImageCategory; label: string }[] = [
   { value: 'EXTERIOR', label: '외관' },
   { value: 'INTERIOR', label: '내부' },
@@ -39,6 +48,10 @@ const CATEGORY_OPTIONS: { value: ShelterImageCategory; label: string }[] = [
   { value: 'SIGNAGE', label: '안내문' },
   { value: 'ETC', label: '기타' },
 ]
+
+const CATEGORY_LABEL: Record<string, string> = Object.fromEntries(
+  CATEGORY_OPTIONS.map((o) => [o.value, o.label]),
+)
 
 function fromBool(v: boolean | null | undefined): TriBool {
   if (v === true) return 'true'
@@ -52,20 +65,57 @@ function toBool(v: TriBool): boolean | null {
   return null
 }
 
-export default function ShelterReportModal({ shelter, onClose, onSubmitted }: Props) {
-  const [name, setName] = useState(shelter.name ?? '')
-  const [builtYear, setBuiltYear] = useState<string>(shelter.builtYear?.toString() ?? '')
-  const [safetyGrade, setSafetyGrade] = useState<string>(shelter.safetyGrade?.toString() ?? '')
-  const [signageLanguage, setSignageLanguage] = useState(shelter.signageLanguage ?? '')
-  const [accessibleToilet, setAccessibleToilet] = useState<TriBool>(fromBool(shelter.accessibleToilet))
-  const [ramp, setRamp] = useState<TriBool>(fromBool(shelter.ramp))
-  const [elevator, setElevator] = useState<TriBool>(fromBool(shelter.elevator))
-  const [brailleBlock, setBrailleBlock] = useState<TriBool>(fromBool(shelter.brailleBlock))
-  const [etcFacilities, setEtcFacilities] = useState(shelter.etcFacilities ?? '')
+export default function ShelterReportModal({ shelter, reportId, onClose, onSubmitted }: Props) {
+  const isEdit = reportId !== undefined
+  const [loading, setLoading] = useState(isEdit)
+  const [loadError, setLoadError] = useState<string | null>(null)
+
+  const [name, setName] = useState(isEdit ? '' : shelter.name ?? '')
+  const [builtYear, setBuiltYear] = useState<string>(
+    isEdit ? '' : shelter.builtYear?.toString() ?? '',
+  )
+  const [safetyGrade, setSafetyGrade] = useState<string>(
+    isEdit ? '' : shelter.safetyGrade?.toString() ?? '',
+  )
+  const [signageLanguage, setSignageLanguage] = useState(isEdit ? '' : shelter.signageLanguage ?? '')
+  const [accessibleToilet, setAccessibleToilet] = useState<TriBool>(
+    isEdit ? '' : fromBool(shelter.accessibleToilet),
+  )
+  const [ramp, setRamp] = useState<TriBool>(isEdit ? '' : fromBool(shelter.ramp))
+  const [elevator, setElevator] = useState<TriBool>(isEdit ? '' : fromBool(shelter.elevator))
+  const [brailleBlock, setBrailleBlock] = useState<TriBool>(
+    isEdit ? '' : fromBool(shelter.brailleBlock),
+  )
+  const [etcFacilities, setEtcFacilities] = useState(isEdit ? '' : shelter.etcFacilities ?? '')
   const [requestNote, setRequestNote] = useState('')
+  const [existingImages, setExistingImages] = useState<ExistingImage[]>([])
   const [images, setImages] = useState<PendingImage[]>([])
+  const [userPassword, setUserPassword] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!isEdit || reportId === undefined) return
+    setLoading(true)
+    fetchShelterReportDetail(reportId)
+      .then((d) => {
+        setName(d.name ?? '')
+        setBuiltYear(d.builtYear?.toString() ?? '')
+        setSafetyGrade(d.safetyGrade?.toString() ?? '')
+        setSignageLanguage(d.signageLanguage ?? '')
+        setAccessibleToilet(fromBool(d.accessibleToilet))
+        setRamp(fromBool(d.ramp))
+        setElevator(fromBool(d.elevator))
+        setBrailleBlock(fromBool(d.brailleBlock))
+        setEtcFacilities(d.etcFacilities ?? '')
+        setRequestNote(d.requestNote ?? '')
+        setExistingImages(d.images.map((img) => ({ ...img, removed: false })))
+      })
+      .catch((e: unknown) =>
+        setLoadError(e instanceof Error ? e.message : '리포트 조회 실패'),
+      )
+      .finally(() => setLoading(false))
+  }, [isEdit, reportId])
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -133,9 +183,16 @@ export default function ShelterReportModal({ shelter, onClose, onSubmitted }: Pr
     })
   }
 
+  const toggleExistingRemoved = (fileId: number) => {
+    setExistingImages((prev) =>
+      prev.map((img) => (img.fileId === fileId ? { ...img, removed: !img.removed } : img)),
+    )
+  }
+
   const uploadingCount = images.filter((img) => img.status === 'uploading').length
   const failedCount = images.filter((img) => img.status === 'failed').length
-  const canSubmit = !submitting && uploadingCount === 0
+  const canSubmit =
+    !submitting && !loading && uploadingCount === 0 && (!isEdit || userPassword.trim().length > 0)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -145,28 +202,70 @@ export default function ShelterReportModal({ shelter, onClose, onSubmitted }: Pr
     setError(null)
     try {
       const doneImages = images.filter(
-        (img): img is PendingImage & { fileId: number } => img.status === 'done' && img.fileId !== null,
+        (img): img is PendingImage & { fileId: number } =>
+          img.status === 'done' && img.fileId !== null,
       )
 
-      await createShelterReport({
-        shelterId: shelter.id,
-        name: name.trim() || null,
-        builtYear: builtYear ? Number(builtYear) : null,
-        safetyGrade: safetyGrade ? Number(safetyGrade) : null,
-        signageLanguage: signageLanguage.trim() || null,
-        accessibleToilet: toBool(accessibleToilet),
-        ramp: toBool(ramp),
-        elevator: toBool(elevator),
-        brailleBlock: toBool(brailleBlock),
-        etcFacilities: etcFacilities.trim() || null,
-        requestNote: requestNote.trim() || null,
-        images: doneImages.map((img) => ({
-          fileId: img.fileId,
-          category: img.category || null,
-          description: img.description.trim() || null,
-        })),
-      })
-      onSubmitted()
+      if (!isEdit) {
+        await createShelterReport({
+          shelterId: shelter.id,
+          name: name.trim() || null,
+          builtYear: builtYear ? Number(builtYear) : null,
+          safetyGrade: safetyGrade ? Number(safetyGrade) : null,
+          signageLanguage: signageLanguage.trim() || null,
+          accessibleToilet: toBool(accessibleToilet),
+          ramp: toBool(ramp),
+          elevator: toBool(elevator),
+          brailleBlock: toBool(brailleBlock),
+          etcFacilities: etcFacilities.trim() || null,
+          requestNote: requestNote.trim() || null,
+          images: doneImages.map((img) => ({
+            fileId: img.fileId,
+            category: img.category || null,
+            description: img.description.trim() || null,
+          })),
+        })
+        onSubmitted('조사 정보가 접수되었습니다 (승인 대기)')
+      } else {
+        const imageChanges: ImageChange[] = [
+          ...existingImages
+            .filter((img) => img.removed)
+            .map(
+              (img): ImageChange => ({
+                fileId: img.fileId,
+                status: 'DELETE',
+                category: null,
+                description: null,
+              }),
+            ),
+          ...doneImages.map(
+            (img): ImageChange => ({
+              fileId: img.fileId,
+              status: 'CREATE',
+              category: img.category || null,
+              description: img.description.trim() || null,
+            }),
+          ),
+        ]
+        await updateShelterReport(
+          reportId!,
+          {
+            name: name.trim() || null,
+            builtYear: builtYear ? Number(builtYear) : null,
+            safetyGrade: safetyGrade ? Number(safetyGrade) : null,
+            signageLanguage: signageLanguage.trim() || null,
+            accessibleToilet: toBool(accessibleToilet),
+            ramp: toBool(ramp),
+            elevator: toBool(elevator),
+            brailleBlock: toBool(brailleBlock),
+            etcFacilities: etcFacilities.trim() || null,
+            requestNote: requestNote.trim() || null,
+            imageChanges,
+          },
+          userPassword,
+        )
+        onSubmitted('수정이 반영되었습니다')
+      }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : '제출 실패')
     } finally {
@@ -174,11 +273,34 @@ export default function ShelterReportModal({ shelter, onClose, onSubmitted }: Pr
     }
   }
 
+  if (loading) {
+    return (
+      <div className="modal-backdrop" onClick={onClose}>
+        <div className="modal" onClick={(e) => e.stopPropagation()}>
+          <div className="modal-loading">불러오는 중…</div>
+        </div>
+      </div>
+    )
+  }
+
+  if (loadError) {
+    return (
+      <div className="modal-backdrop" onClick={onClose}>
+        <div className="modal" onClick={(e) => e.stopPropagation()}>
+          <div className="modal-loading modal-error-state">{loadError}</div>
+          <div className="modal-footer">
+            <button type="button" onClick={onClose}>닫기</button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
         <header className="modal-header">
-          <h2>대피소 조사 정보 제보</h2>
+          <h2>{isEdit ? '대피소 조사 정보 수정' : '대피소 조사 정보 제보'}</h2>
           <button type="button" className="modal-close" onClick={onClose}>✕</button>
         </header>
 
@@ -234,8 +356,40 @@ export default function ShelterReportModal({ shelter, onClose, onSubmitted }: Pr
             <textarea value={requestNote} onChange={(e) => setRequestNote(e.target.value)} rows={3} />
           </div>
 
+          {isEdit && existingImages.length > 0 && (
+            <fieldset className="images">
+              <legend>기존 사진 ({existingImages.filter((i) => !i.removed).length} / {existingImages.length}장)</legend>
+              <ul className="image-list">
+                {existingImages.map((img) => (
+                  <li key={img.fileId} className={`image-item ${img.removed ? 'status-removed' : ''}`}>
+                    <div className="image-thumb">
+                      <img src={img.url} alt={img.fileName} />
+                      {img.removed && <div className="image-overlay error">삭제 예정</div>}
+                    </div>
+                    <div className="image-meta">
+                      <div className="image-name">{img.fileName}</div>
+                      {img.category && (
+                        <span className="existing-cat-tag">
+                          {CATEGORY_LABEL[img.category] ?? img.category}
+                        </span>
+                      )}
+                      {img.description && <div className="existing-desc">{img.description}</div>}
+                    </div>
+                    <button
+                      type="button"
+                      className="image-remove existing-toggle"
+                      onClick={() => toggleExistingRemoved(img.fileId)}
+                    >
+                      {img.removed ? '복구' : '삭제'}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </fieldset>
+          )}
+
           <fieldset className="images">
-            <legend>현장 사진</legend>
+            <legend>{isEdit ? '추가할 사진' : '현장 사진'}</legend>
             <div className="image-add">
               <label className="file-picker">
                 <input type="file" accept="image/*" multiple onChange={handleFilesSelected} />
@@ -295,12 +449,31 @@ export default function ShelterReportModal({ shelter, onClose, onSubmitted }: Pr
             )}
           </fieldset>
 
+          {isEdit && (
+            <div className="field edit-password">
+              <label>수정 비밀번호</label>
+              <input
+                type="password"
+                value={userPassword}
+                onChange={(e) => setUserPassword(e.target.value)}
+                placeholder="수정 비밀번호"
+                autoComplete="off"
+              />
+            </div>
+          )}
+
           {error && <div className="modal-error">{error}</div>}
 
           <footer className="modal-footer">
             <button type="button" onClick={onClose} disabled={submitting}>취소</button>
             <button type="submit" className="primary" disabled={!canSubmit}>
-              {submitting ? '제출 중…' : uploadingCount > 0 ? `업로드 대기 (${uploadingCount})` : '제출'}
+              {submitting
+                ? '저장 중…'
+                : uploadingCount > 0
+                  ? `업로드 대기 (${uploadingCount})`
+                  : isEdit
+                    ? '수정 저장'
+                    : '제출'}
             </button>
           </footer>
         </form>

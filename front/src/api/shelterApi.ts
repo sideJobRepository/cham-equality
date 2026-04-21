@@ -1,6 +1,6 @@
 import type { ApiResponse, PageResponse, Shelter } from '../types/shelter'
 import { createPresignedUploader } from '../lib/presignedUpload'
-import { http } from './http'
+import { http, useNextUserPassword } from './http'
 
 export type ShelterImageCategory =
   | 'EXTERIOR'
@@ -65,6 +65,86 @@ export async function fetchShelters(
 export async function createShelterReport(body: ShelterReportCreateRequest): Promise<number> {
   const { data } = await http.post<ApiResponse<number>>('/shelter-reports', body)
   return data.data
+}
+
+export type ShelterReportStatus = 'PENDING' | 'APPROVED' | 'REJECTED'
+
+export type ShelterReportSummary = {
+  id: number
+  shelterId: number
+  name: string | null
+  builtYear: number | null
+  safetyGrade: number | null
+  signageLanguage: string | null
+  accessibleToilet: boolean | null
+  ramp: boolean | null
+  elevator: boolean | null
+  brailleBlock: boolean | null
+  etcFacilities: string | null
+  requestNote: string | null
+  requestStatus: ShelterReportStatus
+  createDate: string
+}
+
+export type ShelterReportImageView = {
+  fileId: number
+  category: ShelterImageCategory | null
+  description: string | null
+  url: string
+  fileName: string
+}
+
+export type ShelterReportDetail = ShelterReportSummary & {
+  shelterName: string | null
+  shelterAddress: string | null
+  images: ShelterReportImageView[]
+}
+
+export async function fetchPendingReportsByShelter(
+  shelterId: number,
+): Promise<ShelterReportSummary[]> {
+  const { data } = await http.get<ApiResponse<ShelterReportSummary[]>>(
+    `/shelter-reports/shelter/${shelterId}`,
+    { params: { status: 'PENDING' } },
+  )
+  return data.data
+}
+
+export async function fetchShelterReportDetail(id: number): Promise<ShelterReportDetail> {
+  const { data } = await http.get<ApiResponse<ShelterReportDetail>>(`/shelter-reports/${id}`)
+  return data.data
+}
+
+export type FileProcessStatus = 'CREATE' | 'DELETE'
+
+export type ImageChange = {
+  fileId: number
+  status: FileProcessStatus
+  category: ShelterImageCategory | null
+  description: string | null
+}
+
+export type ShelterReportUpdateRequest = {
+  name: string | null
+  builtYear: number | null
+  safetyGrade: number | null
+  signageLanguage: string | null
+  accessibleToilet: boolean | null
+  ramp: boolean | null
+  elevator: boolean | null
+  brailleBlock: boolean | null
+  etcFacilities: string | null
+  requestNote: string | null
+  imageChanges: ImageChange[]
+}
+
+export async function updateShelterReport(
+  id: number,
+  body: ShelterReportUpdateRequest,
+  userPassword: string,
+): Promise<void> {
+  useNextUserPassword(userPassword)
+  await http.put(`/shelter-reports/${id}`, body)
 }
 
 const shelterImageUploader = createPresignedUploader<PresignedUrlResponse, FileUploadResponse>({
