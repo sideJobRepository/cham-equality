@@ -15,7 +15,10 @@ import org.apache.commons.io.FilenameUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import software.amazon.awssdk.core.ResponseInputStream;
+import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
@@ -23,10 +26,19 @@ import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequ
 import software.amazon.awssdk.services.s3.presigner.model.PresignedPutObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignRequest;
 
+import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 
 @Service
@@ -36,6 +48,7 @@ public class S3FileService {
     
     
     private final S3Presigner s3Presigner;
+    private final S3Client s3Client;
     private final CommonFileRepository commonFileRepository;
     private final FileViewUrlCache fileViewUrlCache;
     
@@ -98,13 +111,58 @@ public class S3FileService {
         
         GetObjectRequest getObjectRequest = GetObjectRequest.builder().bucket(bucket)
                 .key(file.getFilePath())
-                .responseContentDisposition("attachment; filename=\"" + file.getFileName() + "\"").build();
-        
+                .responseContentDisposition(buildContentDisposition(file.getFileName())).build();
+
         GetObjectPresignRequest presignRequest = GetObjectPresignRequest.builder().signatureDuration(Duration.ofMinutes(5)).getObjectRequest(getObjectRequest).build();
-        
+
         PresignedGetObjectRequest presignedGetObjectRequest = s3Presigner.presignGetObject(presignRequest);
-        
+
         return presignedGetObjectRequest.url().toString();
+    }
+
+    private String buildContentDisposition(String fileName) {
+        String asciiFallback = fileName.replaceAll("[^\\x20-\\x7E]", "_").replace("\"", "'");
+        String utf8Encoded = URLEncoder.encode(fileName, StandardCharsets.UTF_8).replace("+", "%20");
+        return "attachment; filename=\"" + asciiFallback + "\"; filename*=UTF-8''" + utf8Encoded;
+    }
+
+    @Transactional(readOnly = true)
+    public void downloadFilesAsZip(List<Long> ids, String zipFileName, HttpServletResponse response) throws IOException {
+        if (ids == null || ids.isEmpty()) {
+            throw new IllegalArgumentException("파일 ID가 필요합니다");
+        }
+        List<CommonFile> files = commonFileRepository.findFilesIds(ids);
+        if (files.isEmpty()) {
+            throw new IllegalArgumentException("다운로드할 파일을 찾을 수 없습니다");
+        }
+
+        response.setContentType("application/zip");
+        response.setHeader("Content-Disposition", buildContentDisposition(zipFileName));
+
+        Set<String> taken = new HashSet<>();
+        try (OutputStream out = response.getOutputStream();
+             ZipOutputStream zos = new ZipOutputStream(out)) {
+            for (CommonFile file : files) {
+                String entryName = disambiguateName(taken, file.getFileName());
+                zos.putNextEntry(new ZipEntry(entryName));
+                try (ResponseInputStream<GetObjectResponse> s3stream = s3Client.getObject(
+                        GetObjectRequest.builder().bucket(bucket).key(file.getFilePath()).build())) {
+                    s3stream.transferTo(zos);
+                }
+                zos.closeEntry();
+            }
+            zos.finish();
+        }
+    }
+
+    private String disambiguateName(Set<String> taken, String name) {
+        if (taken.add(name)) return name;
+        int dot = name.lastIndexOf('.');
+        String base = dot > 0 ? name.substring(0, dot) : name;
+        String ext = dot > 0 ? name.substring(dot) : "";
+        int n = 2;
+        while (!taken.add(base + "-" + n + ext)) n++;
+        return base + "-" + n + ext;
     }
     
     public void modifyFileStatus(FileRequest request,Long targetId) {
