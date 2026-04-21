@@ -23,11 +23,11 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class NaverServiceImpl implements SocialService {
     
-    @Value("${naver.clientId}")
+    @Value("${naver.clientId:test}")
     private String naverClientId;
-    @Value("${naver.redirecturi}")
+    @Value("${naver.redirecturi:test}")
     private String naverRedirectUri;
-    @Value("${naver.client-secret}")
+    @Value("${naver.client-secret:test}")
     private String naverClientSecret;
     
     @Override

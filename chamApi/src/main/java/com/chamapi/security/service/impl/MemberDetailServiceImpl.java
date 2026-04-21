@@ -41,7 +41,7 @@ public class MemberDetailServiceImpl implements UserDetailsService {
     
     public UserDetails loadUserByUsername(SocialProfile socialProfile) {
         
-        Member findMember = memberRepository.findByMemberSocialId(String.valueOf(socialProfile.sub()))
+        Member findMember = memberRepository.findBySocialId(String.valueOf(socialProfile.sub()))
                 .orElseGet(() -> {
                     Member member = new Member(socialProfile);
                     Member saveMember = memberRepository.save(member);

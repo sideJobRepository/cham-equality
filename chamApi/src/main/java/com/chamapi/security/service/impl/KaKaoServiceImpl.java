@@ -27,13 +27,13 @@ import org.springframework.web.client.RestClientResponseException;
 @RequiredArgsConstructor
 public class KaKaoServiceImpl implements SocialService {
 
-    @Value("${kakao.clientId}")
+    @Value("${kakao.clientId:test}")
     private String kakaoClientId;
-    @Value("${kakao.redirecturi}")
+    @Value("${kakao.redirecturi:test}")
     private String kakaoRedirectUri;
-    @Value("${kakao.client-secret}")
+    @Value("${kakao.client-secret:test}")
     private String kakaoClientSecret;
-    @Value("${kakao.appId}")
+    @Value("${kakao.appId:0}")
     private Long kakaoAppId;
 
     @Override
