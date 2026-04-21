@@ -9,7 +9,6 @@ import static jakarta.persistence.GenerationType.IDENTITY;
 @Table(name = "SHELTER_IMAGE")
 @Entity
 @Getter
-@IdClass(ShelterImageId.class)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
@@ -22,7 +21,6 @@ public class ShelterImage extends DateSuperClass {
     private Long id;
 
     // 파일 ID
-    @Id
     @Column(name = "FILE_ID")
     private Long fileId;
 
