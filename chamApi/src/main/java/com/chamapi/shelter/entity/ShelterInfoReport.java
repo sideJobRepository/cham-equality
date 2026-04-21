@@ -1,6 +1,7 @@
 package com.chamapi.shelter.entity;
 
 import com.chamapi.common.entity.DateSuperClass;
+import com.chamapi.common.exception.BadRequestException;
 import com.chamapi.shelter.enums.ShelterInfoReportStatus;
 import jakarta.persistence.*;
 import lombok.*;
@@ -62,5 +63,37 @@ public class ShelterInfoReport extends DateSuperClass {
 
     public void reject() {
         this.requestStatus = ShelterInfoReportStatus.REJECTED;
+    }
+
+    public void update(
+            String name,
+            Integer builtYear,
+            Integer safetyGrade,
+            String signageLanguage,
+            Boolean accessibleToilet,
+            Boolean ramp,
+            Boolean elevator,
+            Boolean brailleBlock,
+            String etcFacilities,
+            String requestNote
+    ) {
+        this.name = name;
+        this.builtYear = builtYear;
+        this.safetyGrade = safetyGrade;
+        this.signageLanguage = signageLanguage;
+        this.accessibility = ShelterAccessibility.builder()
+                .accessibleToilet(accessibleToilet)
+                .ramp(ramp)
+                .elevator(elevator)
+                .brailleBlock(brailleBlock)
+                .etcFacilities(etcFacilities)
+                .build();
+        this.requestNote = requestNote;
+    }
+
+    public void verifyPending() {
+        if (this.requestStatus != ShelterInfoReportStatus.PENDING) {
+            throw new BadRequestException("대기 중인 리포트만 수정 가능합니다");
+        }
     }
 }

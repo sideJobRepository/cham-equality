@@ -81,6 +81,7 @@ jobs:
             AWS_REGION='${{ secrets.AWS_REGION }}' \
             AWS_BUCKET='${{ secrets.AWS_BUCKET }}' \
             ADMIN_PASSWORD='${{ secrets.ADMIN_PASSWORD }}' \
+            USER_PASSWORD='${{ secrets.USER_PASSWORD }}' \
             nohup java \
             -Dspring.profiles.active=real \
             -Dserver.port=8081 \

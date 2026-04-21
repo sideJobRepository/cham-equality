@@ -15,6 +15,10 @@ public interface ShelterInfoReportRepository extends JpaRepository<ShelterInfoRe
 
     Page<ShelterInfoReport> findAllByRequestStatus(ShelterInfoReportStatus status, Pageable pageable);
 
+    List<ShelterInfoReport> findAllByShelterIdAndRequestStatusOrderByCreateDateDesc(
+            Long shelterId, ShelterInfoReportStatus status
+    );
+
     @Query("SELECT r.shelterId, COUNT(r) FROM ShelterInfoReport r " +
             "WHERE r.shelterId IN :shelterIds AND r.requestStatus = :status " +
             "GROUP BY r.shelterId")

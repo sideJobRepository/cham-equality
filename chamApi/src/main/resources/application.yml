@@ -39,3 +39,6 @@ cors:
 
 admin:
   password: ${ADMIN_PASSWORD:}
+
+user:
+  password: ${USER_PASSWORD:}
