@@ -212,3 +212,59 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+@media (max-width: 640px) {
+  .detail-backdrop {
+    padding: 0;
+    align-items: stretch;
+  }
+
+  .detail-modal {
+    border-radius: 0;
+    max-width: none;
+    min-height: 100vh;
+  }
+
+  .detail-header {
+    padding: 14px 16px;
+    position: sticky;
+    top: 0;
+    background: #fff;
+    z-index: 1;
+  }
+
+  .detail-header h2 {
+    font-size: 16px;
+  }
+
+  .detail-body {
+    padding: 16px;
+    max-height: none;
+  }
+
+  .fields {
+    grid-template-columns: 1fr;
+    gap: 8px 12px;
+    margin-bottom: 20px;
+  }
+
+  .images-grid {
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: 8px;
+  }
+
+  .image-card img {
+    height: 110px;
+  }
+
+  .detail-footer {
+    padding: 12px 16px;
+    position: sticky;
+    bottom: 0;
+  }
+
+  .detail-footer button {
+    flex: 1;
+    padding: 10px;
+  }
+}

@@ -64,3 +64,19 @@
   border-radius: 4px;
   font-size: 13px;
 }
+
+@media (max-width: 640px) {
+  .admin-login-page {
+    padding: 16px;
+    align-items: flex-start;
+    padding-top: 15vh;
+  }
+
+  .admin-login-card {
+    padding: 24px 20px;
+  }
+
+  .admin-login-card input {
+    font-size: 16px; /* iOS 자동 확대 방지 */
+  }
+}

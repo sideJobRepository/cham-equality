@@ -1,4 +1,6 @@
 import type { ApiResponse, PageResponse, Shelter } from '../types/shelter'
+import { createPresignedUploader } from '../lib/presignedUpload'
+import { http } from './http'
 
 export type ShelterImageCategory =
   | 'EXTERIOR'
@@ -54,66 +56,27 @@ export async function fetchShelters(
   size: number,
   keyword?: string,
 ): Promise<PageResponse<Shelter>> {
-  const params = new URLSearchParams()
-  params.set('page', String(page))
-  params.set('size', String(size))
-  if (keyword && keyword.trim()) params.set('keyword', keyword.trim())
-  const res = await fetch(`/api/shelters?${params}`)
-  if (!res.ok) {
-    throw new Error(`대피소 목록 조회 실패 (HTTP ${res.status})`)
-  }
-  const json: ApiResponse<PageResponse<Shelter>> = await res.json()
-  return json.data
+  const params: Record<string, string | number> = { page, size }
+  if (keyword && keyword.trim()) params.keyword = keyword.trim()
+  const { data } = await http.get<ApiResponse<PageResponse<Shelter>>>('/shelters', { params })
+  return data.data
 }
 
 export async function createShelterReport(body: ShelterReportCreateRequest): Promise<number> {
-  const res = await fetch(`/api/shelter-reports`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  })
-  if (!res.ok) {
-    throw new Error(`조사 정보 제출 실패 (HTTP ${res.status})`)
-  }
-  const json: ApiResponse<number> = await res.json()
-  return json.data
+  const { data } = await http.post<ApiResponse<number>>('/shelter-reports', body)
+  return data.data
 }
 
-type PresignInfo = { fileName: string; fileSize: number; contentType: string }
-
-async function requestPresignedUrls(files: PresignInfo[]): Promise<PresignedUrlResponse[]> {
-  const res = await fetch(`/api/presigned-url`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
+const shelterImageUploader = createPresignedUploader<PresignedUrlResponse, FileUploadResponse>({
+  async requestPresignedUrls(files) {
+    const { data } = await http.post<PresignedUrlResponse[]>('/presigned-url', {
       fileType: 'SHELTER_IMAGE',
-      files: files.map((f) => ({
-        fileName: f.fileName,
-        fileSize: f.fileSize,
-        contentType: f.contentType,
-      })),
-    }),
-  })
-  if (!res.ok) throw new Error(`presigned URL 발급 실패 (HTTP ${res.status})`)
-  return res.json()
-}
-
-async function putToS3(url: string, file: File): Promise<void> {
-  const res = await fetch(url, {
-    method: 'PUT',
-    headers: { 'Content-Type': file.type || 'application/octet-stream' },
-    body: file,
-  })
-  if (!res.ok) throw new Error(`S3 업로드 실패 (HTTP ${res.status})`)
-}
-
-async function registerUploadedFiles(
-  uploaded: { presign: PresignedUrlResponse; file: File }[],
-): Promise<FileUploadResponse[]> {
-  const res = await fetch(`/api/upload-file`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
+      files,
+    })
+    return data
+  },
+  async registerUploadedFiles(uploaded) {
+    const { data } = await http.post<ApiResponse<FileUploadResponse[]>>('/upload-file', {
       fileType: 'SHELTER_IMAGE',
       files: uploaded.map(({ presign, file }) => ({
         fileName: presign.fileName,
@@ -122,18 +85,11 @@ async function registerUploadedFiles(
         bucketName: presign.bucket,
         fileSize: file.size,
       })),
-    }),
-  })
-  if (!res.ok) throw new Error(`파일 등록 실패 (HTTP ${res.status})`)
-  const json: ApiResponse<FileUploadResponse[]> = await res.json()
-  return json.data
-}
+    })
+    return data.data
+  },
+})
 
 export async function uploadShelterImage(file: File): Promise<FileUploadResponse> {
-  const [presign] = await requestPresignedUrls([
-    { fileName: file.name, fileSize: file.size, contentType: file.type },
-  ])
-  await putToS3(presign.url, file)
-  const [registered] = await registerUploadedFiles([{ presign, file }])
-  return registered
+  return shelterImageUploader.upload(file)
 }

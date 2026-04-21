@@ -197,3 +197,63 @@
   color: #fff;
   border-color: #2c5fa8;
 }
+
+@media (max-width: 960px) {
+  .shelter-page {
+    padding: 20px 20px;
+  }
+}
+
+@media (max-width: 640px) {
+  .shelter-page {
+    padding: 16px 12px;
+  }
+
+  .shelter-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .shelter-header h1 {
+    font-size: 19px;
+  }
+
+  .admin-link-btn {
+    align-self: flex-start;
+  }
+
+  .shelter-subtitle {
+    margin-bottom: 14px;
+    font-size: 12px;
+  }
+
+  .search-bar {
+    max-width: none;
+  }
+
+  .search-bar input {
+    font-size: 16px; /* iOS 자동 확대 방지 */
+  }
+
+  .shelter-table {
+    font-size: 12px;
+    min-width: 980px;
+  }
+
+  .shelter-table thead th,
+  .shelter-table tbody td {
+    padding: 8px 6px;
+  }
+
+  .shelter-table td.ellipsis {
+    max-width: 160px;
+  }
+
+  .shelter-pagination button {
+    min-width: 30px;
+    height: 30px;
+    padding: 0 6px;
+    font-size: 12px;
+  }
+}
