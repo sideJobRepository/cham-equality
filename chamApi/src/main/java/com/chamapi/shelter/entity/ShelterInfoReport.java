@@ -1,7 +1,7 @@
 package com.chamapi.shelter.entity;
 
 import com.chamapi.common.entity.DateSuperClass;
-import com.chamapi.shelter.enums.ShelterInfoRegisterRequestStatus;
+import com.chamapi.shelter.enums.ShelterInfoReportStatus;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -48,11 +48,19 @@ public class ShelterInfoReport extends DateSuperClass {
     private ShelterAccessibility accessibility;
 
     // 조사자 메모
-    @Column(name = "REQUEST_NOTE", length = 4000)
+    @Column(name = "REPORT_NOTE")
     private String requestNote;
 
     // 요청 상태
     @Enumerated(EnumType.STRING)
-    @Column(name = "REQUEST_STATUS")
-    private ShelterInfoRegisterRequestStatus requestStatus;
+    @Column(name = "REPORT_STATUS")
+    private ShelterInfoReportStatus requestStatus;
+
+    public void approve() {
+        this.requestStatus = ShelterInfoReportStatus.APPROVED;
+    }
+
+    public void reject() {
+        this.requestStatus = ShelterInfoReportStatus.REJECTED;
+    }
 }

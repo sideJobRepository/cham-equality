@@ -1,9 +1,13 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { fetchShelters } from '../api/shelterApi'
+import { getAdminPassword } from '../api/adminApi'
+import ShelterReportModal from '../components/ShelterReportModal'
 import type { PageResponse, Shelter } from '../types/shelter'
 import './ShelterListPage.css'
 
 const PAGE_SIZE = 20
+const SEARCH_DEBOUNCE_MS = 300
 
 function yn(value: boolean | null): string {
   if (value === null || value === undefined) return '-'
@@ -11,32 +15,77 @@ function yn(value: boolean | null): string {
 }
 
 export default function ShelterListPage() {
+  const [keyword, setKeyword] = useState('')
+  const [debouncedKeyword, setDebouncedKeyword] = useState('')
   const [page, setPage] = useState(0)
   const [data, setData] = useState<PageResponse<Shelter> | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [selected, setSelected] = useState<Shelter | null>(null)
+  const [flash, setFlash] = useState<string | null>(null)
 
   useEffect(() => {
+    const t = setTimeout(() => {
+      setDebouncedKeyword(keyword)
+      setPage(0)
+    }, SEARCH_DEBOUNCE_MS)
+    return () => clearTimeout(t)
+  }, [keyword])
+
+  const load = useCallback(() => {
     setLoading(true)
     setError(null)
-    fetchShelters(page, PAGE_SIZE)
+    fetchShelters(page, PAGE_SIZE, debouncedKeyword)
       .then(setData)
       .catch((e: unknown) => {
         const msg = e instanceof Error ? e.message : '알 수 없는 오류'
         setError(msg)
       })
       .finally(() => setLoading(false))
-  }, [page])
+  }, [page, debouncedKeyword])
+
+  useEffect(() => {
+    load()
+  }, [load])
+
+  useEffect(() => {
+    if (!flash) return
+    const t = setTimeout(() => setFlash(null), 2500)
+    return () => clearTimeout(t)
+  }, [flash])
 
   return (
     <div className="shelter-page">
       <header className="shelter-header">
-        <h1>대피소 목록</h1>
-        <p className="shelter-subtitle">
-          총 {data?.totalElements ?? 0}건 · 페이지 {(data?.page ?? 0) + 1} / {data?.totalPages ?? 0}
-        </p>
+        <div>
+          <h1>대피소 목록</h1>
+          <p className="shelter-subtitle">
+            총 {data?.totalElements ?? 0}건 · 페이지 {(data?.page ?? 0) + 1} / {data?.totalPages ?? 0}
+          </p>
+        </div>
+        <Link
+          to={getAdminPassword() ? '/admin/reports' : '/admin/login'}
+          className="admin-link-btn"
+        >
+          관리자
+        </Link>
       </header>
 
+      <div className="search-bar">
+        <input
+          type="text"
+          value={keyword}
+          onChange={(e) => setKeyword(e.target.value)}
+          placeholder="시설명 또는 주소로 검색"
+        />
+        {keyword && (
+          <button type="button" className="search-clear" onClick={() => setKeyword('')}>
+            ✕
+          </button>
+        )}
+      </div>
+
+      {flash && <div className="shelter-flash">{flash}</div>}
       {loading && <div className="shelter-state">불러오는 중…</div>}
       {error && <div className="shelter-state shelter-error">{error}</div>}
 
@@ -47,6 +96,7 @@ export default function ShelterListPage() {
               <thead>
                 <tr>
                   <th>ID</th>
+                  <th>상태</th>
                   <th>시설명</th>
                   <th>주소</th>
                   <th>면적(㎡)</th>
@@ -62,8 +112,17 @@ export default function ShelterListPage() {
               </thead>
               <tbody>
                 {data.content.map((s) => (
-                  <tr key={s.id}>
+                  <tr key={s.id} className="clickable" onClick={() => setSelected(s)}>
                     <td>{s.id}</td>
+                    <td className="center">
+                      {s.pendingReportCount > 0 ? (
+                        <span className="badge badge-pending">
+                          제출됨{s.pendingReportCount > 1 ? ` ${s.pendingReportCount}` : ''}
+                        </span>
+                      ) : (
+                        <span className="badge badge-empty">-</span>
+                      )}
+                    </td>
                     <td className="ellipsis">{s.name}</td>
                     <td className="ellipsis">{s.address}</td>
                     <td className="num">{s.area ?? '-'}</td>
@@ -79,7 +138,9 @@ export default function ShelterListPage() {
                 ))}
                 {data.empty && (
                   <tr>
-                    <td colSpan={12} className="center">데이터가 없습니다</td>
+                    <td colSpan={13} className="center">
+                      {debouncedKeyword ? '검색 결과가 없습니다' : '데이터가 없습니다'}
+                    </td>
                   </tr>
                 )}
               </tbody>
@@ -92,6 +153,18 @@ export default function ShelterListPage() {
             onChange={setPage}
           />
         </>
+      )}
+
+      {selected && (
+        <ShelterReportModal
+          shelter={selected}
+          onClose={() => setSelected(null)}
+          onSubmitted={() => {
+            setSelected(null)
+            setFlash('조사 정보가 접수되었습니다 (승인 대기)')
+            load()
+          }}
+        />
       )}
     </div>
   )

@@ -20,9 +20,10 @@ public record ShelterListResponse(
         Boolean ramp,
         Boolean elevator,
         Boolean brailleBlock,
-        String etcFacilities
+        String etcFacilities,
+        Integer pendingReportCount
 ) {
-    public static ShelterListResponse from(Shelter s) {
+    public static ShelterListResponse from(Shelter s, Integer pendingReportCount) {
         ShelterAccessibility a = s.getAccessibility();
         return new ShelterListResponse(
                 s.getId(),
@@ -41,7 +42,8 @@ public record ShelterListResponse(
                 a != null ? a.getRamp() : null,
                 a != null ? a.getElevator() : null,
                 a != null ? a.getBrailleBlock() : null,
-                a != null ? a.getEtcFacilities() : null
+                a != null ? a.getEtcFacilities() : null,
+                pendingReportCount
         );
     }
 }

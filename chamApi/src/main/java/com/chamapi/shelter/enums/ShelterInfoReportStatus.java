@@ -1,6 +1,6 @@
 package com.chamapi.shelter.enums;
 
-public enum ShelterInfoRegisterRequestStatus {
+public enum ShelterInfoReportStatus {
     PENDING,
     APPROVED,
     REJECTED

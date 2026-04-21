@@ -71,4 +71,12 @@ public class Shelter extends DateSuperClass {
     // 대피소 이동약자 편의시설
     @Embedded
     private ShelterAccessibility accessibility;
+
+    public void applyReport(ShelterInfoReport report) {
+        if (report.getName() != null) this.name = report.getName();
+        if (report.getBuiltYear() != null) this.builtYear = report.getBuiltYear();
+        if (report.getSafetyGrade() != null) this.safetyGrade = report.getSafetyGrade();
+        if (report.getSignageLanguage() != null) this.signageLanguage = report.getSignageLanguage();
+        if (report.getAccessibility() != null) this.accessibility = report.getAccessibility();
+    }
 }

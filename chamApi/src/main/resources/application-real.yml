@@ -32,5 +32,17 @@ auth:
   refresh-token:
     expiry: 1d
 
+
+logging:
+  file:
+    name: /home/cham/cham-equality-log/cham.log
+    level:
+      root: INFO
+  logback:
+    rollingpolicy:
+      file-name-pattern: ${LOG_FILE}.%d{yyyy-MM-dd}.%i.log
 cors:
   url: https://cham-monimap.com
+
+admin:
+  password: ${ADMIN_PASSWORD}

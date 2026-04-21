@@ -16,6 +16,7 @@ export type Shelter = {
   elevator: boolean | null
   brailleBlock: boolean | null
   etcFacilities: string | null
+  pendingReportCount: number
 }
 
 export type PageResponse<T> = {

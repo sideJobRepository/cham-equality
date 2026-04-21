@@ -4,9 +4,32 @@
   color: #222;
 }
 
+.shelter-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
 .shelter-header h1 {
   margin: 0 0 4px;
   font-size: 22px;
+}
+
+.admin-link-btn {
+  padding: 7px 14px;
+  border: 1px solid #2c5fa8;
+  color: #2c5fa8;
+  background: #fff;
+  border-radius: 4px;
+  font-size: 13px;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.admin-link-btn:hover {
+  background: #2c5fa8;
+  color: #fff;
 }
 
 .shelter-subtitle {
@@ -55,6 +78,77 @@
 
 .shelter-table tbody tr:hover {
   background: #fafbfc;
+}
+
+.shelter-table tbody tr.clickable {
+  cursor: pointer;
+}
+
+.shelter-table tbody tr.clickable:hover {
+  background: #eef4fb;
+}
+
+.shelter-flash {
+  padding: 10px 14px;
+  background: #e7f3e7;
+  color: #2e7d32;
+  border: 1px solid #b7dcb7;
+  border-radius: 4px;
+  margin-bottom: 16px;
+  font-size: 13px;
+}
+
+.search-bar {
+  position: relative;
+  margin-bottom: 14px;
+  max-width: 400px;
+}
+
+.search-bar input {
+  width: 100%;
+  padding: 9px 34px 9px 12px;
+  border: 1px solid #d0d0d0;
+  border-radius: 4px;
+  font-size: 14px;
+  font-family: inherit;
+}
+
+.search-bar input:focus {
+  outline: none;
+  border-color: #2c5fa8;
+}
+
+.search-clear {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #999;
+  font-size: 14px;
+  padding: 4px 8px;
+}
+
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.badge-pending {
+  background: #fff4d6;
+  color: #8a6d00;
+}
+
+.badge-empty {
+  color: #ccc;
+  font-size: 12px;
+  padding: 0;
 }
 
 .shelter-table td.num,

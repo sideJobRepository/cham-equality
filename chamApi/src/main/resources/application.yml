@@ -36,3 +36,6 @@ auth:
 
 cors:
   url: http://localhost:5173
+
+admin:
+  password: ${ADMIN_PASSWORD:}

@@ -52,7 +52,6 @@ public class S3FileService {
                     .bucket(bucket)
                     .key(objectKey)
                     .contentType(file.getContentType())
-                    .metadata(Map.of("original-filename", file.getFileName()))
                     .build();
             
             PutObjectPresignRequest presignRequest = PutObjectPresignRequest.builder()

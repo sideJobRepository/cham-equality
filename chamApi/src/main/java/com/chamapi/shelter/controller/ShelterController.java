@@ -10,6 +10,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -21,8 +22,9 @@ public class ShelterController {
 
     @GetMapping
     public ApiResponse<PageResponse<ShelterListResponse>> getShelters(
+            @RequestParam(required = false) String keyword,
             @PageableDefault(size = 20, sort = "id", direction = Sort.Direction.ASC) Pageable pageable
     ) {
-        return new ApiResponse<>(200, true, shelterService.findShelters(pageable));
+        return new ApiResponse<>(200, true, shelterService.findShelters(keyword, pageable));
     }
 }

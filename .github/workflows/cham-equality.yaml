@@ -1,0 +1,127 @@
+name: cham-equality
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dorny/paths-filter@v3
+        id: changes
+        with:
+          filters: |
+            backend:
+              - 'chamApi/**'
+            frontend:
+              - 'front/**'
+
+    outputs:
+      backend: ${{ steps.changes.outputs.backend }}
+      frontend: ${{ steps.changes.outputs.frontend }}
+
+  build-backend:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.backend == 'true'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'corretto'
+          java-version: '25'
+
+
+      - name: gradle 권한 추가 및 빌드
+        run: chmod +x ./gradlew && ./gradlew clean build -x test
+
+      - name: 빌드된 파일 이름 변경
+        run: mv ./build/libs/*SNAPSHOT.jar ./project.jar
+
+      - name: SCP로 전송
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          password: ${{ secrets.PASSWORD }}
+          port: '22'
+          source: project.jar
+          target: /home/cham/cham-server-research/tobe
+
+
+      - name: ssh 접속
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          password: ${{ secrets.PASSWORD }}
+          script_stop: true
+          port: 22
+          script: |
+            rm -rf /home/cham/cham-server-research/target
+            mkdir -p /home/cham/cham-server-research/target
+            mv /home/cham/cham-server-research/tobe/project.jar /home/cham/cham-server-research/target
+            cd /home/cham/cham-server-research/target
+            sudo fuser -k -n tcp 8081 || true
+            DB_USERNAME='${{ secrets.DB_USERNAME }}' \
+            DB_PASSWORD='${{ secrets.DB_PASSWORD }}' \
+            DB_URL='${{ secrets.DB_URL }}' \
+            DB_PORT='${{ secrets.DB_PORT }}' \
+            AWS_ACCESS_KEY='${{ secrets.AWS_ACCESS_KEY }}' \
+            AWS_SECRET_KEY='${{ secrets.AWS_SECRET_KEY }}' \
+            AWS_REGION='${{ secrets.AWS_REGION }}' \
+            AWS_BUCKET='${{ secrets.AWS_BUCKET }}' \
+            ADMIN_PASSWORD='${{ secrets.ADMIN_PASSWORD }}' \
+            nohup java \
+            -Dspring.profiles.active=real \
+            -Dserver.port=8081 \
+            -Duser.timezone=Asia/Seoul \
+            -jar project.jar > /dev/null 2>&1 &
+            
+            rm -rf /home/cham/cham-server-research/tobe
+
+  build-frontend:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.frontend == 'true'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: npm 인스톨
+        run: cd front && npm install
+
+      - name: npm 빌드
+        run: cd front && npm run build
+
+      - name: scp로 전송
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          password: ${{ secrets.PASSWORD }}
+          port: 22
+          source: front/dist/*
+          target: /home/cham/deploy/front-dist-temp-research
+
+      - name: ssh 접속
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          password: ${{ secrets.PASSWORD }}
+          port: 22
+          script: |
+            sudo rm -rf /usr/share/nginx/cham-front-research
+            sudo mkdir -p /usr/share/nginx/cham-front-research
+            sudo mv /home/cham/deploy/front-dist-temp-research/* /usr/share/nginx/cham-front-research/
+            sudo systemctl reload nginx
