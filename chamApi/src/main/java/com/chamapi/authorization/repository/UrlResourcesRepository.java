@@ -1,7 +1,7 @@
 package com.chamapi.authorization.repository;
 
-import org.springframework.core.io.UrlResource;
+import com.chamapi.authorization.entity.UrlResources;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface UrlResourcesRepository extends JpaRepository<UrlResource, Long> {
+public interface UrlResourcesRepository extends JpaRepository<UrlResources, Long> {
 }
