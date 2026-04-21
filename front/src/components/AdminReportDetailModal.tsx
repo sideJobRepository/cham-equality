@@ -1,14 +1,15 @@
 import { useEffect, useState } from 'react'
 import {
   approveReport,
-  downloadFileBlob,
+  downloadFilesAsZip,
   fetchReportDetail,
+  getDownloadUrl,
   rejectReport,
   UnauthorizedError,
   type ShelterReportDetail,
   type ShelterReportImageView,
 } from '../api/adminApi'
-import { saveBlob, zipBlobs } from '../lib/fileDownload'
+import { saveBlob } from '../lib/file'
 import './AdminReportDetailModal.css'
 
 type Props = {
@@ -91,8 +92,8 @@ export default function AdminReportDetailModal({
   const handleDownload = async (img: ShelterReportImageView) => {
     setDownloadingId(img.fileId)
     try {
-      const blob = await downloadFileBlob(img.fileId)
-      saveBlob(blob, img.fileName)
+      const url = await getDownloadUrl(img.fileId)
+      window.open(url, '_blank', 'noopener,noreferrer')
     } catch (e: unknown) {
       if (e instanceof UnauthorizedError) onUnauthorized()
       else alert(e instanceof Error ? e.message : '다운로드 실패')
@@ -103,15 +104,14 @@ export default function AdminReportDetailModal({
 
   const handleDownloadAll = async () => {
     if (!detail || detail.images.length === 0) return
+    const zipName = `report-${detail.id}.zip`
     setZipping(true)
     try {
-      const items = await Promise.all(
-        detail.images.map(async (img) => ({
-          blob: await downloadFileBlob(img.fileId),
-          fileName: img.fileName,
-        })),
+      const blob = await downloadFilesAsZip(
+        detail.images.map((img) => img.fileId),
+        zipName,
       )
-      await zipBlobs(items, `report-${detail.id}.zip`)
+      saveBlob(blob, zipName)
     } catch (e: unknown) {
       if (e instanceof UnauthorizedError) onUnauthorized()
       else alert(e instanceof Error ? e.message : '일괄 다운로드 실패')
@@ -184,10 +184,10 @@ export default function AdminReportDetailModal({
                     <button
                       type="button"
                       className="zip-btn"
-                      disabled={zipping}
                       onClick={handleDownloadAll}
+                      disabled={zipping}
                     >
-                      {zipping ? '압축 중…' : '전체 다운로드 (ZIP)'}
+                      {zipping ? '다운로드 중…' : '전체 다운로드'}
                     </button>
                   )}
                 </div>

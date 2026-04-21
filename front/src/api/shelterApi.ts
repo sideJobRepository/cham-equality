@@ -1,5 +1,5 @@
 import type { ApiResponse, PageResponse, Shelter } from '../types/shelter'
-import { createPresignedUploader } from '../lib/presignedUpload'
+import { createPresignedUploader } from '../lib/file'
 import { http, useNextUserPassword } from './http'
 
 export type ShelterImageCategory =

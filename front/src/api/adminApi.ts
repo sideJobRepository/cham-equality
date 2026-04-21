@@ -68,10 +68,17 @@ export async function approveReport(id: number): Promise<void> {
   await http.post(`/admin/reports/${id}/approve`)
 }
 
-export async function downloadFileBlob(fileId: number): Promise<Blob> {
-  const { data } = await http.get<Blob>(`/download-file/${fileId}`, {
-    responseType: 'blob',
-  })
+export async function getDownloadUrl(fileId: number): Promise<string> {
+  const { data } = await http.get<ApiResponse<string>>(`/download-file/${fileId}`)
+  return data.data
+}
+
+export async function downloadFilesAsZip(ids: number[], name: string): Promise<Blob> {
+  const { data } = await http.post<Blob>(
+    '/download-file/zip',
+    { ids, name },
+    { responseType: 'blob' },
+  )
   return data
 }
 
