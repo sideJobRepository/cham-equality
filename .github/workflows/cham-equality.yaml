@@ -41,10 +41,11 @@ jobs:
 
 
       - name: gradle 권한 추가 및 빌드
+        working-directory: chamApi
         run: chmod +x ./gradlew && ./gradlew clean build -x test
 
       - name: 빌드된 파일 이름 변경
-        run: mv ./build/libs/*SNAPSHOT.jar ./project.jar
+        run: mv ./chamApi/build/libs/*SNAPSHOT.jar ./project.jar
 
       - name: SCP로 전송
         uses: appleboy/scp-action@v0.1.7
