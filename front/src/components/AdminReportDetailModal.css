@@ -4,10 +4,9 @@
   background: rgba(0, 0, 0, 0.5);
   display: flex;
   justify-content: center;
-  align-items: flex-start;
+  align-items: center;
   z-index: 1000;
-  padding: 30px 20px;
-  overflow-y: auto;
+  padding: 20px;
 }
 
 .detail-modal {
@@ -15,11 +14,13 @@
   border-radius: 8px;
   width: 100%;
   max-width: 720px;
+  max-height: calc(100dvh - 40px);
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
   font-size: 14px;
   color: #222;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .detail-header {
@@ -28,6 +29,7 @@
   justify-content: space-between;
   padding: 16px 20px;
   border-bottom: 1px solid #eee;
+  flex-shrink: 0;
 }
 
 .detail-header h2 {
@@ -53,8 +55,9 @@
 
 .detail-body {
   padding: 20px;
-  max-height: 70vh;
+  flex: 1 1 auto;
   overflow-y: auto;
+  min-height: 0;
 }
 
 .state {
@@ -232,8 +235,7 @@
   padding: 14px 20px;
   border-top: 1px solid #eee;
   background: #f9f9fa;
-  border-bottom-left-radius: 8px;
-  border-bottom-right-radius: 8px;
+  flex-shrink: 0;
 }
 
 .detail-footer button {
@@ -264,21 +266,17 @@
 @media (max-width: 640px) {
   .detail-backdrop {
     padding: 0;
-    align-items: stretch;
   }
 
   .detail-modal {
     border-radius: 0;
     max-width: none;
-    min-height: 100vh;
+    max-height: 100dvh;
+    height: 100dvh;
   }
 
   .detail-header {
     padding: 14px 16px;
-    position: sticky;
-    top: 0;
-    background: #fff;
-    z-index: 1;
   }
 
   .detail-header h2 {
@@ -287,7 +285,6 @@
 
   .detail-body {
     padding: 16px;
-    max-height: none;
   }
 
   .fields {
@@ -307,8 +304,6 @@
 
   .detail-footer {
     padding: 12px 16px;
-    position: sticky;
-    bottom: 0;
   }
 
   .detail-footer button {

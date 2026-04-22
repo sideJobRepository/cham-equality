@@ -4,10 +4,9 @@
   background: rgba(0, 0, 0, 0.45);
   display: flex;
   justify-content: center;
-  align-items: flex-start;
+  align-items: center;
   z-index: 1000;
-  padding: 40px 20px;
-  overflow-y: auto;
+  padding: 20px;
 }
 
 .pending-modal {
@@ -15,6 +14,10 @@
   border-radius: 8px;
   width: 100%;
   max-width: 560px;
+  max-height: calc(100dvh - 40px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
   font-size: 14px;
   color: #222;
@@ -26,6 +29,7 @@
   justify-content: space-between;
   padding: 16px 20px;
   border-bottom: 1px solid #eee;
+  flex-shrink: 0;
 }
 
 .pending-header h2 {
@@ -50,8 +54,9 @@
 
 .pending-body {
   padding: 16px 20px;
-  max-height: 70vh;
+  flex: 1 1 auto;
   overflow-y: auto;
+  min-height: 0;
 }
 
 .pending-state {
@@ -132,16 +137,12 @@
 @media (max-width: 640px) {
   .pending-backdrop {
     padding: 0;
-    align-items: stretch;
   }
 
   .pending-modal {
     border-radius: 0;
     max-width: none;
-    min-height: 100vh;
-  }
-
-  .pending-body {
-    max-height: none;
+    max-height: 100dvh;
+    height: 100dvh;
   }
 }
