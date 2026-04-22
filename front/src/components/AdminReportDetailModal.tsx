@@ -9,7 +9,7 @@ import {
   type ShelterReportDetail,
   type ShelterReportImageView,
 } from '../api/adminApi'
-import { saveBlob } from '../lib/file'
+import { saveBlob, triggerDownload } from '../lib/file'
 import './AdminReportDetailModal.css'
 
 type Props = {
@@ -93,7 +93,7 @@ export default function AdminReportDetailModal({
     setDownloadingId(img.fileId)
     try {
       const url = await getDownloadUrl(img.fileId)
-      window.open(url, '_blank', 'noopener,noreferrer')
+      triggerDownload(url, img.fileName)
     } catch (e: unknown) {
       if (e instanceof UnauthorizedError) onUnauthorized()
       else alert(e instanceof Error ? e.message : '다운로드 실패')

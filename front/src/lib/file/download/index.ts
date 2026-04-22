@@ -19,6 +19,15 @@ export function saveBlob(blob: Blob, fileName: string): void {
   URL.revokeObjectURL(objectUrl)
 }
 
+export function triggerDownload(url: string, fileName: string): void {
+  const a = document.createElement('a')
+  a.href = url
+  a.download = fileName
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+}
+
 export async function downloadFile(url: string, fileName: string): Promise<void> {
   const res = await fetch(url)
   if (!res.ok) throw new Error(`다운로드 실패 (HTTP ${res.status})`)
