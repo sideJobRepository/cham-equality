@@ -17,10 +17,8 @@ export type UploaderAdapter<Presign extends PresignedUrlInfo, Registered> = {
   registerUploadedFiles: (
     uploaded: { presign: Presign; file: File }[],
   ) => Promise<Registered[]>
-  putToRemote?: (url: string, file: File) => Promise<void>
 }
 
 export type PresignedUploader<Registered> = {
   upload: (file: File) => Promise<Registered>
-  uploadMany: (files: File[]) => Promise<Registered[]>
 }
