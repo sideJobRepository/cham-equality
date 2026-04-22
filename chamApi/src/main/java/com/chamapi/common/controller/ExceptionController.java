@@ -17,13 +17,17 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.util.List;
 
+/**
+ * 전역 예외 핸들러. 모든 컨트롤러의 예외를 여기서 {@link ErrorMessageResponse} 포맷으로 통일한다.
+ * 도메인 예외는 {@link CustomException}을 상속해 자체 HttpStatus를 들고 오게 하고,
+ * 그 외 프레임워크/DB/예기치 못한 예외는 400/500으로 내린 뒤 로그만 남긴다.
+ */
 @RestControllerAdvice
 @Slf4j
 public class ExceptionController {
-    
+
     /**
-     * 
-     * 검증 예외 처리
+     * {@code @Valid} 실패. 필드별 메시지를 {@code validation} 배열에 담아 프론트가 필드 하이라이트에 쓸 수 있게 한다.
      */
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -62,6 +66,10 @@ public class ExceptionController {
         );
     }
     
+    /**
+     * 도메인 예외 처리. 각 예외가 들고 있는 HttpStatus를 그대로 사용해 401/403/409 등 세분화된 응답을 낸다.
+     * {@code field}가 붙은 예외(ValidationException 계열)는 검증 예외와 동일하게 {@code validation}에도 실어 보낸다.
+     */
     @ExceptionHandler(CustomException.class)
     public ResponseEntity<ErrorMessageResponse> handleCustomException(CustomException e) {
         log.info("공통 예외 ", e);
