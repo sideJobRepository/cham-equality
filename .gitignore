@@ -21,3 +21,6 @@ chamApi/src/test/resources/.env
 
 chamApp/android/.gradle
 chamApp/android/build
+chamApp/android/local.properties
+chamApp/android/app/build
+chamApp/android/app/.cxx
