@@ -1,4 +1,4 @@
-package com.chamapp
+package kr.or.cham.equality
 
 import android.app.Application
 import com.facebook.react.PackageList

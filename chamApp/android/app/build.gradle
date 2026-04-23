@@ -77,9 +77,9 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace "com.chamapp"
+    namespace "kr.or.cham.equality"
     defaultConfig {
-        applicationId "com.chamapp"
+        applicationId "kr.or.cham.equality"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

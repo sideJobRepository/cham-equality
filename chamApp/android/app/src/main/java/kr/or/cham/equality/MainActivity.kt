@@ -1,4 +1,4 @@
-package com.chamapp
+package kr.or.cham.equality
 
 import com.facebook.react.ReactActivity
 import com.facebook.react.ReactActivityDelegate
