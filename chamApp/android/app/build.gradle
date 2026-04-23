@@ -2,6 +2,9 @@ apply plugin: "com.android.application"
 apply plugin: "org.jetbrains.kotlin.android"
 apply plugin: "com.facebook.react"
 
+// react-native-config: chamApp/.env 로드 (project.env.get(...) 사용 가능하게)
+apply from: "../../node_modules/react-native-config/android/dotenv.gradle"
+
 /**
  * This is the configuration block to customize your React Native Android app.
  * By default you don't need to apply any configuration, just uncomment the lines you need.
@@ -84,6 +87,10 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
         versionName "1.0"
+
+        // 카카오 URL scheme — AuthCodeHandlerActivity의 intent-filter에서 사용
+        def kakaoAppKey = project.env.get("KAKAO_NATIVE_APP_KEY") ?: ""
+        manifestPlaceholders = [KAKAO_SCHEME: "kakao" + kakaoAppKey]
     }
     signingConfigs {
         debug {

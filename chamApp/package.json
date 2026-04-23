@@ -10,10 +10,21 @@
     "test": "jest"
   },
   "dependencies": {
+    "@react-native-async-storage/async-storage": "^2.2.0",
+    "@react-native-kakao/core": "^2.4.5",
+    "@react-native-kakao/user": "^2.4.5",
+    "@react-native/new-app-screen": "0.84.1",
+    "@react-navigation/native": "^7.2.2",
+    "@react-navigation/native-stack": "^7.14.11",
+    "@tanstack/react-query": "^5.100.0",
+    "axios": "^1.15.2",
     "react": "19.2.3",
     "react-native": "0.84.1",
-    "@react-native/new-app-screen": "0.84.1",
-    "react-native-safe-area-context": "^5.5.2"
+    "react-native-config": "^1.6.1",
+    "react-native-keychain": "^10.0.0",
+    "react-native-safe-area-context": "^5.5.2",
+    "react-native-screens": "^4.24.0",
+    "zustand": "^5.0.12"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",

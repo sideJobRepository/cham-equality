@@ -1,6 +1,20 @@
 pluginManagement { includeBuild("../node_modules/@react-native/gradle-plugin") }
 plugins { id("com.facebook.react.settings") }
 extensions.configure(com.facebook.react.ReactSettingsExtension){ ex -> ex.autolinkLibrariesFromCommand() }
+
+dependencyResolutionManagement {
+    // PREFER_SETTINGS: settings에 선언된 저장소가 서브프로젝트의 저장소보다 우선 적용됨
+    // (react-native 라이브러리들이 자기 build.gradle에서 google/mavenCentral만 선언하는 경우
+    //  카카오 같은 커스텀 저장소가 전달되지 않는 문제 해결)
+    // 카카오 공식문서 참고
+    repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)
+    repositories {
+        google()
+        mavenCentral()
+        maven { url 'https://devrepo.kakao.com/nexus/content/groups/public/' }
+    }
+}
+
 rootProject.name = 'chamApp'
 include ':app'
 includeBuild('../node_modules/@react-native/gradle-plugin')
