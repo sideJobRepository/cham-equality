@@ -8,7 +8,7 @@ export type PresignedUrlInfo = {
   url: string
   objectKey: string
   fileName: string
-  bucket: string
+  bucketName: string
   contentType: string
 }
 

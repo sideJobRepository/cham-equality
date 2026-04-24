@@ -38,7 +38,7 @@ export type PresignedUrlResponse = {
   url: string
   objectKey: string
   fileName: string
-  bucket: string
+  bucketName: string
   contentType: string
 }
 
@@ -162,7 +162,7 @@ const shelterImageUploader = createPresignedUploader<PresignedUrlResponse, FileU
         fileName: presign.fileName,
         objectKey: presign.objectKey,
         contentType: presign.contentType,
-        bucketName: presign.bucket,
+        bucketName: presign.bucketName,
         fileSize: file.size,
       })),
     })

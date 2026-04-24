@@ -62,7 +62,7 @@ export type PresignedUrlInfo = {
   url: string           // PUT 대상 서명 URL (유효시간 있음)
   objectKey: string     // 버킷 내부 경로
   fileName: string      // 서버가 정한 파일명 (원본과 다를 수 있음)
-  bucket: string
+  bucketName: string
   contentType: string
 }
 
@@ -186,7 +186,7 @@ const noticeAttachmentUploader = createPresignedUploader<
         fileName: presign.fileName,
         objectKey: presign.objectKey,
         contentType: presign.contentType,
-        bucketName: presign.bucket,
+        bucketName: presign.bucketName,
         fileSize: file.size,
       })),
     })
