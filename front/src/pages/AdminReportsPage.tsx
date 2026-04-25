@@ -5,8 +5,8 @@ import {
   fetchReports,
   getAdminPassword,
   UnauthorizedError,
+  type AdminReportFilter,
   type ShelterReport,
-  type ShelterReportStatus,
 } from '../api/adminApi'
 import AdminReportDetailModal from '../components/AdminReportDetailModal'
 import type { PageResponse } from '../types/shelter'
@@ -14,12 +14,13 @@ import './AdminReportsPage.css'
 
 const PAGE_SIZE = 20
 
-type Filter = ShelterReportStatus | 'ALL'
+type Filter = AdminReportFilter | 'ALL'
 
 const FILTERS: { value: Filter; label: string }[] = [
   { value: 'PENDING', label: '대기' },
   { value: 'APPROVED', label: '승인' },
   { value: 'REJECTED', label: '반려' },
+  { value: 'RE_INVESTIGATION', label: '재조사' },
   { value: 'ALL', label: '전체' },
 ]
 
@@ -80,6 +81,7 @@ export default function AdminReportsPage() {
           </p>
         </div>
         <div className="admin-header-actions">
+          <Link to="/admin/shelters" className="shelter-link-btn">대피소 편집</Link>
           <Link to="/shelters" className="shelter-link-btn">← 대피소 목록</Link>
           <button type="button" className="logout-btn" onClick={logout}>
             로그아웃
@@ -114,8 +116,6 @@ export default function AdminReportsPage() {
                   <th>ID</th>
                   <th>대피소</th>
                   <th>시설명</th>
-                  <th>건축</th>
-                  <th>안전등급</th>
                   <th>안내문</th>
                   <th>화장실</th>
                   <th>경사로</th>
@@ -132,9 +132,7 @@ export default function AdminReportsPage() {
                   <tr key={r.id} className="clickable" onClick={() => setSelectedId(r.id)}>
                     <td>{r.id}</td>
                     <td>#{r.shelterId}</td>
-                    <td className="ellipsis">{r.name ?? '-'}</td>
-                    <td className="num">{r.builtYear ?? '-'}</td>
-                    <td className="num">{r.safetyGrade ?? '-'}</td>
+                    <td className="ellipsis">{r.shelterName ?? '-'}</td>
                     <td className="ellipsis">{r.signageLanguage ?? '-'}</td>
                     <td className="center">{yn(r.accessibleToilet)}</td>
                     <td className="center">{yn(r.ramp)}</td>
@@ -152,7 +150,7 @@ export default function AdminReportsPage() {
                 ))}
                 {data.empty && (
                   <tr>
-                    <td colSpan={14} className="center">데이터 없음</td>
+                    <td colSpan={12} className="center">데이터 없음</td>
                   </tr>
                 )}
               </tbody>

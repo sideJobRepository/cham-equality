@@ -1,4 +1,11 @@
-import type { ApiResponse, PageResponse } from '../types/shelter'
+import type {
+  ApiResponse,
+  PageResponse,
+  Shelter,
+  ShelterSurveyStatus,
+  ShelterType,
+} from '../types/shelter'
+import type { ShelterSearchFilter } from './shelterApi'
 import { http } from './http'
 
 export {
@@ -18,9 +25,7 @@ export type ShelterReportStatus = 'PENDING' | 'APPROVED' | 'REJECTED'
 export type ShelterReport = {
   id: number
   shelterId: number
-  name: string | null
-  builtYear: number | null
-  safetyGrade: number | null
+  shelterName: string | null
   signageLanguage: string | null
   accessibleToilet: boolean | null
   ramp: boolean | null
@@ -43,16 +48,19 @@ export type ShelterReportImageView = {
 export type ShelterReportDetail = ShelterReport & {
   shelterName: string | null
   shelterAddress: string | null
+  shelterSurveyStatus: ShelterSurveyStatus | null
   images: ShelterReportImageView[]
 }
 
+export type AdminReportFilter = ShelterReportStatus | 'RE_INVESTIGATION'
+
 export async function fetchReports(
-  status: ShelterReportStatus | 'ALL',
+  filter: AdminReportFilter | 'ALL',
   page: number,
   size: number,
 ): Promise<PageResponse<ShelterReport>> {
   const params: Record<string, string | number> = { page, size }
-  if (status !== 'ALL') params.status = status
+  if (filter !== 'ALL') params.filter = filter
   const { data } = await http.get<ApiResponse<PageResponse<ShelterReport>>>('/admin/reports', {
     params,
   })
@@ -66,6 +74,14 @@ export async function fetchReportDetail(id: number): Promise<ShelterReportDetail
 
 export async function approveReport(id: number): Promise<void> {
   await http.post(`/admin/reports/${id}/approve`)
+}
+
+export async function rejectReport(id: number): Promise<void> {
+  await http.post(`/admin/reports/${id}/reject`)
+}
+
+export async function requestReInvestigation(id: number): Promise<void> {
+  await http.post(`/admin/reports/${id}/re-investigate`)
 }
 
 export async function getDownloadUrl(fileId: number): Promise<string> {
@@ -82,6 +98,29 @@ export async function downloadFilesAsZip(ids: number[], name: string): Promise<B
   return data
 }
 
-export async function rejectReport(id: number): Promise<void> {
-  await http.post(`/admin/reports/${id}/reject`)
+export async function fetchAdminShelters(
+  page: number,
+  size: number,
+  keyword?: string,
+  filter?: ShelterSearchFilter,
+): Promise<PageResponse<Shelter>> {
+  const params: Record<string, string | number> = { page, size }
+  if (keyword && keyword.trim()) params.keyword = keyword.trim()
+  if (filter) params.filter = filter
+  const { data } = await http.get<ApiResponse<PageResponse<Shelter>>>('/admin/shelters', { params })
+  return data.data
+}
+
+export type AdminShelterUpdateRequest = {
+  name: string | null
+  builtYear: number | null
+  shelterType: ShelterType | null
+  safetyGrade: number | null
+}
+
+export async function updateAdminShelter(
+  id: number,
+  body: AdminShelterUpdateRequest,
+): Promise<void> {
+  await http.put(`/admin/shelters/${id}`, body)
 }

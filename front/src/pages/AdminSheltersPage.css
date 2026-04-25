@@ -1,0 +1,221 @@
+.admin-shelters-page {
+  padding: 24px 32px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  color: #222;
+}
+
+.admin-shelters-page .admin-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.admin-shelters-page .admin-header h1 {
+  margin: 0 0 4px;
+  font-size: 22px;
+}
+
+.admin-shelters-page .subtitle {
+  margin: 0;
+  color: #666;
+  font-size: 13px;
+}
+
+.admin-shelters-page .admin-header-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.admin-shelters-page .shelter-link-btn {
+  padding: 7px 14px;
+  border: 1px solid #2c5fa8;
+  color: #2c5fa8;
+  background: #fff;
+  border-radius: 4px;
+  font-size: 13px;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.admin-shelters-page .logout-btn {
+  padding: 7px 14px;
+  border: 1px solid #c0392b;
+  color: #c0392b;
+  background: #fff;
+  border-radius: 4px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.admin-shelters-page .search-bar {
+  margin: 12px 0 16px;
+  position: relative;
+  max-width: 480px;
+}
+
+.admin-shelters-page .search-bar input {
+  width: 100%;
+  padding: 8px 32px 8px 12px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+.admin-shelters-page .search-clear {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #999;
+  font-size: 14px;
+}
+
+.shelter-flash {
+  margin-bottom: 12px;
+  padding: 10px 14px;
+  background: #e3f4e3;
+  color: #1e6f1e;
+  border-radius: 4px;
+  font-size: 13px;
+}
+
+.shelters-table-wrap {
+  overflow-x: auto;
+  border: 1px solid #e3e3e3;
+  border-radius: 4px;
+}
+
+.shelters-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.shelters-table thead {
+  background: #f5f7fa;
+}
+
+.shelters-table th,
+.shelters-table td {
+  padding: 9px 10px;
+  border-bottom: 1px solid #efefef;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.shelters-table tbody tr:hover {
+  background: #fafafa;
+}
+
+.shelters-table td.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.shelters-table td.center {
+  text-align: center;
+}
+
+.shelters-table td.ellipsis {
+  max-width: 220px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.edit-btn {
+  padding: 4px 10px;
+  background: #2c5fa8;
+  color: #fff;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.edit-btn:hover {
+  background: #234e8a;
+}
+
+.admin-shelters-page .pagination {
+  margin-top: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.admin-shelters-page .pagination button {
+  min-width: 32px;
+  height: 32px;
+  border: 1px solid #ccc;
+  background: #fff;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.admin-shelters-page .pagination button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.admin-shelters-page .state {
+  padding: 30px;
+  text-align: center;
+  color: #666;
+}
+
+.admin-shelters-page .state.error {
+  color: #c0392b;
+}
+
+@media (max-width: 960px) {
+  .admin-shelters-page {
+    padding: 20px 16px;
+  }
+}
+
+@media (max-width: 640px) {
+  .admin-shelters-page {
+    padding: 14px 12px;
+  }
+
+  .admin-shelters-page .admin-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .admin-shelters-page .admin-header h1 {
+    font-size: 19px;
+  }
+
+  .admin-shelters-page .admin-header-actions {
+    flex-wrap: wrap;
+  }
+
+  .admin-shelters-page .search-bar {
+    max-width: none;
+  }
+
+  .admin-shelters-page .search-bar input {
+    font-size: 16px;
+  }
+
+  .shelters-table {
+    font-size: 12px;
+    min-width: 720px;
+  }
+
+  .edit-btn {
+    min-height: 32px;
+    padding: 6px 12px;
+  }
+}

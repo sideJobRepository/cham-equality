@@ -1,0 +1,146 @@
+.shelter-edit-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+}
+
+.shelter-edit-modal {
+  background: #fff;
+  border-radius: 6px;
+  width: min(520px, 92vw);
+  max-height: 92vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.shelter-edit-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 18px;
+  border-bottom: 1px solid #eee;
+}
+
+.shelter-edit-header h2 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.shelter-edit-close {
+  background: none;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  color: #666;
+}
+
+.shelter-edit-info {
+  padding: 12px 18px;
+  background: #f9f9f9;
+  font-size: 13px;
+  color: #555;
+}
+
+.shelter-edit-info > div {
+  margin-bottom: 4px;
+}
+
+.shelter-edit-info span {
+  display: inline-block;
+  width: 60px;
+  color: #888;
+  font-size: 12px;
+}
+
+.shelter-edit-body {
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+}
+
+.shelter-edit-body .field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.shelter-edit-body label {
+  font-size: 12px;
+  color: #555;
+}
+
+.shelter-edit-body input,
+.shelter-edit-body select {
+  padding: 7px 9px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.shelter-edit-error {
+  padding: 8px 10px;
+  background: #fde8e8;
+  color: #c0392b;
+  border-radius: 4px;
+  font-size: 13px;
+}
+
+.shelter-edit-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 18px;
+  border-top: 1px solid #eee;
+}
+
+.shelter-edit-footer button {
+  padding: 7px 16px;
+  border: 1px solid #ccc;
+  background: #fff;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.shelter-edit-footer button.primary {
+  background: #2c5fa8;
+  color: #fff;
+  border-color: #2c5fa8;
+}
+
+.shelter-edit-footer button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@media (max-width: 640px) {
+  .shelter-edit-backdrop {
+    padding: 0;
+    align-items: stretch;
+  }
+
+  .shelter-edit-modal {
+    width: 100%;
+    max-height: 100dvh;
+    height: 100dvh;
+    border-radius: 0;
+  }
+
+  .shelter-edit-body input,
+  .shelter-edit-body select {
+    font-size: 16px; /* iOS 자동 확대 방지 */
+    min-height: 40px;
+  }
+
+  .shelter-edit-footer button {
+    min-height: 44px;
+    flex: 1;
+  }
+}

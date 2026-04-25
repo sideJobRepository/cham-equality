@@ -5,6 +5,7 @@ import {
   fetchReportDetail,
   getDownloadUrl,
   rejectReport,
+  requestReInvestigation,
   UnauthorizedError,
   type ShelterReportDetail,
   type ShelterReportImageView,
@@ -76,7 +77,11 @@ export default function AdminReportDetailModal({
   }, [onClose])
 
   const handleApprove = async () => {
-    if (!confirm('이 리포트를 승인하고 대피소 정보에 반영할까요?')) return
+    const isReApproval = detail?.shelterSurveyStatus === 'RE_INVESTIGATION'
+    const message = isReApproval
+      ? '재조사 승인입니다. 이전에 승인된 사진은 삭제 상태로 전환되어 일일 정리 배치가 수거합니다. 계속할까요?'
+      : '이 리포트를 승인하고 대피소 정보에 반영할까요?'
+    if (!confirm(message)) return
     setProcessing(true)
     try {
       await approveReport(reportId)
@@ -134,6 +139,20 @@ export default function AdminReportDetailModal({
     }
   }
 
+  const handleReInvestigate = async () => {
+    if (!confirm('재조사 요청 시 시민이 다시 제출할 수 있게 됩니다. 진행할까요?')) return
+    setProcessing(true)
+    try {
+      await requestReInvestigation(reportId)
+      onActionDone()
+    } catch (e: unknown) {
+      if (e instanceof UnauthorizedError) onUnauthorized()
+      else alert(e instanceof Error ? e.message : '재조사 요청 실패')
+    } finally {
+      setProcessing(false)
+    }
+  }
+
   return (
     <div className="detail-backdrop" onClick={onClose}>
       <div className="detail-modal" onClick={(e) => e.stopPropagation()}>
@@ -165,9 +184,6 @@ export default function AdminReportDetailModal({
                   </span>
                 </Row>
                 <Row label="접수">{detail.createDate?.slice(0, 16).replace('T', ' ')}</Row>
-                <Row label="시설명">{detail.name ?? '-'}</Row>
-                <Row label="건축 연도">{detail.builtYear ?? '-'}</Row>
-                <Row label="안전등급">{detail.safetyGrade ?? '-'}</Row>
                 <Row label="안내문 언어">{detail.signageLanguage ?? '-'}</Row>
                 <Row label="장애인화장실">{yn(detail.accessibleToilet)}</Row>
                 <Row label="경사로">{yn(detail.ramp)}</Row>
@@ -230,6 +246,13 @@ export default function AdminReportDetailModal({
             </button>
             <button type="button" className="approve-btn" disabled={processing} onClick={handleApprove}>
               승인
+            </button>
+          </footer>
+        )}
+        {detail && detail.requestStatus === 'APPROVED' && (
+          <footer className="detail-footer">
+            <button type="button" className="reinvestigate-btn" disabled={processing} onClick={handleReInvestigate}>
+              재조사 요청
             </button>
           </footer>
         )}
