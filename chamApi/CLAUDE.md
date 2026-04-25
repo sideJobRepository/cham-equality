@@ -49,6 +49,26 @@ Spring Data auto-wires the `*Impl` by naming convention. Follow this trio for an
 ### S3 presigned-URL caching
 `FileViewUrlCache#getFileUrl(Long)` is `@Cacheable(cacheNames = CacheConfig.FILE_VIEW_URL, key = "#id")`. Cache TTL (`FILE_VIEW_URL_TTL = 50m`) is passed as the presigned-URL `signatureDuration`, so cache entry and S3 signature expire together. `CommonFileSchedule` runs daily at 01:00 Asia/Seoul to purge `TEMPORARY` files older than a day via `FileBatchService.temporaryFileRemove`.
 
+### Download filename rewrite hook
+`S3FileService` does not hardcode filename logic per domain. Instead it injects `List<FileNameResolver>` (interface in `file/service/`) and merges every resolver's `Map<Long, String>` for both single-file (`fileDownload`) and ZIP (`downloadFilesAsZip`) paths. A fileId without a resolver match falls back to the original `CommonFile.fileName`. The shelter implementation (`ShelterFileNameResolver`) renames `SHELTER_IMAGE` files to `{시설명}_{카테고리한글}_{n}.{ext}`, where `n` is the 1-based index inside the same `(shelterId, category)` group ordered by `ShelterImage.id` ASC. Add new domain rules by registering another `FileNameResolver` bean — no changes to `S3FileService` required.
+
+### Shelter survey-status gate
+`Shelter.SHELTER_SURVEY_STATUS` (enum `ShelterSurveyStatus`: `NOT_INVESTIGATED` / `INVESTIGATED` / `RE_INVESTIGATION`) decides whether `POST /api/shelter-reports` accepts a new citizen submission. The check lives at the top of `ShelterInfoReportService#createReport` and is the **only** place it runs — controllers do not pre-check it.
+
+State transitions:
+- `approve(reportId)` → `Shelter.applyReport(report)` sets `surveyStatus = INVESTIGATED` and copies signage/accessibility fields. Sibling PENDING reports for the same shelter are auto-rejected in the same transaction. Any **previous APPROVED** report on the same shelter has its attachments cleaned (`ShelterImage` rows deleted, `CommonFile` flipped back to TEMPORARY for the daily batch); the previous report's `requestStatus` stays APPROVED for history.
+- `requestReInvestigation(reportId)` (admin only, `POST /api/admin/reports/{id}/re-investigate`) → `Shelter.markReInvestigation()` flips it to `RE_INVESTIGATION`. The originating report stays `APPROVED`.
+- Submissions while `RE_INVESTIGATION`: `UserPasswordValidator.validate(password)` is invoked, so the controller forwards the `X-User-Password` header (declared `required = false` on the controller, enforced by the service).
+
+### Admin-only shelter fields
+`Shelter.name`, `Shelter.builtYear`, `Shelter.shelterType`, `Shelter.safetyGrade` are not part of citizen submissions:
+- `ShelterInfoReport` no longer carries `SHELTER_NAME` / `SHELTER_BUILT_YEAR` / `SHELTER_SAFETY_GRADE` columns or fields.
+- `Shelter.applyReport()` does **not** copy name/builtYear/shelterType/safetyGrade.
+- The only write path is `PUT /api/admin/shelters/{id}` → `AdminShelterService.updateAdminEditableFields` → `Shelter.updateAdminEditableFields(name, builtYear, shelterType, safetyGrade)`.
+
+### Search keyword scope
+`ShelterRepository.search(keyword, pageable)` matches `LIKE %keyword%` against three columns: `name`, `address`, and `oldAddress`. Add new searchable columns there (the JPQL is hand-written, not Specification-based).
+
 ## Conventions
 
 - Entities extend `DateSuperClass` for audit dates; column names use SNAKE_CASE uppercase (`SHELTER_ID`, `CREATE_DATE`).
