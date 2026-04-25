@@ -9,9 +9,7 @@ import java.time.LocalDateTime;
 public record ShelterReportListResponse(
         Long id,
         Long shelterId,
-        String name,
-        Integer builtYear,
-        Integer safetyGrade,
+        String shelterName,
         String signageLanguage,
         Boolean accessibleToilet,
         Boolean ramp,
@@ -22,14 +20,12 @@ public record ShelterReportListResponse(
         ShelterInfoReportStatus requestStatus,
         LocalDateTime createDate
 ) {
-    public static ShelterReportListResponse from(ShelterInfoReport r) {
+    public static ShelterReportListResponse from(ShelterInfoReport r, String shelterName) {
         ShelterAccessibility a = r.getAccessibility();
         return new ShelterReportListResponse(
                 r.getId(),
                 r.getShelterId(),
-                r.getName(),
-                r.getBuiltYear(),
-                r.getSafetyGrade(),
+                shelterName,
                 r.getSignageLanguage(),
                 a != null ? a.getAccessibleToilet() : null,
                 a != null ? a.getRamp() : null,

@@ -28,18 +28,6 @@ public class ShelterInfoReport extends DateSuperClass {
     @Column(name = "SHELTER_ID")
     private Long shelterId;
 
-    // 현장 확인 시설명
-    @Column(name = "SHELTER_NAME")
-    private String name;
-
-    // 건축 연도
-    @Column(name = "SHELTER_BUILT_YEAR")
-    private Integer builtYear;
-
-    // 안전 등급(내진설계)
-    @Column(name = "SHELTER_SAFETY_GRADE")
-    private Integer safetyGrade;
-
     // 안내문 언어
     @Column(name = "SHELTER_SIGNAGE_LANGUAGE")
     private String signageLanguage;
@@ -66,9 +54,6 @@ public class ShelterInfoReport extends DateSuperClass {
     }
 
     public void update(
-            String name,
-            Integer builtYear,
-            Integer safetyGrade,
             String signageLanguage,
             Boolean accessibleToilet,
             Boolean ramp,
@@ -77,9 +62,6 @@ public class ShelterInfoReport extends DateSuperClass {
             String etcFacilities,
             String requestNote
     ) {
-        this.name = name;
-        this.builtYear = builtYear;
-        this.safetyGrade = safetyGrade;
         this.signageLanguage = signageLanguage;
         this.accessibility = ShelterAccessibility.builder()
                 .accessibleToilet(accessibleToilet)

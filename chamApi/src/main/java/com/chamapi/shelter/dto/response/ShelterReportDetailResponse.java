@@ -2,10 +2,10 @@ package com.chamapi.shelter.dto.response;
 
 import com.chamapi.shelter.entity.Shelter;
 import com.chamapi.shelter.entity.ShelterAccessibility;
-import com.chamapi.shelter.entity.ShelterImage;
 import com.chamapi.shelter.entity.ShelterInfoReport;
 import com.chamapi.shelter.enums.ShelterImageCategory;
 import com.chamapi.shelter.enums.ShelterInfoReportStatus;
+import com.chamapi.shelter.enums.ShelterSurveyStatus;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -15,9 +15,7 @@ public record ShelterReportDetailResponse(
         Long shelterId,
         String shelterName,
         String shelterAddress,
-        String name,
-        Integer builtYear,
-        Integer safetyGrade,
+        ShelterSurveyStatus shelterSurveyStatus,
         String signageLanguage,
         Boolean accessibleToilet,
         Boolean ramp,
@@ -49,9 +47,7 @@ public record ShelterReportDetailResponse(
                 r.getShelterId(),
                 shelter != null ? shelter.getName() : null,
                 shelter != null ? shelter.getAddress() : null,
-                r.getName(),
-                r.getBuiltYear(),
-                r.getSafetyGrade(),
+                shelter != null ? shelter.getSurveyStatus() : null,
                 r.getSignageLanguage(),
                 a != null ? a.getAccessibleToilet() : null,
                 a != null ? a.getRamp() : null,

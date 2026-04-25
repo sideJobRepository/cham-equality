@@ -26,4 +26,12 @@ public interface ShelterInfoReportRepository extends JpaRepository<ShelterInfoRe
             @Param("shelterIds") Collection<Long> shelterIds,
             @Param("status") ShelterInfoReportStatus status
     );
+
+    @Query("SELECT r FROM ShelterInfoReport r " +
+            "WHERE r.requestStatus = com.chamapi.shelter.enums.ShelterInfoReportStatus.PENDING " +
+            "  AND r.shelterId IN (" +
+            "       SELECT s.id FROM Shelter s " +
+            "       WHERE s.surveyStatus = com.chamapi.shelter.enums.ShelterSurveyStatus.RE_INVESTIGATION" +
+            "  )")
+    Page<ShelterInfoReport> findReInvestigationPending(Pageable pageable);
 }

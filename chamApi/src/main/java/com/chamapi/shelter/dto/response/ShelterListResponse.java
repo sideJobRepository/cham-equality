@@ -2,11 +2,15 @@ package com.chamapi.shelter.dto.response;
 
 import com.chamapi.shelter.entity.Shelter;
 import com.chamapi.shelter.entity.ShelterAccessibility;
+import com.chamapi.shelter.enums.ShelterSurveyStatus;
+import com.chamapi.shelter.enums.ShelterType;
 
 public record ShelterListResponse(
         Long id,
         String name,
+        ShelterType shelterType,
         String address,
+        String oldAddress,
         String latitude,
         String longitude,
         Integer area,
@@ -21,6 +25,7 @@ public record ShelterListResponse(
         Boolean elevator,
         Boolean brailleBlock,
         String etcFacilities,
+        ShelterSurveyStatus surveyStatus,
         Integer pendingReportCount
 ) {
     public static ShelterListResponse from(Shelter s, Integer pendingReportCount) {
@@ -28,7 +33,9 @@ public record ShelterListResponse(
         return new ShelterListResponse(
                 s.getId(),
                 s.getName(),
+                s.getShelterType(),
                 s.getAddress(),
+                s.getOldAddress(),
                 s.getLatitude(),
                 s.getLongitude(),
                 s.getArea(),
@@ -43,6 +50,7 @@ public record ShelterListResponse(
                 a != null ? a.getElevator() : null,
                 a != null ? a.getBrailleBlock() : null,
                 a != null ? a.getEtcFacilities() : null,
+                s.getSurveyStatus(),
                 pendingReportCount
         );
     }

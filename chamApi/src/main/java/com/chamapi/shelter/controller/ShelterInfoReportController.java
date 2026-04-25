@@ -33,10 +33,16 @@ public class ShelterInfoReportController {
     private final ShelterInfoReportService shelterInfoReportService;
     private final UserPasswordValidator userPasswordValidator;
 
-    /** 신고 생성. 인증 없이 누구나 제출 가능하며 생성된 리포트 ID를 돌려준다. */
+    /**
+     * 신고 생성. 인증 없이 누구나 제출 가능하지만, 대피소가 RE_INVESTIGATION 상태면
+     * {@code X-User-Password} 헤더가 필수가 되며 INVESTIGATED 상태면 차단된다.
+     */
     @PostMapping
-    public ApiResponse<Long> createReport(@RequestBody ShelterInfoReportCreateRequest request) {
-        Long id = shelterInfoReportService.createReport(request);
+    public ApiResponse<Long> createReport(
+            @RequestBody ShelterInfoReportCreateRequest request,
+            @RequestHeader(value = UserPasswordValidator.HEADER_NAME, required = false) String password
+    ) {
+        Long id = shelterInfoReportService.createReport(request, password);
         return new ApiResponse<>(200, true, id);
     }
 

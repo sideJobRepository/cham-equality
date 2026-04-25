@@ -9,9 +9,6 @@ import java.util.List;
 
 public record ShelterInfoReportCreateRequest(
         Long shelterId,
-        String name,
-        Integer builtYear,
-        Integer safetyGrade,
         String signageLanguage,
         Boolean accessibleToilet,
         Boolean ramp,
@@ -31,9 +28,6 @@ public record ShelterInfoReportCreateRequest(
     public ShelterInfoReport toEntity() {
         return ShelterInfoReport.builder()
                 .shelterId(shelterId)
-                .name(name)
-                .builtYear(builtYear)
-                .safetyGrade(safetyGrade)
                 .signageLanguage(signageLanguage)
                 .accessibility(ShelterAccessibility.builder()
                         .accessibleToilet(accessibleToilet)

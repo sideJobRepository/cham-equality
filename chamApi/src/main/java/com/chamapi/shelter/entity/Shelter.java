@@ -1,6 +1,8 @@
 package com.chamapi.shelter.entity;
 
 import com.chamapi.common.entity.DateSuperClass;
+import com.chamapi.shelter.enums.ShelterSurveyStatus;
+import com.chamapi.shelter.enums.ShelterType;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -44,6 +46,15 @@ public class Shelter extends DateSuperClass {
     @Column(name = "SHELTER_CAPACITY")
     private Integer capacity;
 
+    // 대피소 구 주소
+    @Column(name = "SHELTER_OLD_ADDRESS")
+    private String oldAddress;
+
+    // 대피소 타입
+    @Column(name = "SHELTER_TYPE")
+    @Enumerated(EnumType.STRING)
+    private ShelterType shelterType;
+
     // 대피소 건축 연도
     @Column(name = "SHELTER_BUILT_YEAR")
     private Integer builtYear;
@@ -72,11 +83,25 @@ public class Shelter extends DateSuperClass {
     @Embedded
     private ShelterAccessibility accessibility;
 
+    // 대피소 조사 상태(시민 제출 가능 여부 게이트)
+    @Column(name = "SHELTER_SURVEY_STATUS")
+    @Enumerated(EnumType.STRING)
+    private ShelterSurveyStatus surveyStatus;
+
     public void applyReport(ShelterInfoReport report) {
-        if (report.getName() != null) this.name = report.getName();
-        if (report.getBuiltYear() != null) this.builtYear = report.getBuiltYear();
-        if (report.getSafetyGrade() != null) this.safetyGrade = report.getSafetyGrade();
         if (report.getSignageLanguage() != null) this.signageLanguage = report.getSignageLanguage();
         if (report.getAccessibility() != null) this.accessibility = report.getAccessibility();
+        this.surveyStatus = ShelterSurveyStatus.INVESTIGATED;
+    }
+
+    public void markReInvestigation() {
+        this.surveyStatus = ShelterSurveyStatus.RE_INVESTIGATION;
+    }
+
+    public void updateAdminEditableFields(String name, Integer builtYear, ShelterType shelterType, Integer safetyGrade) {
+        this.name = name;
+        this.builtYear = builtYear;
+        this.shelterType = shelterType;
+        this.safetyGrade = safetyGrade;
     }
 }

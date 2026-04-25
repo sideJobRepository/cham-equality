@@ -32,6 +32,8 @@ import java.io.OutputStream;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -52,7 +54,11 @@ import java.util.zip.ZipOutputStream;
  *   <li>도메인 저장 시 {@link #modifyFileStatus}로 targetId를 박고 {@code COMPLETE}로 전환.</li>
  *   <li>{@code TEMPORARY}로 1일 이상 방치된 파일은 {@code CommonFileSchedule}이 01:00에 수거.</li>
  * </ol>
- * 조회용 뷰 URL은 {@link FileViewUrlCache}가 50분 TTL로 캐싱한다(서명 만료와 TTL 동기화).
+ *
+ * <p>다운로드 파일명은 {@link FileNameResolver} 빈들이 도메인 규칙으로 재작성한다.
+ * 매핑이 없으면 {@link CommonFile#getFileName()} 원본 그대로 내려간다.
+ *
+ * <p>조회용 뷰 URL은 {@link FileViewUrlCache}가 50분 TTL로 캐싱한다(서명 만료와 TTL 동기화).
  */
 @Service
 @RequiredArgsConstructor
@@ -64,6 +70,7 @@ public class S3FileService {
     private final S3Client s3Client;
     private final CommonFileRepository commonFileRepository;
     private final FileViewUrlCache fileViewUrlCache;
+    private final List<FileNameResolver> fileNameResolvers;
 
     @Value("${spring.cloud.aws.s3.bucket}")
     private String bucket;
@@ -129,16 +136,19 @@ public class S3FileService {
 
     /**
      * 단건 다운로드용 Presigned GET URL 발급(5분 유효).
-     * {@code responseContentDisposition}을 서명에 포함시켜 S3 응답에 attachment 헤더가 박히게 한다.
-     * 그래서 프론트가 URL을 어떻게 열든 브라우저가 다운로드로 처리한다(새 탭 안 열림, CORS 불필요).
+     * {@code responseContentDisposition}을 서명에 박아두기 때문에
+     * 브라우저가 어떻게 GET하든 다운로드로 처리된다(프론트가 fetch 없이 {@code <a download>}만 써도 됨).
+     * 도메인 규칙으로 재작성된 이름이 있으면 그쪽을 우선해서 내려보낸다.
      */
     @Transactional(readOnly = true)
     public String fileDownload(Long id) {
         CommonFile file = commonFileRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("존재 하지 않는 파일 ID 입니다 : " + id));
 
+        String displayName = mergeOverrides(List.of(id)).getOrDefault(id, file.getFileName());
+
         GetObjectRequest getObjectRequest = GetObjectRequest.builder().bucket(bucket)
                 .key(file.getFilePath())
-                .responseContentDisposition(buildContentDisposition(file.getFileName())).build();
+                .responseContentDisposition(buildContentDisposition(displayName)).build();
 
         GetObjectPresignRequest presignRequest = GetObjectPresignRequest.builder().signatureDuration(Duration.ofMinutes(5)).getObjectRequest(getObjectRequest).build();
 
@@ -160,7 +170,8 @@ public class S3FileService {
     /**
      * 다건 ZIP 다운로드. 서버가 S3에서 파일별 {@link ResponseInputStream}을 열어
      * 즉시 {@link ZipOutputStream}으로 흘려보내는 방식이라 서버 메모리에 Blob을 쌓지 않는다.
-     * 파일명 중복은 {@link #disambiguateName}으로 {@code 사진-2.jpg} 식으로 회피한다.
+     * 도메인 규칙 이름이 있으면 그걸 ZIP 엔트리명으로 쓰고, 중복은 {@link #disambiguateName}으로
+     * {@code 사진-2.jpg} 식으로 회피한다.
      */
     @Transactional(readOnly = true)
     public void downloadFilesAsZip(List<Long> ids, String zipFileName, HttpServletResponse response) throws IOException {
@@ -172,6 +183,8 @@ public class S3FileService {
             throw new IllegalArgumentException("다운로드할 파일을 찾을 수 없습니다");
         }
 
+        Map<Long, String> overrides = mergeOverrides(ids);
+
         response.setContentType("application/zip");
         response.setHeader("Content-Disposition", buildContentDisposition(zipFileName));
 
@@ -179,7 +192,8 @@ public class S3FileService {
         try (OutputStream out = response.getOutputStream();
              ZipOutputStream zos = new ZipOutputStream(out)) {
             for (CommonFile file : files) {
-                String entryName = disambiguateName(taken, file.getFileName());
+                String name = overrides.getOrDefault(file.getId(), file.getFileName());
+                String entryName = disambiguateName(taken, name);
                 zos.putNextEntry(new ZipEntry(entryName));
                 try (ResponseInputStream<GetObjectResponse> s3stream = s3Client.getObject(
                         GetObjectRequest.builder().bucket(bucket).key(file.getFilePath()).build())) {
@@ -200,6 +214,20 @@ public class S3FileService {
         int n = 2;
         while (!taken.add(base + "-" + n + ext)) n++;
         return base + "-" + n + ext;
+    }
+
+    /**
+     * 등록된 모든 {@link FileNameResolver}의 매핑을 합쳐 fileId → 표시명 맵을 만든다.
+     * 같은 fileId에 두 도메인이 모두 응답하면 마지막에 합쳐진 값이 이긴다(현 구조에선 발생 안 함).
+     */
+    private Map<Long, String> mergeOverrides(Collection<Long> fileIds) {
+        if (fileNameResolvers == null || fileNameResolvers.isEmpty()) return Map.of();
+        Map<Long, String> merged = new HashMap<>();
+        for (FileNameResolver resolver : fileNameResolvers) {
+            Map<Long, String> partial = resolver.resolveOverrideNames(fileIds);
+            if (partial != null && !partial.isEmpty()) merged.putAll(partial);
+        }
+        return merged;
     }
 
     /**
@@ -237,5 +265,5 @@ public class S3FileService {
                 .map(fileViewUrlCache::getFileUrl)
                 .toList();
     }
-    
+
 }
