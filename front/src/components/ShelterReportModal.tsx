@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   createShelterReport,
   fetchShelterReportDetail,
@@ -8,7 +8,7 @@ import {
   type ShelterImageCategory,
   type ShelterReportImageView,
 } from '../api/shelterApi'
-import type { Shelter } from '../types/shelter'
+import { SHELTER_TYPE_LABEL, type Shelter } from '../types/shelter'
 import './ShelterReportModal.css'
 
 type Props = {
@@ -29,29 +29,24 @@ type PendingImage = {
   status: UploadStatus
   fileId: number | null
   errorMessage: string | null
-  category: ShelterImageCategory | ''
-  description: string
+  category: ShelterImageCategory
 }
 
 type ExistingImage = ShelterReportImageView & {
   removed: boolean
 }
 
-const CATEGORY_OPTIONS: { value: ShelterImageCategory; label: string }[] = [
-  { value: 'EXTERIOR', label: '외관' },
-  { value: 'INTERIOR', label: '내부' },
-  { value: 'ENTRANCE', label: '출입구' },
-  { value: 'RAMP', label: '경사로' },
-  { value: 'ELEVATOR', label: '엘리베이터' },
-  { value: 'TOILET', label: '장애인화장실' },
-  { value: 'BRAILLE', label: '점자블록' },
-  { value: 'SIGNAGE', label: '안내문' },
-  { value: 'ETC', label: '기타' },
-]
-
-const CATEGORY_LABEL: Record<string, string> = Object.fromEntries(
-  CATEGORY_OPTIONS.map((o) => [o.value, o.label]),
-)
+const CATEGORY_LABEL: Record<ShelterImageCategory, string> = {
+  EXTERIOR: '외관',
+  INTERIOR: '내부',
+  ENTRANCE: '출입구',
+  RAMP: '경사로',
+  ELEVATOR: '엘리베이터',
+  TOILET: '장애인화장실',
+  BRAILLE: '점자블록',
+  SIGNAGE: '안내문',
+  ETC: '기타',
+}
 
 function fromBool(v: boolean | null | undefined): TriBool {
   if (v === true) return 'true'
@@ -67,16 +62,12 @@ function toBool(v: TriBool): boolean | null {
 
 export default function ShelterReportModal({ shelter, reportId, onClose, onSubmitted }: Props) {
   const isEdit = reportId !== undefined
+  const isReInvestigation = !isEdit && shelter.surveyStatus === 'RE_INVESTIGATION'
+  const requiresPassword = isEdit || isReInvestigation
+
   const [loading, setLoading] = useState(isEdit)
   const [loadError, setLoadError] = useState<string | null>(null)
 
-  const [name, setName] = useState(isEdit ? '' : shelter.name ?? '')
-  const [builtYear, setBuiltYear] = useState<string>(
-    isEdit ? '' : shelter.builtYear?.toString() ?? '',
-  )
-  const [safetyGrade, setSafetyGrade] = useState<string>(
-    isEdit ? '' : shelter.safetyGrade?.toString() ?? '',
-  )
   const [signageLanguage, setSignageLanguage] = useState(isEdit ? '' : shelter.signageLanguage ?? '')
   const [accessibleToilet, setAccessibleToilet] = useState<TriBool>(
     isEdit ? '' : fromBool(shelter.accessibleToilet),
@@ -99,9 +90,6 @@ export default function ShelterReportModal({ shelter, reportId, onClose, onSubmi
     setLoading(true)
     fetchShelterReportDetail(reportId)
       .then((d) => {
-        setName(d.name ?? '')
-        setBuiltYear(d.builtYear?.toString() ?? '')
-        setSafetyGrade(d.safetyGrade?.toString() ?? '')
         setSignageLanguage(d.signageLanguage ?? '')
         setAccessibleToilet(fromBool(d.accessibleToilet))
         setRamp(fromBool(d.ramp))
@@ -150,7 +138,10 @@ export default function ShelterReportModal({ shelter, reportId, onClose, onSubmi
       })
   }
 
-  const handleFilesSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFilesPicked = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    category: ShelterImageCategory,
+  ) => {
     const picked = Array.from(e.target.files ?? [])
     if (picked.length === 0) return
     const newImages: PendingImage[] = picked.map((file) => ({
@@ -160,8 +151,7 @@ export default function ShelterReportModal({ shelter, reportId, onClose, onSubmi
       status: 'uploading',
       fileId: null,
       errorMessage: null,
-      category: '',
-      description: '',
+      category,
     }))
     setImages((prev) => [...prev, ...newImages])
     newImages.forEach(startUpload)
@@ -189,10 +179,29 @@ export default function ShelterReportModal({ shelter, reportId, onClose, onSubmi
     )
   }
 
+  const newImagesByCategory = useMemo(() => {
+    const map: Record<ShelterImageCategory, PendingImage[]> = {
+      EXTERIOR: [], INTERIOR: [], ENTRANCE: [], RAMP: [], ELEVATOR: [],
+      TOILET: [], BRAILLE: [], SIGNAGE: [], ETC: [],
+    }
+    images.forEach((img) => map[img.category].push(img))
+    return map
+  }, [images])
+
+  const existingByCategory = useMemo(() => {
+    const map: Record<string, ExistingImage[]> = {}
+    existingImages.forEach((img) => {
+      const key = img.category ?? 'UNKNOWN'
+      if (!map[key]) map[key] = []
+      map[key].push(img)
+    })
+    return map
+  }, [existingImages])
+
   const uploadingCount = images.filter((img) => img.status === 'uploading').length
   const failedCount = images.filter((img) => img.status === 'failed').length
   const canSubmit =
-    !submitting && !loading && uploadingCount === 0 && (!isEdit || userPassword.trim().length > 0)
+    !submitting && !loading && uploadingCount === 0 && (!requiresPassword || userPassword.trim().length > 0)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -207,24 +216,24 @@ export default function ShelterReportModal({ shelter, reportId, onClose, onSubmi
       )
 
       if (!isEdit) {
-        await createShelterReport({
-          shelterId: shelter.id,
-          name: name.trim() || null,
-          builtYear: builtYear ? Number(builtYear) : null,
-          safetyGrade: safetyGrade ? Number(safetyGrade) : null,
-          signageLanguage: signageLanguage.trim() || null,
-          accessibleToilet: toBool(accessibleToilet),
-          ramp: toBool(ramp),
-          elevator: toBool(elevator),
-          brailleBlock: toBool(brailleBlock),
-          etcFacilities: etcFacilities.trim() || null,
-          requestNote: requestNote.trim() || null,
-          images: doneImages.map((img) => ({
-            fileId: img.fileId,
-            category: img.category || null,
-            description: img.description.trim() || null,
-          })),
-        })
+        await createShelterReport(
+          {
+            shelterId: shelter.id,
+            signageLanguage: signageLanguage.trim() || null,
+            accessibleToilet: toBool(accessibleToilet),
+            ramp: toBool(ramp),
+            elevator: toBool(elevator),
+            brailleBlock: toBool(brailleBlock),
+            etcFacilities: etcFacilities.trim() || null,
+            requestNote: requestNote.trim() || null,
+            images: doneImages.map((img) => ({
+              fileId: img.fileId,
+              category: img.category,
+              description: null,
+            })),
+          },
+          isReInvestigation ? userPassword : undefined,
+        )
         onSubmitted('조사 정보가 접수되었습니다 (승인 대기)')
       } else {
         const imageChanges: ImageChange[] = [
@@ -242,17 +251,14 @@ export default function ShelterReportModal({ shelter, reportId, onClose, onSubmi
             (img): ImageChange => ({
               fileId: img.fileId,
               status: 'CREATE',
-              category: img.category || null,
-              description: img.description.trim() || null,
+              category: img.category,
+              description: null,
             }),
           ),
         ]
         await updateShelterReport(
           reportId!,
           {
-            name: name.trim() || null,
-            builtYear: builtYear ? Number(builtYear) : null,
-            safetyGrade: safetyGrade ? Number(safetyGrade) : null,
             signageLanguage: signageLanguage.trim() || null,
             accessibleToilet: toBool(accessibleToilet),
             ramp: toBool(ramp),
@@ -300,32 +306,26 @@ export default function ShelterReportModal({ shelter, reportId, onClose, onSubmi
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
         <header className="modal-header">
-          <h2>{isEdit ? '대피소 조사 정보 수정' : '대피소 조사 정보 제보'}</h2>
+          <h2>{isEdit ? '대피소 조사 정보 수정' : '대피소 조사 정보'}</h2>
           <button type="button" className="modal-close" onClick={onClose}>✕</button>
         </header>
 
         <div className="modal-info">
-          <div><span>주소</span>{shelter.address ?? '-'}</div>
+          <div><span>시설명</span>{shelter.name}</div>
+          <div><span>대피소 타입</span>{shelter.shelterType ? SHELTER_TYPE_LABEL[shelter.shelterType] : '-'}</div>
+          <div><span>주소</span>{shelter.address ?? '-'}{shelter.oldAddress ? ` (${shelter.oldAddress})` : ''}</div>
           <div><span>관리기관</span>{shelter.managingAuthorityName ?? '-'} · {shelter.managingAuthorityTelNo ?? '-'}</div>
+          <div><span>건축연도</span>{shelter.builtYear ?? '-'}</div>
+          <div><span>안전등급</span>{shelter.safetyGrade ?? '-'}</div>
+          <div className="readonly-note">위 항목은 관리자만 수정할 수 있습니다.</div>
+          {isReInvestigation && (
+            <div className="reinvestigation-notice">
+              재조사 요청된 대피소입니다. 제출하려면 수정 비밀번호가 필요합니다.
+            </div>
+          )}
         </div>
 
         <form className="modal-body" onSubmit={handleSubmit}>
-          <div className="field">
-            <label>시설명 (현장 확인)</label>
-            <input value={name} onChange={(e) => setName(e.target.value)} />
-          </div>
-
-          <div className="field-row">
-            <div className="field">
-              <label>건축 연도</label>
-              <input type="number" value={builtYear} onChange={(e) => setBuiltYear(e.target.value)} />
-            </div>
-            <div className="field">
-              <label>안전 등급 (내진설계)</label>
-              <input type="number" value={safetyGrade} onChange={(e) => setSafetyGrade(e.target.value)} />
-            </div>
-          </div>
-
           <div className="field">
             <label>안내문 언어</label>
             <input
@@ -336,19 +336,75 @@ export default function ShelterReportModal({ shelter, reportId, onClose, onSubmi
           </div>
 
           <fieldset className="accessibility">
-            <legend>이동약자 편의시설</legend>
-            <TriBoolRow label="장애인 화장실" value={accessibleToilet} onChange={setAccessibleToilet} />
-            <TriBoolRow label="경사로" value={ramp} onChange={setRamp} />
-            <TriBoolRow label="엘리베이터" value={elevator} onChange={setElevator} />
-            <TriBoolRow label="점자블록" value={brailleBlock} onChange={setBrailleBlock} />
-            <div className="field">
-              <label>기타 접근성 시설</label>
-              <input
-                value={etcFacilities}
-                onChange={(e) => setEtcFacilities(e.target.value)}
-                placeholder="예: 자동문, 수유실, 시각장애인 안내방송"
-              />
+            <legend>이동약자 편의시설 (시설별 사진 첨부)</legend>
+
+            <AccessibilityRow
+              label="장애인 화장실"
+              category="TOILET"
+              tri={accessibleToilet}
+              onTri={setAccessibleToilet}
+              pending={newImagesByCategory.TOILET}
+              existing={existingByCategory.TOILET ?? []}
+              onPick={(e) => handleFilesPicked(e, 'TOILET')}
+              onRetry={retryUpload}
+              onRemovePending={removeImage}
+              onToggleExistingRemoved={toggleExistingRemoved}
+            />
+            <AccessibilityRow
+              label="경사로"
+              category="RAMP"
+              tri={ramp}
+              onTri={setRamp}
+              pending={newImagesByCategory.RAMP}
+              existing={existingByCategory.RAMP ?? []}
+              onPick={(e) => handleFilesPicked(e, 'RAMP')}
+              onRetry={retryUpload}
+              onRemovePending={removeImage}
+              onToggleExistingRemoved={toggleExistingRemoved}
+            />
+            <AccessibilityRow
+              label="엘리베이터"
+              category="ELEVATOR"
+              tri={elevator}
+              onTri={setElevator}
+              pending={newImagesByCategory.ELEVATOR}
+              existing={existingByCategory.ELEVATOR ?? []}
+              onPick={(e) => handleFilesPicked(e, 'ELEVATOR')}
+              onRetry={retryUpload}
+              onRemovePending={removeImage}
+              onToggleExistingRemoved={toggleExistingRemoved}
+            />
+            <AccessibilityRow
+              label="점자블록"
+              category="BRAILLE"
+              tri={brailleBlock}
+              onTri={setBrailleBlock}
+              pending={newImagesByCategory.BRAILLE}
+              existing={existingByCategory.BRAILLE ?? []}
+              onPick={(e) => handleFilesPicked(e, 'BRAILLE')}
+              onRetry={retryUpload}
+              onRemovePending={removeImage}
+              onToggleExistingRemoved={toggleExistingRemoved}
+            />
+
+            <div className="field-row etc-row">
+              <div className="field" style={{ flex: 1 }}>
+                <label>기타 접근성 시설</label>
+                <input
+                  value={etcFacilities}
+                  onChange={(e) => setEtcFacilities(e.target.value)}
+                  placeholder="예: 자동문, 수유실, 시각장애인 안내방송"
+                />
+              </div>
+              <FilePickerButton onPick={(e) => handleFilesPicked(e, 'ETC')} />
             </div>
+            <CategoryImageStrip
+              pending={newImagesByCategory.ETC}
+              existing={existingByCategory.ETC ?? []}
+              onRetry={retryUpload}
+              onRemovePending={removeImage}
+              onToggleExistingRemoved={toggleExistingRemoved}
+            />
           </fieldset>
 
           <div className="field">
@@ -356,113 +412,61 @@ export default function ShelterReportModal({ shelter, reportId, onClose, onSubmi
             <textarea value={requestNote} onChange={(e) => setRequestNote(e.target.value)} rows={3} />
           </div>
 
-          {isEdit && existingImages.length > 0 && (
-            <fieldset className="images">
-              <legend>기존 사진 ({existingImages.filter((i) => !i.removed).length} / {existingImages.length}장)</legend>
-              <ul className="image-list">
-                {existingImages.map((img) => (
-                  <li key={img.fileId} className={`image-item ${img.removed ? 'status-removed' : ''}`}>
-                    <div className="image-thumb">
-                      <img src={img.url} alt={img.fileName} />
-                      {img.removed && <div className="image-overlay error">삭제 예정</div>}
-                    </div>
-                    <div className="image-meta">
-                      <div className="image-name">{img.fileName}</div>
-                      {img.category && (
-                        <span className="existing-cat-tag">
-                          {CATEGORY_LABEL[img.category] ?? img.category}
-                        </span>
-                      )}
-                      {img.description && <div className="existing-desc">{img.description}</div>}
-                    </div>
-                    <button
-                      type="button"
-                      className="image-remove existing-toggle"
-                      onClick={() => toggleExistingRemoved(img.fileId)}
-                    >
-                      {img.removed ? '복구' : '삭제'}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </fieldset>
-          )}
-
-          <fieldset className="images">
-            <legend>{isEdit ? '추가할 사진' : '현장 사진'}</legend>
-            <div className="image-add">
-              <label className="file-picker">
-                <input type="file" accept="image/*" multiple onChange={handleFilesSelected} />
-                사진 추가
-              </label>
-              <span className="image-count">
-                {images.length}장
-                {uploadingCount > 0 && ` · 업로드 중 ${uploadingCount}`}
-                {failedCount > 0 && ` · 실패 ${failedCount}`}
-              </span>
-            </div>
-
-            {images.length > 0 && (
-              <ul className="image-list">
-                {images.map((img) => (
-                  <li key={img.key} className={`image-item status-${img.status}`}>
-                    <div className="image-thumb">
-                      <img src={img.previewUrl} alt={img.file.name} />
-                      {img.status === 'uploading' && <div className="image-overlay">업로드 중…</div>}
-                      {img.status === 'failed' && <div className="image-overlay error">실패</div>}
-                    </div>
-                    <div className="image-meta">
-                      <div className="image-name">{img.file.name}</div>
-                      <select
-                        value={img.category}
-                        onChange={(e) =>
-                          updateImage(img.key, {
-                            category: (e.target.value || '') as ShelterImageCategory | '',
-                          })
-                        }
-                        disabled={img.status !== 'done'}
+          {(existingByCategory.EXTERIOR?.length ||
+            existingByCategory.INTERIOR?.length ||
+            existingByCategory.ENTRANCE?.length ||
+            existingByCategory.SIGNAGE?.length ||
+            existingByCategory.UNKNOWN?.length) && (
+              <fieldset className="images">
+                <legend>기타 기존 사진</legend>
+                <ul className="image-list">
+                  {[...(existingByCategory.EXTERIOR ?? []),
+                    ...(existingByCategory.INTERIOR ?? []),
+                    ...(existingByCategory.ENTRANCE ?? []),
+                    ...(existingByCategory.SIGNAGE ?? []),
+                    ...(existingByCategory.UNKNOWN ?? []),
+                  ].map((img) => (
+                    <li key={img.fileId} className={`image-item ${img.removed ? 'status-removed' : ''}`}>
+                      <div className="image-thumb">
+                        <img src={img.url} alt={img.fileName} />
+                        {img.removed && <div className="image-overlay error">삭제 예정</div>}
+                      </div>
+                      <div className="image-meta">
+                        <div className="image-name">{img.fileName}</div>
+                        {img.category && (
+                          <span className="existing-cat-tag">{CATEGORY_LABEL[img.category as ShelterImageCategory] ?? img.category}</span>
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        className="image-remove existing-toggle"
+                        onClick={() => toggleExistingRemoved(img.fileId)}
                       >
-                        <option value="">카테고리 선택</option>
-                        {CATEGORY_OPTIONS.map((opt) => (
-                          <option key={opt.value} value={opt.value}>{opt.label}</option>
-                        ))}
-                      </select>
-                      <input
-                        type="text"
-                        placeholder="설명(선택)"
-                        value={img.description}
-                        onChange={(e) => updateImage(img.key, { description: e.target.value })}
-                        disabled={img.status !== 'done'}
-                      />
-                      {img.status === 'failed' && (
-                        <button type="button" className="retry-btn" onClick={() => retryUpload(img.key)}>
-                          재시도
-                        </button>
-                      )}
-                    </div>
-                    <button type="button" className="image-remove" onClick={() => removeImage(img.key)}>
-                      ✕
-                    </button>
-                  </li>
-                ))}
-              </ul>
+                        {img.removed ? '복구' : '삭제'}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </fieldset>
             )}
-          </fieldset>
 
-          {isEdit && (
+          {requiresPassword && (
             <div className="field edit-password">
-              <label>수정 비밀번호</label>
+              <label>{isEdit ? '수정 비밀번호' : '재조사 제출 비밀번호'}</label>
               <input
                 type="password"
                 value={userPassword}
                 onChange={(e) => setUserPassword(e.target.value)}
-                placeholder="수정 비밀번호"
+                placeholder="비밀번호"
                 autoComplete="off"
               />
             </div>
           )}
 
           {error && <div className="modal-error">{error}</div>}
+          {failedCount > 0 && (
+            <div className="modal-error">실패한 사진 {failedCount}개가 있습니다. 재시도하거나 제거하세요.</div>
+          )}
 
           <footer className="modal-footer">
             <button type="button" onClick={onClose} disabled={submitting}>취소</button>
@@ -482,28 +486,118 @@ export default function ShelterReportModal({ shelter, reportId, onClose, onSubmi
   )
 }
 
-type TriBoolRowProps = {
+type AccessibilityRowProps = {
   label: string
-  value: TriBool
-  onChange: (v: TriBool) => void
+  category: ShelterImageCategory
+  tri: TriBool
+  onTri: (v: TriBool) => void
+  pending: PendingImage[]
+  existing: ExistingImage[]
+  onPick: (e: React.ChangeEvent<HTMLInputElement>) => void
+  onRetry: (key: string) => void
+  onRemovePending: (key: string) => void
+  onToggleExistingRemoved: (fileId: number) => void
 }
 
-function TriBoolRow({ label, value, onChange }: TriBoolRowProps) {
+function AccessibilityRow({
+  label,
+  tri,
+  onTri,
+  pending,
+  existing,
+  onPick,
+  onRetry,
+  onRemovePending,
+  onToggleExistingRemoved,
+}: AccessibilityRowProps) {
   return (
-    <div className="tri-row">
-      <span className="tri-label">{label}</span>
-      <div className="tri-buttons">
-        {(['true', 'false', ''] as TriBool[]).map((v) => (
+    <div className="accessibility-row">
+      <div className="tri-row">
+        <span className="tri-label">{label}</span>
+        <div className="tri-buttons">
+          {(['true', 'false', ''] as TriBool[]).map((v) => (
+            <button
+              type="button"
+              key={v || 'null'}
+              className={tri === v ? 'active' : ''}
+              onClick={() => onTri(v)}
+            >
+              {v === 'true' ? '있음' : v === 'false' ? '없음' : '모름'}
+            </button>
+          ))}
+        </div>
+        <FilePickerButton onPick={onPick} />
+      </div>
+      <CategoryImageStrip
+        pending={pending}
+        existing={existing}
+        onRetry={onRetry}
+        onRemovePending={onRemovePending}
+        onToggleExistingRemoved={onToggleExistingRemoved}
+      />
+    </div>
+  )
+}
+
+function FilePickerButton({ onPick }: { onPick: (e: React.ChangeEvent<HTMLInputElement>) => void }) {
+  return (
+    <label className="file-picker file-picker-inline">
+      <input type="file" accept="image/*" multiple onChange={onPick} />
+      📷 사진 추가
+    </label>
+  )
+}
+
+type StripProps = {
+  pending: PendingImage[]
+  existing: ExistingImage[]
+  onRetry: (key: string) => void
+  onRemovePending: (key: string) => void
+  onToggleExistingRemoved: (fileId: number) => void
+}
+
+function CategoryImageStrip({
+  pending,
+  existing,
+  onRetry,
+  onRemovePending,
+  onToggleExistingRemoved,
+}: StripProps) {
+  if (pending.length === 0 && existing.length === 0) return null
+  return (
+    <ul className="image-list image-strip">
+      {existing.map((img) => (
+        <li key={`existing-${img.fileId}`} className={`image-item ${img.removed ? 'status-removed' : ''}`}>
+          <div className="image-thumb">
+            <img src={img.url} alt={img.fileName} />
+            {img.removed && <div className="image-overlay error">삭제 예정</div>}
+          </div>
           <button
             type="button"
-            key={v || 'null'}
-            className={value === v ? 'active' : ''}
-            onClick={() => onChange(v)}
+            className="image-remove existing-toggle"
+            onClick={() => onToggleExistingRemoved(img.fileId)}
           >
-            {v === 'true' ? '있음' : v === 'false' ? '없음' : '모름'}
+            {img.removed ? '복구' : '삭제'}
           </button>
-        ))}
-      </div>
-    </div>
+        </li>
+      ))}
+      {pending.map((img) => (
+        <li key={img.key} className={`image-item status-${img.status}`}>
+          <div className="image-thumb">
+            <img src={img.previewUrl} alt={img.file.name} />
+            {img.status === 'uploading' && <div className="image-overlay">업로드 중…</div>}
+            {img.status === 'failed' && <div className="image-overlay error">실패</div>}
+          </div>
+          {img.status === 'failed' && (
+            <button type="button" className="retry-btn" onClick={() => onRetry(img.key)}>
+              재시도
+            </button>
+          )}
+          <button type="button" className="image-remove" onClick={() => onRemovePending(img.key)}>
+            ✕
+          </button>
+        </li>
+      ))}
+    </ul>
   )
 }

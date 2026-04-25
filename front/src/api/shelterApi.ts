@@ -1,4 +1,4 @@
-import type { ApiResponse, PageResponse, Shelter } from '../types/shelter'
+import type { ApiResponse, PageResponse, Shelter, ShelterSurveyStatus } from '../types/shelter'
 import { createPresignedUploader } from '../lib/file'
 import { http, useNextUserPassword } from './http'
 
@@ -21,9 +21,6 @@ export type ReportImageItem = {
 
 export type ShelterReportCreateRequest = {
   shelterId: number
-  name: string | null
-  builtYear: number | null
-  safetyGrade: number | null
   signageLanguage: string | null
   accessibleToilet: boolean | null
   ramp: boolean | null
@@ -51,18 +48,34 @@ export type FileUploadResponse = {
   bucketName: string
 }
 
+export type ShelterSearchFilter =
+  | 'COMPLETED'
+  | 'RE_INVESTIGATION'
+  | 'SUBMITTED'
+  | 'NOT_SUBMITTED'
+
 export async function fetchShelters(
   page: number,
   size: number,
   keyword?: string,
+  filter?: ShelterSearchFilter,
 ): Promise<PageResponse<Shelter>> {
   const params: Record<string, string | number> = { page, size }
   if (keyword && keyword.trim()) params.keyword = keyword.trim()
+  if (filter) params.filter = filter
   const { data } = await http.get<ApiResponse<PageResponse<Shelter>>>('/shelters', { params })
   return data.data
 }
 
-export async function createShelterReport(body: ShelterReportCreateRequest): Promise<number> {
+/**
+ * 신고 생성. 대피소가 RE_INVESTIGATION 상태면 userPassword가 필요하다.
+ * NOT_INVESTIGATED 상태에선 비번 없이도 보낼 수 있고, INVESTIGATED 상태면 서버가 400으로 막는다.
+ */
+export async function createShelterReport(
+  body: ShelterReportCreateRequest,
+  userPassword?: string,
+): Promise<number> {
+  if (userPassword) useNextUserPassword(userPassword)
   const { data } = await http.post<ApiResponse<number>>('/shelter-reports', body)
   return data.data
 }
@@ -72,9 +85,7 @@ export type ShelterReportStatus = 'PENDING' | 'APPROVED' | 'REJECTED'
 export type ShelterReportSummary = {
   id: number
   shelterId: number
-  name: string | null
-  builtYear: number | null
-  safetyGrade: number | null
+  shelterName: string | null
   signageLanguage: string | null
   accessibleToilet: boolean | null
   ramp: boolean | null
@@ -97,6 +108,7 @@ export type ShelterReportImageView = {
 export type ShelterReportDetail = ShelterReportSummary & {
   shelterName: string | null
   shelterAddress: string | null
+  shelterSurveyStatus: ShelterSurveyStatus | null
   images: ShelterReportImageView[]
 }
 
@@ -106,6 +118,16 @@ export async function fetchPendingReportsByShelter(
   const { data } = await http.get<ApiResponse<ShelterReportSummary[]>>(
     `/shelter-reports/shelter/${shelterId}`,
     { params: { status: 'PENDING' } },
+  )
+  return data.data
+}
+
+export async function fetchApprovedReportsByShelter(
+  shelterId: number,
+): Promise<ShelterReportSummary[]> {
+  const { data } = await http.get<ApiResponse<ShelterReportSummary[]>>(
+    `/shelter-reports/shelter/${shelterId}`,
+    { params: { status: 'APPROVED' } },
   )
   return data.data
 }
@@ -125,9 +147,6 @@ export type ImageChange = {
 }
 
 export type ShelterReportUpdateRequest = {
-  name: string | null
-  builtYear: number | null
-  safetyGrade: number | null
   signageLanguage: string | null
   accessibleToilet: boolean | null
   ramp: boolean | null

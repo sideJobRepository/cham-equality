@@ -268,3 +268,117 @@
     font-size: 12px;
   }
 }
+
+.row-locked {
+  background: #f5f5f5;
+  color: #777;
+}
+
+.row-locked:hover {
+  background: #ececec;
+}
+
+.badge-locked {
+  background: #ddd;
+  color: #555;
+  padding: 3px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+}
+
+.badge-reinvestigation {
+  background: #f4d39b;
+  color: #7a4f00;
+  padding: 3px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+}
+
+.sub-address {
+  font-size: 11px;
+  color: #888;
+  margin-top: 2px;
+}
+
+.search-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  position: static;
+  max-width: 720px;
+}
+
+.search-input-wrap {
+  position: relative;
+  flex: 1;
+}
+
+.search-input-wrap input {
+  width: 100%;
+  padding: 9px 34px 9px 12px;
+  border: 1px solid #d0d0d0;
+  border-radius: 4px;
+  font-size: 14px;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+.search-input-wrap input:focus {
+  outline: none;
+  border-color: #2c5fa8;
+}
+
+.search-input-wrap .search-clear {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.search-submit {
+  padding: 8px 16px;
+  background: #2c5fa8;
+  color: #fff;
+  border: 1px solid #2c5fa8;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.search-submit:hover {
+  background: #234e8a;
+}
+
+.status-filter {
+  padding: 8px 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 13px;
+  background: #fff;
+  cursor: pointer;
+}
+
+/* 시민 목록 — 검색 바 모바일 wrap */
+@media (max-width: 640px) {
+  .search-bar {
+    flex-wrap: wrap;
+    max-width: none;
+  }
+
+  .search-input-wrap {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+
+  .status-filter {
+    flex: 1;
+    min-height: 40px;
+    font-size: 14px;
+  }
+
+  .search-submit {
+    flex: 0 0 auto;
+    min-height: 40px;
+  }
+}

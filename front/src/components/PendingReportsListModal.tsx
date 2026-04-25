@@ -72,7 +72,6 @@ export default function PendingReportsListModal({ shelter, onClose, onSelect }: 
                     </span>
                   </div>
                   <div className="pending-item-body">
-                    <div className="pending-item-name">{r.name ?? '(시설명 미입력)'}</div>
                     <div className="pending-item-grid">
                       <span>화장실 {yn(r.accessibleToilet)}</span>
                       <span>경사로 {yn(r.ramp)}</span>

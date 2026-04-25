@@ -1,14 +1,22 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { fetchShelters } from '../api/shelterApi'
+import { fetchShelters, type ShelterSearchFilter } from '../api/shelterApi'
 import { getAdminPassword } from '../api/adminApi'
 import ShelterReportModal from '../components/ShelterReportModal'
 import PendingReportsListModal from '../components/PendingReportsListModal'
-import type { PageResponse, Shelter } from '../types/shelter'
+import ShelterInfoViewModal from '../components/ShelterInfoViewModal'
+import { SHELTER_TYPE_LABEL, type PageResponse, type Shelter } from '../types/shelter'
 import './ShelterListPage.css'
 
 const PAGE_SIZE = 20
-const SEARCH_DEBOUNCE_MS = 300
+
+const FILTER_OPTIONS: { value: '' | ShelterSearchFilter; label: string }[] = [
+  { value: '', label: '전체' },
+  { value: 'SUBMITTED', label: '제출됨' },
+  { value: 'COMPLETED', label: '완료됨' },
+  { value: 'NOT_SUBMITTED', label: '미제출' },
+  { value: 'RE_INVESTIGATION', label: '재조사' },
+]
 
 function yn(value: boolean | null): string {
   if (value === null || value === undefined) return '-'
@@ -21,44 +29,57 @@ type ReportModalState =
 
 export default function ShelterListPage() {
   const [keyword, setKeyword] = useState('')
-  const [debouncedKeyword, setDebouncedKeyword] = useState('')
+  const [submittedKeyword, setSubmittedKeyword] = useState('')
+  const [filter, setFilter] = useState<'' | ShelterSearchFilter>('')
   const [page, setPage] = useState(0)
   const [data, setData] = useState<PageResponse<Shelter> | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [reportModal, setReportModal] = useState<ReportModalState | null>(null)
   const [pendingList, setPendingList] = useState<Shelter | null>(null)
+  const [infoView, setInfoView] = useState<Shelter | null>(null)
   const [flash, setFlash] = useState<string | null>(null)
-
-  useEffect(() => {
-    const t = setTimeout(() => {
-      setDebouncedKeyword(keyword)
-      setPage(0)
-    }, SEARCH_DEBOUNCE_MS)
-    return () => clearTimeout(t)
-  }, [keyword])
 
   const load = useCallback(() => {
     setLoading(true)
     setError(null)
-    fetchShelters(page, PAGE_SIZE, debouncedKeyword)
+    fetchShelters(page, PAGE_SIZE, submittedKeyword, filter || undefined)
       .then(setData)
       .catch((e: unknown) => {
         const msg = e instanceof Error ? e.message : '알 수 없는 오류'
         setError(msg)
       })
       .finally(() => setLoading(false))
-  }, [page, debouncedKeyword])
+  }, [page, submittedKeyword, filter])
 
   useEffect(() => {
     load()
   }, [load])
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    setPage(0)
+    setSubmittedKeyword(keyword.trim())
+  }
+
+  const handleFilterChange = (value: '' | ShelterSearchFilter) => {
+    setFilter(value)
+    setPage(0)
+  }
 
   useEffect(() => {
     if (!flash) return
     const t = setTimeout(() => setFlash(null), 2500)
     return () => clearTimeout(t)
   }, [flash])
+
+  const handleRowClick = (s: Shelter) => {
+    if (s.surveyStatus === 'INVESTIGATED') {
+      setInfoView(s)
+      return
+    }
+    setReportModal({ mode: 'create', shelter: s })
+  }
 
   return (
     <div className="shelter-page">
@@ -77,19 +98,41 @@ export default function ShelterListPage() {
         </Link>
       </header>
 
-      <div className="search-bar">
-        <input
-          type="text"
-          value={keyword}
-          onChange={(e) => setKeyword(e.target.value)}
-          placeholder="시설명 또는 주소로 검색"
-        />
-        {keyword && (
-          <button type="button" className="search-clear" onClick={() => setKeyword('')}>
-            ✕
-          </button>
-        )}
-      </div>
+      <form className="search-bar" onSubmit={handleSearchSubmit}>
+        <div className="search-input-wrap">
+          <input
+            type="text"
+            value={keyword}
+            onChange={(e) => setKeyword(e.target.value)}
+            placeholder="시설명, 도로명, 구주소로 검색 (Enter)"
+          />
+          {keyword && (
+            <button
+              type="button"
+              className="search-clear"
+              onClick={() => {
+                setKeyword('')
+                setSubmittedKeyword('')
+                setPage(0)
+              }}
+            >
+              ✕
+            </button>
+          )}
+        </div>
+        <select
+          className="status-filter"
+          value={filter}
+          onChange={(e) => handleFilterChange(e.target.value as '' | ShelterSearchFilter)}
+        >
+          {FILTER_OPTIONS.map((opt) => (
+            <option key={opt.value || 'ALL'} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
+        </select>
+        <button type="submit" className="search-submit">검색</button>
+      </form>
 
       {flash && <div className="shelter-flash">{flash}</div>}
       {loading && <div className="shelter-state">불러오는 중…</div>}
@@ -104,28 +147,33 @@ export default function ShelterListPage() {
                   <th>ID</th>
                   <th>상태</th>
                   <th>시설명</th>
+                  <th>타입</th>
                   <th>주소</th>
-                  <th>면적(㎡)</th>
-                  <th>수용인원</th>
-                  <th>관리기관</th>
-                  <th>전화번호</th>
-                  <th>안내문 언어</th>
                   <th>장애인화장실</th>
                   <th>경사로</th>
                   <th>엘베</th>
                   <th>점자블록</th>
+                  <th>안내문 언어</th>
+                  <th>면적(㎡)</th>
+                  <th>수용인원</th>
+                  <th>관리기관</th>
+                  <th>전화번호</th>
                 </tr>
               </thead>
               <tbody>
                 {data.content.map((s) => (
                   <tr
                     key={s.id}
-                    className="clickable"
-                    onClick={() => setReportModal({ mode: 'create', shelter: s })}
+                    className={`clickable ${s.surveyStatus === 'INVESTIGATED' ? 'row-locked' : ''}`}
+                    onClick={() => handleRowClick(s)}
                   >
                     <td>{s.id}</td>
                     <td className="center">
-                      {s.pendingReportCount > 0 ? (
+                      {s.surveyStatus === 'INVESTIGATED' ? (
+                        <span className="badge badge-locked" title="조사 완료">완료</span>
+                      ) : s.surveyStatus === 'RE_INVESTIGATION' ? (
+                        <span className="badge badge-reinvestigation" title="재조사 중">재조사</span>
+                      ) : s.pendingReportCount > 0 ? (
                         <button
                           type="button"
                           className="badge badge-pending badge-btn"
@@ -142,22 +190,26 @@ export default function ShelterListPage() {
                       )}
                     </td>
                     <td className="ellipsis">{s.name}</td>
-                    <td className="ellipsis">{s.address}</td>
-                    <td className="num">{s.area ?? '-'}</td>
-                    <td className="num">{s.capacity ?? '-'}</td>
-                    <td className="ellipsis">{s.managingAuthorityName ?? '-'}</td>
-                    <td>{s.managingAuthorityTelNo ?? '-'}</td>
-                    <td className="ellipsis">{s.signageLanguage ?? '-'}</td>
+                    <td className="ellipsis">{s.shelterType ? SHELTER_TYPE_LABEL[s.shelterType] : '-'}</td>
+                    <td className="ellipsis">
+                      <div>{s.address}</div>
+                      {s.oldAddress && <div className="sub-address">{s.oldAddress}</div>}
+                    </td>
                     <td className="center">{yn(s.accessibleToilet)}</td>
                     <td className="center">{yn(s.ramp)}</td>
                     <td className="center">{yn(s.elevator)}</td>
                     <td className="center">{yn(s.brailleBlock)}</td>
+                    <td className="ellipsis">{s.signageLanguage ?? '-'}</td>
+                    <td className="num">{s.area ?? '-'}</td>
+                    <td className="num">{s.capacity ?? '-'}</td>
+                    <td className="ellipsis">{s.managingAuthorityName ?? '-'}</td>
+                    <td>{s.managingAuthorityTelNo ?? '-'}</td>
                   </tr>
                 ))}
                 {data.empty && (
                   <tr>
-                    <td colSpan={13} className="center">
-                      {debouncedKeyword ? '검색 결과가 없습니다' : '데이터가 없습니다'}
+                    <td colSpan={14} className="center">
+                      {submittedKeyword || filter ? '검색 결과가 없습니다' : '데이터가 없습니다'}
                     </td>
                   </tr>
                 )}
@@ -182,6 +234,13 @@ export default function ShelterListPage() {
             setPendingList(null)
             setReportModal({ mode: 'edit', shelter, reportId })
           }}
+        />
+      )}
+
+      {infoView && (
+        <ShelterInfoViewModal
+          shelter={infoView}
+          onClose={() => setInfoView(null)}
         />
       )}
 

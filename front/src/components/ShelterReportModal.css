@@ -472,3 +472,178 @@
     padding: 10px;
   }
 }
+
+.accessibility-row {
+  border-top: 1px solid #eee;
+  padding-top: 10px;
+  margin-top: 10px;
+}
+
+.accessibility-row:first-of-type {
+  border-top: none;
+  padding-top: 0;
+  margin-top: 0;
+}
+
+.file-picker-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 10px;
+  background: #f0f3f7;
+  border: 1px dashed #aac;
+  border-radius: 4px;
+  font-size: 12px;
+  color: #2c5fa8;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.file-picker-inline input[type="file"] {
+  display: none;
+}
+
+.image-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 0;
+  list-style: none;
+}
+
+.etc-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.reinvestigation-notice {
+  margin-top: 8px;
+  padding: 8px 10px;
+  background: #fff5e0;
+  color: #7a4f00;
+  border-radius: 4px;
+  font-size: 13px;
+}
+
+.readonly-note {
+  margin-top: 6px;
+  font-size: 11px;
+  color: #888;
+  font-style: italic;
+}
+
+/* 시민 모달 — 모바일/태블릿 보강 (현장 사진 업로드 시나리오 우선) */
+.accessibility-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.image-strip .image-item {
+  width: 96px;
+  flex-direction: column;
+  padding: 4px;
+  gap: 4px;
+}
+
+.image-strip .image-thumb,
+.image-strip .image-thumb img {
+  width: 88px;
+  height: 88px;
+}
+
+.image-strip .image-remove {
+  align-self: flex-end;
+  padding: 2px 6px;
+}
+
+.image-strip .retry-btn {
+  align-self: stretch;
+  text-align: center;
+}
+
+@media (max-width: 640px) {
+  .accessibility-row .tri-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      "label    picker"
+      "buttons  buttons";
+    align-items: center;
+    column-gap: 8px;
+    row-gap: 8px;
+  }
+
+  .accessibility-row .tri-label {
+    grid-area: label;
+    font-weight: 500;
+  }
+
+  .accessibility-row .tri-buttons {
+    grid-area: buttons;
+    width: 100%;
+  }
+
+  .accessibility-row .file-picker-inline {
+    grid-area: picker;
+  }
+
+  .etc-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .etc-row .file-picker-inline {
+    align-self: flex-start;
+  }
+
+  .file-picker-inline {
+    padding: 8px 12px;
+    font-size: 13px;
+    min-height: 36px;
+  }
+
+  .image-strip {
+    gap: 6px;
+  }
+
+  .image-strip .image-item {
+    width: calc(33.33% - 4px);
+  }
+
+  .image-strip .image-thumb,
+  .image-strip .image-thumb img {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1 / 1;
+  }
+
+  .modal-info span {
+    width: 64px;
+    font-size: 12px;
+  }
+
+  .modal-info {
+    line-height: 1.55;
+  }
+
+  .reinvestigation-notice {
+    font-size: 12px;
+  }
+
+  .readonly-note {
+    font-size: 10px;
+  }
+
+  .modal-footer button {
+    min-height: 44px; /* 모바일 터치 영역 */
+  }
+
+  .tri-buttons button {
+    min-height: 36px;
+    font-size: 13px;
+  }
+}
