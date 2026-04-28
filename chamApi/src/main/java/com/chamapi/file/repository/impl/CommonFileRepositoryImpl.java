@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
 
 import static com.chamapi.file.entity.QCommonFile.commonFile;
 
@@ -44,6 +45,16 @@ public class CommonFileRepositoryImpl implements CommonFileQueryRepository {
                         commonFile.targetId.eq(targetId),
                         commonFile.fileType.eq(fileType)
                 )
+                .fetch();
+    }
+    
+    @Override
+    public List<CommonFile> findByPathsAndFileType(Set<String> paths, FileType fileType) {
+        if (paths == null || paths.isEmpty()) return List.of();
+        return queryFactory
+                .selectFrom(commonFile)
+                .where(commonFile.filePath.in(paths)
+                        .and(commonFile.fileType.eq(fileType)))
                 .fetch();
     }
 }
