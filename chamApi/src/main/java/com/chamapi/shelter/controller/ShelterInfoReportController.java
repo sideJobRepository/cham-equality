@@ -1,7 +1,6 @@
 package com.chamapi.shelter.controller;
 
 import com.chamapi.common.dto.ApiResponse;
-import com.chamapi.shelter.auth.UserPasswordValidator;
 import com.chamapi.shelter.dto.request.ShelterInfoReportCreateRequest;
 import com.chamapi.shelter.dto.request.ShelterInfoReportUpdateRequest;
 import com.chamapi.shelter.dto.response.ShelterReportDetailResponse;
@@ -31,8 +30,8 @@ import java.util.List;
 public class ShelterInfoReportController {
 
     private final ShelterInfoReportService shelterInfoReportService;
-    private final UserPasswordValidator userPasswordValidator;
 
+    private static final String REPORT_USER_PASSWORD_HEADER_NAME = "X-User-Password";
     /**
      * 신고 생성. 인증 없이 누구나 제출 가능하지만, 대피소가 RE_INVESTIGATION 상태면
      * {@code X-User-Password} 헤더가 필수가 되며 INVESTIGATED 상태면 차단된다.
@@ -40,7 +39,7 @@ public class ShelterInfoReportController {
     @PostMapping
     public ApiResponse<Long> createReport(
             @RequestBody ShelterInfoReportCreateRequest request,
-            @RequestHeader(value = UserPasswordValidator.HEADER_NAME, required = false) String password
+            @RequestHeader(value = REPORT_USER_PASSWORD_HEADER_NAME, required = false) String password
     ) {
         Long id = shelterInfoReportService.createReport(request, password);
         return new ApiResponse<>(200, true, id);
@@ -70,10 +69,9 @@ public class ShelterInfoReportController {
     public ApiResponse<Void> updateReport(
             @PathVariable Long id,
             @RequestBody ShelterInfoReportUpdateRequest request,
-            @RequestHeader(value = UserPasswordValidator.HEADER_NAME, required = false) String password
+            @RequestHeader(value = REPORT_USER_PASSWORD_HEADER_NAME, required = false) String password
     ) {
-        userPasswordValidator.validate(password);
-        shelterInfoReportService.updateReport(id, request);
+        shelterInfoReportService.updateReport(id, password, request);
         return ApiResponse.of(200, true, "수정 완료");
     }
 }

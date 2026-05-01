@@ -11,8 +11,6 @@ import org.springframework.stereotype.Component;
 @Component
 public class UserPasswordValidator {
 
-    public static final String HEADER_NAME = "X-User-Password";
-
     @Value("${app.report-user-password:}")
     private String userPassword;
 

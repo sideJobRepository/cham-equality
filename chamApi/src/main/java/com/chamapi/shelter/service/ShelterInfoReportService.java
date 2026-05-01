@@ -260,7 +260,9 @@ public class ShelterInfoReportService {
      * 이미지 변경은 CREATE(새 업로드 파일 연결) / DELETE(기존 이미지 제거) 두 종류로 들어온다.
      */
     @Transactional
-    public void updateReport(Long reportId, ShelterInfoReportUpdateRequest request) {
+    public void updateReport(Long reportId, String password, ShelterInfoReportUpdateRequest request) {
+        userPasswordValidator.validate(password);
+
         ShelterInfoReport report = shelterInfoReportRepository.findById(reportId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 리포트 ID: " + reportId));
         report.verifyPending();
