@@ -34,7 +34,7 @@ public class SecurityConfig {
     
     private final String[] resource = {"/css/**", "/images/**", "/js/**", "/favicon.*", "/*/icon-*"};
     
-    @Value("${cors.url}")
+    @Value("${app.cors-url}")
     private String corsUrl;
     
     private final AuthenticationSuccessHandler chamEqualityAuthenticationSuccessHandler;

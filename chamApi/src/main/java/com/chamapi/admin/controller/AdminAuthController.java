@@ -17,10 +17,9 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/admin")
 public class AdminAuthController {
 
-    @Value("${admin.password:}")
+    @Value("${app.admin-password:}")
     private String adminPassword;
 
-    /** 비밀번호 일치 여부만 반환. 실패 시에도 예외 대신 401 코드를 응답 본문에 실어 프론트에서 단순 분기. */
     @PostMapping("/login")
     public ApiResponse<Boolean> login(@RequestBody AdminLoginRequest request) {
         boolean ok = adminPassword != null

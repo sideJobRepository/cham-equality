@@ -41,11 +41,8 @@ logging:
   logback:
     rollingpolicy:
       file-name-pattern: ${LOG_FILE}.%d{yyyy-MM-dd}.%i.log
-cors:
-  url: https://cham-monimap.com
 
-admin:
-  password: ${ADMIN_PASSWORD}
-
-user:
-  password: ${USER_PASSWORD}
+app:
+  cors-url: https://cham-monimap.com
+  admin-password: ${ADMIN_PASSWORD}
+  report-user-password: ${USER_PASSWORD}

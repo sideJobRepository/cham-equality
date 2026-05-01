@@ -11,7 +11,7 @@ public class AdminAuthInterceptor implements HandlerInterceptor {
 
     private static final String HEADER_NAME = "X-Admin-Password";
 
-    @Value("${admin.password:}")
+    @Value("${app.admin-password:}")
     private String adminPassword;
 
     @Override

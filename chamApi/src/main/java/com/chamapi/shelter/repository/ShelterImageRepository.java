@@ -9,8 +9,6 @@ import java.util.List;
 
 public interface ShelterImageRepository extends JpaRepository<ShelterImage, Long> {
 
-    List<ShelterImage> findAllByShelterId(Long shelterId);
-
     List<ShelterImage> findAllByFileIdIn(Collection<Long> fileIds);
 
     List<ShelterImage> findAllByShelterIdAndCategoryOrderByIdAsc(Long shelterId, ShelterImageCategory category);

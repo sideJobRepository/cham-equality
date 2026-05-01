@@ -34,11 +34,7 @@ auth:
   refresh-token:
     expiry: 1d
 
-cors:
-  url: http://localhost:5173
-
-admin:
-  password: ${ADMIN_PASSWORD:}
-
-user:
-  password: ${USER_PASSWORD:}
+app:
+  cors-url: http://localhost:5173
+  admin-password: ${ADMIN_PASSWORD:}
+  report-user-password: ${USER_PASSWORD:}
