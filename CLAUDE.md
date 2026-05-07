@@ -11,7 +11,8 @@ cham-equality/
 ├─ chamApi/            Spring Boot 4.0.3 backend  (see chamApi/CLAUDE.md)
 ├─ front/              React 19 + Vite 8 web     (research + admin, served under /research/)
 ├─ chamApp/            React Native 0.84 app     (template stage — no business logic yet)
-└─ dummy-shelter.sql   Seed data: 100 Seoul shelters across 25 구
+├─ dummy-shelter.sql   Seed data: 100 Seoul shelters across 25 구 (개발용 더미)
+└─ shelter.sql         실제 대전 대피소 1100건 (정보공개청구 4종 통합)
 ```
 
 Each module is self-contained (own `package.json` / `build.gradle`, own `.env`). There is no root workspace manager; commands below are run per-module.
@@ -106,8 +107,34 @@ Citizen reports attach photos **per accessibility facility**, not as a single bu
 ## Database
 
 - MySQL schema `CHAM_EQUALITY`, managed manually (`ddl-auto: none`). See `chamApi/README-db.md` for conventions (BIGINT PK, SNAKE_CASE uppercase columns, every table has `CREATE_DATE`/`MODIFY_DATE`).
-- Seed: load `dummy-shelter.sql` into `CHAM_EQUALITY` after running the app once so table DDL exists. The file's header comment lists the `ALTER TABLE` statements (add `SHELTER_OLD_ADDRESS` / `SHELTER_TYPE` / `SHELTER_SURVEY_STATUS` on `SHELTER`; drop `SHELTER_NAME` / `SHELTER_BUILT_YEAR` from `SHELTER_INFO_REPORT`) that must be applied once before re-seeding.
+- Seed: load `dummy-shelter.sql`(서울 더미 100건) 또는 `shelter.sql`(대전 실데이터 1100건)을 `CHAM_EQUALITY`에 로드. 두 파일 모두 헤더에 동일한 `ALTER TABLE` 가이드(add `SHELTER_OLD_ADDRESS` / `SHELTER_TYPE` / `SHELTER_SURVEY_STATUS` on `SHELTER`; drop `SHELTER_NAME` / `SHELTER_BUILT_YEAR` / `SHELTER_SAFETY_GRADE` from `SHELTER_INFO_REPORT`)를 포함 — 컬럼이 아직 없으면 한 번 적용해야 함. `shelter.sql`은 맨 앞에 `DELETE FROM SHELTER; ALTER TABLE SHELTER AUTO_INCREMENT = 1;`이 있어 기존 행을 비우고 갈아끼움.
 - Tests hit the real DB via the same `.env` — there is no H2 fallback.
+
+### shelter.sql (대전 실데이터 1100건)
+
+정보공개청구로 받은 4개 엑셀(리포지토리 루트의 `*.xlsx`)을 통합. 각 파일은 `ShelterType` enum 값으로 매핑됨:
+
+| 출처 엑셀 | 건수 | `SHELTER_TYPE` | 좌표 | 비고 |
+|---|---|---|---|---|
+| 대전 민방위 대피시설 내역(25.12.31. 기준).xlsx | 614 | `CIVIL_DEFENSE` | DMS→십진수 변환 | 도로명·지번 둘 다 보유 → `SHELTER_OLD_ADDRESS`도 채움 |
+| 임시주거시설목록(대전시).xlsx (내진설계 적용) | 104 | `EARTHQUAKE_TEMPORARY_HOUSING` | 십진수 | 지진겸용 |
+| 임시주거시설목록(대전시).xlsx (내진설계 미적용) | 94 | `DISASTER_TEMPORARY_HOUSING` | 십진수 | 일반 이재민용 |
+| 지진옥외대피장 현황.xlsx (대전 행만) | 249 | `EARTHQUAKE` | **없음** | 전국 자료 중 `관할 시도 = 대전광역시`만 필터 |
+| 화학사고 대피장소 현황 정보공개.xlsx | 39 | `CHEMICAL_ACCIDENT` | **없음** | 서구만. 소재지에 `대전광역시 서구 ` 자동 prefix |
+
+- 위/경도 미보유 288건(`EARTHQUAKE` + `CHEMICAL_ACCIDENT`)은 NULL — 지도 표시하려면 별도 지오코딩 필요.
+- `SHELTER_SAFETY_GRADE`는 4개 자료 어디에도 없어 전부 NULL.
+- `SHELTER_SURVEY_STATUS`는 모든 행 `NOT_INVESTIGATED`로 시작.
+- `SHELTER_OLD_ADDRESS`는 민방위 자료에만 지번 정보가 있어 그 614건만 채워짐, 나머지 486건은 NULL.
+- 임시주거 타입 분기는 엑셀 `내진설계` 컬럼(`적용`/`미적용`)으로 결정 — `ShelterType` 주석의 "지진겸용" vs "이재민" 정의에 맞춤.
+- 민방위 자료의 이동약자 시설 매핑:
+  - `완만한경사로 + 출입구경사로 + 접이식이동경사로 > 0` → `SHELTER_RAMP_WHETHER = 1`
+  - `승강기 + 장애인용에스컬레이터 > 0` → `SHELTER_ELEVATOR_WHETHER = 1`
+  - `점자블록 > 0` → `SHELTER_BRAILLE_BLOCK_WHETHER = 1`
+  - 나머지(휠체어리프트·계단용들것·점자안내판·라디오중계기·라디오수신장치)는 `SHELTER_ETC_ACCESSIBILITY_FACILITIES`에 콤마 결합.
+  - `SHELTER_ACCESSIBLE_TOILET_WHETHER`는 원본에 정보 없음 → NULL.
+- `미입력`, `정보부존재`, 빈 문자열은 모두 NULL로 변환.
+- 재생성/검증 스크립트는 `C:\tmp\gen-shelter-sql.js` / `C:\tmp\verify-shelter2.js` (Node + xlsx 패키지 필요).
 
 ## Environment
 
