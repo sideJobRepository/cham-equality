@@ -44,6 +44,9 @@ public class ShelterInfoReport extends DateSuperClass {
     @Enumerated(EnumType.STRING)
     @Column(name = "REPORT_STATUS")
     private ShelterInfoReportStatus requestStatus;
+    
+    @Column(name = "SHELTER_REPORTER")
+    private String reporter;
 
     public void approve() {
         this.requestStatus = ShelterInfoReportStatus.APPROVED;
@@ -51,6 +54,10 @@ public class ShelterInfoReport extends DateSuperClass {
 
     public void reject() {
         this.requestStatus = ShelterInfoReportStatus.REJECTED;
+    }
+
+    public void updateReporter(String reporter) {
+        this.reporter = reporter;
     }
 
     public void update(

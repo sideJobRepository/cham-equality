@@ -12,6 +12,7 @@ public record ShelterInfoReportUpdateRequest(
         Boolean elevator,
         Boolean brailleBlock,
         String etcFacilities,
+        String reporter,
         String requestNote,
         List<ImageChange> imageChanges
 ) {

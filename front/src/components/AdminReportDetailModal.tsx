@@ -184,6 +184,7 @@ export default function AdminReportDetailModal({
                   </span>
                 </Row>
                 <Row label="접수">{detail.createDate?.slice(0, 16).replace('T', ' ')}</Row>
+                <Row label="신청자">{detail.reporter ?? '-'}</Row>
                 <Row label="안내문 언어">{detail.signageLanguage ?? '-'}</Row>
                 <Row label="장애인화장실">{yn(detail.accessibleToilet)}</Row>
                 <Row label="경사로">{yn(detail.ramp)}</Row>
