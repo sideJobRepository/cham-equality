@@ -114,7 +114,7 @@ export default function AdminReportsPage() {
               <thead>
                 <tr>
                   <th>ID</th>
-                  <th>신청자</th>
+                  <th>조사자</th>
                   <th>대피소</th>
                   <th>시설명</th>
                   <th>안내문</th>

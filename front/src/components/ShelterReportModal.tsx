@@ -213,7 +213,7 @@ export default function ShelterReportModal({ shelter, reportId, onClose, onSubmi
     if (!canSubmit) return
 
     if (!isEdit && reporter.trim().length === 0) {
-      alert('신청자 이름을 입력해주세요.')
+      alert('조사자 이름을 입력해주세요.')
       return
     }
 
@@ -339,7 +339,7 @@ export default function ShelterReportModal({ shelter, reportId, onClose, onSubmi
 
         <form className="modal-body" onSubmit={handleSubmit}>
           <div className="field reporter-field">
-            <label>신청자 이름</label>
+            <label>조사자 이름</label>
             <input
               value={reporter}
               onChange={(e) => setReporter(e.target.value)}
