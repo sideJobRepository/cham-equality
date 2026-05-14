@@ -206,12 +206,16 @@ export default function ShelterReportModal({ shelter, reportId, onClose, onSubmi
     !submitting &&
     !loading &&
     uploadingCount === 0 &&
-    (isEdit || reporter.trim().length > 0) &&
     (!requiresPassword || userPassword.trim().length > 0)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!canSubmit) return
+
+    if (!isEdit && reporter.trim().length === 0) {
+      alert('신청자 이름을 입력해주세요.')
+      return
+    }
 
     setSubmitting(true)
     setError(null)
@@ -341,7 +345,6 @@ export default function ShelterReportModal({ shelter, reportId, onClose, onSubmi
               onChange={(e) => setReporter(e.target.value)}
               placeholder="이름을 입력해주세요"
               autoComplete="name"
-              required={!isEdit}
             />
           </div>
           <div className="field">
