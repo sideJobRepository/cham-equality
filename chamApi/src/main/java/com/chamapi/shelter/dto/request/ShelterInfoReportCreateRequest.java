@@ -15,6 +15,7 @@ public record ShelterInfoReportCreateRequest(
         Boolean elevator,
         Boolean brailleBlock,
         String etcFacilities,
+        String reporter,
         String requestNote,
         List<ImageItem> images
 ) {
@@ -36,6 +37,7 @@ public record ShelterInfoReportCreateRequest(
                         .brailleBlock(brailleBlock)
                         .etcFacilities(etcFacilities)
                         .build())
+                .reporter(reporter)
                 .requestNote(requestNote)
                 .requestStatus(ShelterInfoReportStatus.PENDING)
                 .build();

@@ -16,6 +16,7 @@ public record ShelterReportListResponse(
         Boolean elevator,
         Boolean brailleBlock,
         String etcFacilities,
+        String reporter,
         String requestNote,
         ShelterInfoReportStatus requestStatus,
         LocalDateTime createDate
@@ -32,6 +33,7 @@ public record ShelterReportListResponse(
                 a != null ? a.getElevator() : null,
                 a != null ? a.getBrailleBlock() : null,
                 a != null ? a.getEtcFacilities() : null,
+                r.getReporter(),
                 r.getRequestNote(),
                 r.getRequestStatus(),
                 r.getCreateDate()

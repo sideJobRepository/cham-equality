@@ -114,6 +114,7 @@ export default function AdminReportsPage() {
               <thead>
                 <tr>
                   <th>ID</th>
+                  <th>조사자</th>
                   <th>대피소</th>
                   <th>시설명</th>
                   <th>안내문</th>
@@ -131,6 +132,7 @@ export default function AdminReportsPage() {
                 {data.content.map((r) => (
                   <tr key={r.id} className="clickable" onClick={() => setSelectedId(r.id)}>
                     <td>{r.id}</td>
+                    <td className="ellipsis">{r.reporter ?? '-'}</td>
                     <td>#{r.shelterId}</td>
                     <td className="ellipsis">{r.shelterName ?? '-'}</td>
                     <td className="ellipsis">{r.signageLanguage ?? '-'}</td>
@@ -150,7 +152,7 @@ export default function AdminReportsPage() {
                 ))}
                 {data.empty && (
                   <tr>
-                    <td colSpan={12} className="center">데이터 없음</td>
+                    <td colSpan={13} className="center">데이터 없음</td>
                   </tr>
                 )}
               </tbody>

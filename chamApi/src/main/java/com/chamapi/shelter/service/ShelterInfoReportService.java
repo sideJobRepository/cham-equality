@@ -276,6 +276,9 @@ public class ShelterInfoReportService {
                 request.etcFacilities(),
                 request.requestNote()
         );
+        if (request.reporter() != null) {
+            report.updateReporter(request.reporter());
+        }
 
         List<ShelterInfoReportUpdateRequest.ImageChange> changes = request.imageChanges();
         if (changes == null || changes.isEmpty()) return;

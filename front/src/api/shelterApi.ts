@@ -27,6 +27,7 @@ export type ShelterReportCreateRequest = {
   elevator: boolean | null
   brailleBlock: boolean | null
   etcFacilities: string | null
+  reporter: string | null
   requestNote: string | null
   images: ReportImageItem[]
 }
@@ -92,6 +93,7 @@ export type ShelterReportSummary = {
   elevator: boolean | null
   brailleBlock: boolean | null
   etcFacilities: string | null
+  reporter: string | null
   requestNote: string | null
   requestStatus: ShelterReportStatus
   createDate: string
@@ -153,6 +155,7 @@ export type ShelterReportUpdateRequest = {
   elevator: boolean | null
   brailleBlock: boolean | null
   etcFacilities: string | null
+  reporter: string | null
   requestNote: string | null
   imageChanges: ImageChange[]
 }

@@ -99,6 +99,10 @@
   border-color: #2c5fa8;
 }
 
+.reporter-field input {
+  min-height: 40px;
+}
+
 .field-row {
   display: flex;
   gap: 12px;
@@ -432,6 +436,10 @@
   .field input,
   .field textarea {
     font-size: 16px; /* iOS 자동 확대 방지 */
+  }
+
+  .reporter-field input {
+    min-height: 44px;
   }
 
   .field-row {

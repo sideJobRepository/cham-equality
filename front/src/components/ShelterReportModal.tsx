@@ -78,6 +78,7 @@ export default function ShelterReportModal({ shelter, reportId, onClose, onSubmi
     isEdit ? '' : fromBool(shelter.brailleBlock),
   )
   const [etcFacilities, setEtcFacilities] = useState(isEdit ? '' : shelter.etcFacilities ?? '')
+  const [reporter, setReporter] = useState('')
   const [requestNote, setRequestNote] = useState('')
   const [existingImages, setExistingImages] = useState<ExistingImage[]>([])
   const [images, setImages] = useState<PendingImage[]>([])
@@ -96,6 +97,7 @@ export default function ShelterReportModal({ shelter, reportId, onClose, onSubmi
         setElevator(fromBool(d.elevator))
         setBrailleBlock(fromBool(d.brailleBlock))
         setEtcFacilities(d.etcFacilities ?? '')
+        setReporter(d.reporter ?? '')
         setRequestNote(d.requestNote ?? '')
         setExistingImages(d.images.map((img) => ({ ...img, removed: false })))
       })
@@ -201,11 +203,19 @@ export default function ShelterReportModal({ shelter, reportId, onClose, onSubmi
   const uploadingCount = images.filter((img) => img.status === 'uploading').length
   const failedCount = images.filter((img) => img.status === 'failed').length
   const canSubmit =
-    !submitting && !loading && uploadingCount === 0 && (!requiresPassword || userPassword.trim().length > 0)
+    !submitting &&
+    !loading &&
+    uploadingCount === 0 &&
+    (!requiresPassword || userPassword.trim().length > 0)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!canSubmit) return
+
+    if (!isEdit && reporter.trim().length === 0) {
+      alert('조사자 이름을 입력해주세요.')
+      return
+    }
 
     setSubmitting(true)
     setError(null)
@@ -225,6 +235,7 @@ export default function ShelterReportModal({ shelter, reportId, onClose, onSubmi
             elevator: toBool(elevator),
             brailleBlock: toBool(brailleBlock),
             etcFacilities: etcFacilities.trim() || null,
+            reporter: reporter.trim() || null,
             requestNote: requestNote.trim() || null,
             images: doneImages.map((img) => ({
               fileId: img.fileId,
@@ -265,6 +276,7 @@ export default function ShelterReportModal({ shelter, reportId, onClose, onSubmi
             elevator: toBool(elevator),
             brailleBlock: toBool(brailleBlock),
             etcFacilities: etcFacilities.trim() || null,
+            reporter: reporter.trim() || null,
             requestNote: requestNote.trim() || null,
             imageChanges,
           },
@@ -326,6 +338,15 @@ export default function ShelterReportModal({ shelter, reportId, onClose, onSubmi
         </div>
 
         <form className="modal-body" onSubmit={handleSubmit}>
+          <div className="field reporter-field">
+            <label>조사자 이름</label>
+            <input
+              value={reporter}
+              onChange={(e) => setReporter(e.target.value)}
+              placeholder="이름을 입력해주세요"
+              autoComplete="name"
+            />
+          </div>
           <div className="field">
             <label>안내문 언어</label>
             <input

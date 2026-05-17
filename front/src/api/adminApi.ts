@@ -32,6 +32,7 @@ export type ShelterReport = {
   elevator: boolean | null
   brailleBlock: boolean | null
   etcFacilities: string | null
+  reporter: string | null
   requestNote: string | null
   requestStatus: ShelterReportStatus
   createDate: string
