@@ -1,6 +1,7 @@
 package com.chamapi.shelter.entity;
 
 import com.chamapi.common.entity.DateSuperClass;
+import com.chamapi.place.entity.Place;
 import com.chamapi.shelter.enums.ShelterSurveyStatus;
 import com.chamapi.shelter.enums.ShelterType;
 import jakarta.persistence.*;
@@ -21,6 +22,10 @@ public class Shelter extends DateSuperClass {
     @Column(name = "SHELTER_ID")
     @GeneratedValue(strategy = IDENTITY)
     private Long id;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "PLACE_ID")
+    private Place place;
 
     // 대피소 이름
     @Column(name = "SHELTER_NAME")

@@ -16,28 +16,41 @@ public interface ShelterRepository extends JpaRepository<Shelter, Long> {
                     " OR LOWER(s.address) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
                     " OR LOWER(s.oldAddress) LIKE LOWER(CONCAT('%', :keyword, '%')))";
 
-    @Query("SELECT s FROM Shelter s WHERE " + KEYWORD_PREDICATE)
+    @Query(value = "SELECT s FROM Shelter s LEFT JOIN FETCH s.place WHERE " + KEYWORD_PREDICATE,
+            countQuery = "SELECT COUNT(s) FROM Shelter s WHERE " + KEYWORD_PREDICATE)
     Page<Shelter> search(@Param("keyword") String keyword, Pageable pageable);
 
-    @Query("SELECT s FROM Shelter s WHERE " + KEYWORD_PREDICATE +
-            " AND s.surveyStatus = :status")
+    @Query(value = "SELECT s FROM Shelter s LEFT JOIN FETCH s.place WHERE " + KEYWORD_PREDICATE +
+            " AND s.surveyStatus = :status",
+            countQuery = "SELECT COUNT(s) FROM Shelter s WHERE " + KEYWORD_PREDICATE +
+                    " AND s.surveyStatus = :status")
     Page<Shelter> searchByStatus(
             @Param("keyword") String keyword,
             @Param("status") ShelterSurveyStatus status,
             Pageable pageable
     );
 
-    @Query("SELECT s FROM Shelter s WHERE " + KEYWORD_PREDICATE +
+    @Query(value = "SELECT s FROM Shelter s LEFT JOIN FETCH s.place WHERE " + KEYWORD_PREDICATE +
             " AND s.surveyStatus = com.chamapi.shelter.enums.ShelterSurveyStatus.NOT_INVESTIGATED " +
             " AND EXISTS (SELECT r FROM ShelterInfoReport r " +
             "             WHERE r.shelterId = s.id " +
-            "               AND r.requestStatus = com.chamapi.shelter.enums.ShelterInfoReportStatus.PENDING)")
+            "               AND r.requestStatus = com.chamapi.shelter.enums.ShelterInfoReportStatus.PENDING)",
+            countQuery = "SELECT COUNT(s) FROM Shelter s WHERE " + KEYWORD_PREDICATE +
+                    " AND s.surveyStatus = com.chamapi.shelter.enums.ShelterSurveyStatus.NOT_INVESTIGATED " +
+                    " AND EXISTS (SELECT r FROM ShelterInfoReport r " +
+                    "             WHERE r.shelterId = s.id " +
+                    "               AND r.requestStatus = com.chamapi.shelter.enums.ShelterInfoReportStatus.PENDING)")
     Page<Shelter> searchSubmitted(@Param("keyword") String keyword, Pageable pageable);
 
-    @Query("SELECT s FROM Shelter s WHERE " + KEYWORD_PREDICATE +
+    @Query(value = "SELECT s FROM Shelter s LEFT JOIN FETCH s.place WHERE " + KEYWORD_PREDICATE +
             " AND s.surveyStatus = com.chamapi.shelter.enums.ShelterSurveyStatus.NOT_INVESTIGATED " +
             " AND NOT EXISTS (SELECT r FROM ShelterInfoReport r " +
             "                 WHERE r.shelterId = s.id " +
-            "                   AND r.requestStatus = com.chamapi.shelter.enums.ShelterInfoReportStatus.PENDING)")
+            "                   AND r.requestStatus = com.chamapi.shelter.enums.ShelterInfoReportStatus.PENDING)",
+            countQuery = "SELECT COUNT(s) FROM Shelter s WHERE " + KEYWORD_PREDICATE +
+                    " AND s.surveyStatus = com.chamapi.shelter.enums.ShelterSurveyStatus.NOT_INVESTIGATED " +
+                    " AND NOT EXISTS (SELECT r FROM ShelterInfoReport r " +
+                    "                 WHERE r.shelterId = s.id " +
+                    "                   AND r.requestStatus = com.chamapi.shelter.enums.ShelterInfoReportStatus.PENDING)")
     Page<Shelter> searchNotSubmitted(@Param("keyword") String keyword, Pageable pageable);
 }

@@ -80,3 +80,6 @@ State transitions:
 ## Project-specific slash commands
 
 `.claude/commands/` contains `unittest.md`, `integrationtest.md`, `refactoring.md` — invoked as `/unittest`, `/integrationtest`, `/refactoring`. The integration-test command mandates `@SpringBootTest`, `MockMvc`/`WebTestClient`, `@Transactional` isolation, WireMock for externals, and FixtureMonkey for fixtures.
+
+## rule
+- 세션이 열린 디렉토리와 그 하위 디렉토리를 대상으로만 접근을 허용한다. 상위 디렉토리 탐색은 사용자에게 승인을 요청하고 허가된 경우에만 가능하다.
