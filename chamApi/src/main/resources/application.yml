@@ -42,3 +42,9 @@ app:
 data:
   api:
     key: ${DATA_API_KEY}
+    base-url: https://www.safetydata.go.kr
+    disaster-message-path: /V2/api/DSSP-IF-00247
+    region: 대전
+    page-size: 100
+    timeout-millis: 5000
+    sync-days: 2
