@@ -46,3 +46,7 @@ app:
   cors-url: https://cham-monimap.com
   admin-password: ${ADMIN_PASSWORD}
   report-user-password: ${USER_PASSWORD}
+
+data:
+  api:
+    key: ${DATA_API_KEY}
