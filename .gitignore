@@ -27,3 +27,7 @@ chamApp/android/local.properties
 chamApp/android/app/build
 chamApp/android/app/.cxx
 chamApp/.env
+
+# Claude Code 개인 메모 (커밋 금지)
+CLAUDE.local.md
+**/CLAUDE.local.md
