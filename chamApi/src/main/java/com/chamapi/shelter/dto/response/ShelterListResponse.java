@@ -5,14 +5,16 @@ import com.chamapi.shelter.entity.ShelterAccessibility;
 import com.chamapi.shelter.enums.ShelterSurveyStatus;
 import com.chamapi.shelter.enums.ShelterType;
 
+import java.math.BigDecimal;
+
 public record ShelterListResponse(
         Long id,
         String name,
         ShelterType shelterType,
         String address,
         String oldAddress,
-        String latitude,
-        String longitude,
+        BigDecimal latitude,
+        BigDecimal longitude,
         Integer area,
         Integer capacity,
         Integer builtYear,

@@ -7,6 +7,8 @@ import com.chamapi.shelter.enums.ShelterType;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.math.BigDecimal;
+
 import static jakarta.persistence.GenerationType.IDENTITY;
 
 @Table(name = "SHELTER")
@@ -36,12 +38,12 @@ public class Shelter extends DateSuperClass {
     private String address;
 
     // 대피소 위도
-    @Column(name = "SHELTER_LATITUDE")
-    private String latitude;
+    @Column(name = "SHELTER_LATITUDE", precision = 10, scale = 8)
+    private BigDecimal latitude;
 
     // 대피소 경도
-    @Column(name = "SHELTER_LONGITUDE")
-    private String longitude;
+    @Column(name = "SHELTER_LONGITUDE", precision = 11, scale = 8)
+    private BigDecimal longitude;
 
     // 대피소 면적
     @Column(name = "SHELTER_AREA")
