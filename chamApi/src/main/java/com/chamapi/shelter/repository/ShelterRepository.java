@@ -13,8 +13,8 @@ public interface ShelterRepository extends JpaRepository<Shelter, Long> {
     String KEYWORD_PREDICATE =
             "(:keyword IS NULL OR :keyword = '' " +
                     " OR LOWER(s.name) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
-                    " OR LOWER(s.address) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
-                    " OR LOWER(s.oldAddress) LIKE LOWER(CONCAT('%', :keyword, '%')))";
+                    " OR LOWER(s.place.address) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+                    " OR LOWER(s.place.oldAddress) LIKE LOWER(CONCAT('%', :keyword, '%')))";
 
     @Query(value = "SELECT s FROM Shelter s LEFT JOIN FETCH s.place WHERE " + KEYWORD_PREDICATE,
             countQuery = "SELECT COUNT(s) FROM Shelter s WHERE " + KEYWORD_PREDICATE)

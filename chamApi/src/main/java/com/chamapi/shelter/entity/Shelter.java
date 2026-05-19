@@ -33,10 +33,6 @@ public class Shelter extends DateSuperClass {
     @Column(name = "SHELTER_NAME")
     private String name;
 
-    // 대피소 주소
-    @Column(name = "SHELTER_ADDRESS")
-    private String address;
-
     // 대피소 위도
     @Column(name = "SHELTER_LATITUDE", precision = 10, scale = 8)
     private BigDecimal latitude;
@@ -52,10 +48,6 @@ public class Shelter extends DateSuperClass {
     // 대피소 수용인원
     @Column(name = "SHELTER_CAPACITY")
     private Integer capacity;
-
-    // 대피소 구 주소
-    @Column(name = "SHELTER_OLD_ADDRESS")
-    private String oldAddress;
 
     // 대피소 타입
     @Column(name = "SHELTER_TYPE")

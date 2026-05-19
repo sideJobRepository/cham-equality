@@ -1,11 +1,14 @@
 package com.chamapi.shelter.dto.response;
 
+import com.chamapi.place.entity.Place;
 import com.chamapi.shelter.entity.Shelter;
 import com.chamapi.shelter.entity.ShelterAccessibility;
 import com.chamapi.shelter.enums.ShelterSurveyStatus;
 import com.chamapi.shelter.enums.ShelterType;
 
 import java.math.BigDecimal;
+
+import static com.chamapi.common.util.NullSafe.mapOrNull;
 
 public record ShelterListResponse(
         Long id,
@@ -31,13 +34,14 @@ public record ShelterListResponse(
         Integer pendingReportCount
 ) {
     public static ShelterListResponse from(Shelter s, Integer pendingReportCount) {
+        Place p = s.getPlace();
         ShelterAccessibility a = s.getAccessibility();
         return new ShelterListResponse(
                 s.getId(),
                 s.getName(),
                 s.getShelterType(),
-                s.getAddress(),
-                s.getOldAddress(),
+                mapOrNull(p, Place::getAddress),
+                mapOrNull(p, Place::getOldAddress),
                 s.getLatitude(),
                 s.getLongitude(),
                 s.getArea(),
@@ -47,11 +51,11 @@ public record ShelterListResponse(
                 s.getManagingAuthorityName(),
                 s.getManagingAuthorityTelNo(),
                 s.getSignageLanguage(),
-                a != null ? a.getAccessibleToilet() : null,
-                a != null ? a.getRamp() : null,
-                a != null ? a.getElevator() : null,
-                a != null ? a.getBrailleBlock() : null,
-                a != null ? a.getEtcFacilities() : null,
+                mapOrNull(a, ShelterAccessibility::getAccessibleToilet),
+                mapOrNull(a, ShelterAccessibility::getRamp),
+                mapOrNull(a, ShelterAccessibility::getElevator),
+                mapOrNull(a, ShelterAccessibility::getBrailleBlock),
+                mapOrNull(a, ShelterAccessibility::getEtcFacilities),
                 s.getSurveyStatus(),
                 pendingReportCount
         );

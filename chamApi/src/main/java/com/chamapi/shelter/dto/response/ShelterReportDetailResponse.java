@@ -1,5 +1,6 @@
 package com.chamapi.shelter.dto.response;
 
+import com.chamapi.place.entity.Place;
 import com.chamapi.shelter.entity.Shelter;
 import com.chamapi.shelter.entity.ShelterAccessibility;
 import com.chamapi.shelter.entity.ShelterInfoReport;
@@ -9,6 +10,8 @@ import com.chamapi.shelter.enums.ShelterSurveyStatus;
 
 import java.time.LocalDateTime;
 import java.util.List;
+
+import static com.chamapi.common.util.NullSafe.mapOrNull;
 
 public record ShelterReportDetailResponse(
         Long id,
@@ -43,18 +46,19 @@ public record ShelterReportDetailResponse(
             List<ImageView> images
     ) {
         ShelterAccessibility a = r.getAccessibility();
+        Place p = mapOrNull(shelter, Shelter::getPlace);
         return new ShelterReportDetailResponse(
                 r.getId(),
                 r.getShelterId(),
-                shelter != null ? shelter.getName() : null,
-                shelter != null ? shelter.getAddress() : null,
-                shelter != null ? shelter.getSurveyStatus() : null,
+                mapOrNull(shelter, Shelter::getName),
+                mapOrNull(p, Place::getAddress),
+                mapOrNull(shelter, Shelter::getSurveyStatus),
                 r.getSignageLanguage(),
-                a != null ? a.getAccessibleToilet() : null,
-                a != null ? a.getRamp() : null,
-                a != null ? a.getElevator() : null,
-                a != null ? a.getBrailleBlock() : null,
-                a != null ? a.getEtcFacilities() : null,
+                mapOrNull(a, ShelterAccessibility::getAccessibleToilet),
+                mapOrNull(a, ShelterAccessibility::getRamp),
+                mapOrNull(a, ShelterAccessibility::getElevator),
+                mapOrNull(a, ShelterAccessibility::getBrailleBlock),
+                mapOrNull(a, ShelterAccessibility::getEtcFacilities),
                 r.getReporter(),
                 r.getRequestNote(),
                 r.getRequestStatus(),
