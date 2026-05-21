@@ -3,6 +3,8 @@ from pathlib import Path
 from hwp5.hwp5html import HTMLTransform
 from hwp5.xmlmodel import Hwp5File
 
+from app.core.paths import GENERATED, RESOURCES
+
 
 def hwp_to_html(hwp_path: Path, output_dir: Path):
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -17,7 +19,4 @@ def hwp_to_html(hwp_path: Path, output_dir: Path):
 
 
 if __name__ == '__main__':
-    project_root = Path('/Users/sjk/Documents/git/cham-equality/crawling') # tmp
-    hwp_path = project_root / 'resources' / 'test.hwp'
-    output_dir = project_root / 'generated' / 'convert'
-    hwp_to_html(hwp_path, output_dir)
+    hwp_to_html(RESOURCES / 'test2.hwp', GENERATED / 'convert')
