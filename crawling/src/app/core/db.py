@@ -21,13 +21,13 @@ engine = create_engine(_DB_URI, pool_pre_ping=True, future=True)
 metadata = MetaData()
 
 daily_report = Table(
-    "DAILY_REPORT",
+    "DAILY_DISASTER_SAFETY_SUMMARY",
     metadata,
-    Column("DAILY_REPORT_ID", BigInteger, primary_key=True, autoincrement=True),
-    Column("DAILY_REPORT_TITLE", String(255), nullable=False, unique=True),
-    Column("DAILY_REPORT_ORIGIN_URL", Text, nullable=False),
-    Column("DAILY_REPORT_REFINED_HTML", Text, nullable=False),
-    Column("DAILY_REPORT_SUMMARY", Text, nullable=False),
+    Column("SUMMARY_ID", BigInteger, primary_key=True, autoincrement=True),
+    Column("ORIGIN_TITLE", String(255), nullable=False, unique=True),
+    Column("ORIGIN_URL", Text, nullable=False),
+    Column("REFINED_HTML", Text, nullable=False),
+    Column("SUMMARY", Text, nullable=False),
     Column("CREATE_DATE", DateTime, nullable=False),
     Column("MODIFY_DATE", DateTime, nullable=False),
 )

@@ -62,8 +62,8 @@ def crawl_safe_daejeon_recent_daily_report() -> CrawlResult:
 
 
 def _already_processed(title: str) -> bool:
-    stmt = select(daily_report.c.DAILY_REPORT_ID).where(
-        daily_report.c.DAILY_REPORT_TITLE == title
+    stmt = select(daily_report.c.SUMMARY_ID).where(
+        daily_report.c.ORIGIN_TITLE == title
     )
     with engine.connect() as conn:
         return conn.execute(stmt).first() is not None

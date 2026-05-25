@@ -9,10 +9,10 @@ def save(summary_result: SummaryResult) -> None:
     now = datetime.now()
 
     stmt = daily_report.insert().values(
-        DAILY_REPORT_TITLE=crawl_result.title,
-        DAILY_REPORT_ORIGIN_URL=crawl_result.origin_url,
-        DAILY_REPORT_REFINED_HTML=summary_result.refine_result.refined_html,
-        DAILY_REPORT_SUMMARY=summary_result.summary,
+        ORIGIN_TITLE=crawl_result.title,
+        ORIGIN_URL=crawl_result.origin_url,
+        REFINED_HTML=summary_result.refine_result.refined_html,
+        SUMMARY=summary_result.summary,
         CREATE_DATE=now,
         MODIFY_DATE=now,
     )
