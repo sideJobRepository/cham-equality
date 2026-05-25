@@ -27,4 +27,4 @@ def refine(html_path: Path, output_path: Path):
 
 
 if __name__ == '__main__':
-    refine(GENERATED / 'convert' / 'index.xhtml', GENERATED / 'refine' / 'refined.html')
+    refine(GENERATED / 'crawling' / 'ok.html', GENERATED / 'refine' / 'refined2.html')

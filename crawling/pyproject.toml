@@ -25,6 +25,7 @@ dependencies = [
     "pure-eval==0.2.3",
     "pyasn1-modules==0.4.2",
     "pydantic-core==2.46.3",
+    "pydantic-settings>=2.14.1",
     "pyhwp==0.1b15",
     "pypandoc==1.17",
     "pytest-playwright==0.7.1",
