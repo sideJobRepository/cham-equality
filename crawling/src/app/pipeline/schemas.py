@@ -1,10 +1,18 @@
+from enum import Enum
+from typing import Optional
+
 from pydantic import BaseModel
 
 
+class CrawlStatus(str, Enum):
+    NEW = "NEW"
+    ALREADY_DONE = "ALREADY_DONE"
+
 class CrawlResult(BaseModel):
-    origin_url: str
+    status: CrawlStatus
     title: str
-    html_content: str
+    origin_url: Optional[str] = None
+    html_content: Optional[str] = None
 
 class RefineResult(BaseModel):
     crawl_result: CrawlResult
@@ -13,4 +21,3 @@ class RefineResult(BaseModel):
 class SummaryResult(BaseModel):
     refine_result: RefineResult
     summary: str
-
