@@ -1,14 +1,10 @@
-from pathlib import Path
 from lxml import etree
 
-from app.core.paths import GENERATED
+from app.pipeline.schemas import CrawlResult, RefineResult
 
 
-def refine(html_path: Path, output_path: Path):
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-
-    tree = etree.parse(html_path)
-    root = tree.getroot()
+def refine(crawl_result: CrawlResult) -> RefineResult:
+    root = etree.fromstring(crawl_result.html_content.encode('utf-8'))
 
     ns = {'x': 'http://www.w3.org/1999/xhtml'}
 
@@ -23,8 +19,6 @@ def refine(html_path: Path, output_path: Path):
         if link.get('rel') == 'stylesheet':
             link.getparent().remove(link)
 
-    tree.write(str(output_path), pretty_print=True, encoding='utf-8')
+    refined_html = etree.tostring(root, pretty_print=True, encoding='utf-8').decode('utf-8')
 
-
-if __name__ == '__main__':
-    refine(GENERATED / 'crawling' / 'ok.html', GENERATED / 'refine' / 'refined2.html')
+    return RefineResult(crawl_result=crawl_result, refined_html=refined_html)
