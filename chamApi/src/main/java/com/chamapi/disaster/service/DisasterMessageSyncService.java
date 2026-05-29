@@ -51,12 +51,14 @@ public class DisasterMessageSyncService {
     }
 
     private int syncDay(LocalDate date) {
-        List<SafetyDataItem> items = client.fetchAll(date, properties.getRegion(), MAX_PAGES);
+        String region = properties.getRegion();
+        List<SafetyDataItem> items = client.fetchAll(date, region, MAX_PAGES);
         if (items.isEmpty()) return 0;
 
         List<DisasterMessage> candidates = items.stream()
                 .map(this::toEntity)
                 .filter(java.util.Objects::nonNull)
+                .filter(m -> m.getRegionName().contains(region))
                 .collect(Collectors.collectingAndThen(
                         Collectors.toMap(
                                 DisasterMessage::getSn,
@@ -77,7 +79,7 @@ public class DisasterMessageSyncService {
         if (toInsert.isEmpty()) return 0;
 
         repository.saveAll(toInsert);
-        log.info("disaster message sync inserted={} date={} region={}", toInsert.size(), date, properties.getRegion());
+        log.info("disaster message sync inserted={} date={} region={}", toInsert.size(), date, region);
         return toInsert.size();
     }
 
