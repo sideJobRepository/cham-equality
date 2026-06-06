@@ -1,6 +1,6 @@
 package com.chamapi.shelter.dto.response;
 
-import com.chamapi.place.entity.Place;
+import com.chamapi.shelter.entity.Place;
 import com.chamapi.shelter.entity.Shelter;
 import com.chamapi.shelter.entity.ShelterAccessibility;
 import com.chamapi.shelter.enums.ShelterSurveyStatus;

@@ -1,4 +1,4 @@
-package com.chamapi.place.entity;
+package com.chamapi.shelter.entity;
 
 import com.chamapi.common.entity.DateSuperClass;
 import jakarta.persistence.*;

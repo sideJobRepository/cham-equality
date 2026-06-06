@@ -1,7 +1,6 @@
 package com.chamapi.shelter.entity;
 
 import com.chamapi.common.entity.DateSuperClass;
-import com.chamapi.place.entity.Place;
 import com.chamapi.shelter.enums.ShelterSurveyStatus;
 import com.chamapi.shelter.enums.ShelterType;
 import jakarta.persistence.*;
