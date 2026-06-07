@@ -11,14 +11,14 @@ import java.math.BigDecimal;
 import static com.chamapi.common.util.NullSafe.mapOrNull;
 
 public record ShelterResponse(
-        Long id,
+        Long shelterId,
         Long placeId,
         String placeName,
         String address,
         String oldAddress,
         String placeDescription,
-        BigDecimal placeLatitude,
-        BigDecimal placeLongitude,
+        BigDecimal x,
+        BigDecimal y,
         String name,
         BigDecimal latitude,
         BigDecimal longitude,
@@ -51,8 +51,8 @@ public record ShelterResponse(
                 mapOrNull(p, Place::getLatitude),
                 mapOrNull(p, Place::getLongitude),
                 shelter.getName(),
-                shelter.getLatitude(),
                 shelter.getLongitude(),
+                shelter.getLatitude(),
                 shelter.getArea(),
                 shelter.getCapacity(),
                 shelter.getShelterType(),

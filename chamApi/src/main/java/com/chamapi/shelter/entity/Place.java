@@ -5,6 +5,8 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 
 import static jakarta.persistence.GenerationType.IDENTITY;
 
@@ -12,8 +14,6 @@ import static jakarta.persistence.GenerationType.IDENTITY;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor
-@Builder
 public class Place extends DateSuperClass {
 
     // 장소 ID
@@ -50,4 +50,27 @@ public class Place extends DateSuperClass {
     // 장소 경도
     @Column(name = "PLACE_LONGITUDE", precision = 11, scale = 8)
     private BigDecimal longitude;
+
+    // 장소에 속한 대피소 목록
+    @OneToMany(mappedBy = "place", fetch = FetchType.LAZY)
+    private List<Shelter> shelters = new ArrayList<>();
+
+    @Builder
+    private static Place create(Region region,
+                                String name,
+                                String address,
+                                String oldAddress,
+                                String description,
+                                BigDecimal latitude,
+                                BigDecimal longitude) {
+        Place place = new Place();
+        place.region = region;
+        place.name = name;
+        place.address = address;
+        place.oldAddress = oldAddress;
+        place.description = description;
+        place.latitude = latitude;
+        place.longitude = longitude;
+        return place;
+    }
 }

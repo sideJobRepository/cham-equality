@@ -8,6 +8,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
+
 public interface ShelterRepository extends JpaRepository<Shelter, Long> {
 
     String KEYWORD_PREDICATE =
@@ -53,4 +55,9 @@ public interface ShelterRepository extends JpaRepository<Shelter, Long> {
                     "                 WHERE r.shelterId = s.id " +
                     "                   AND r.requestStatus = com.chamapi.shelter.enums.ShelterInfoReportStatus.PENDING)")
     Page<Shelter> searchNotSubmitted(@Param("keyword") String keyword, Pageable pageable);
+
+
+    @Query("SELECT s FROM Shelter s LEFT JOIN FETCH s.place p LEFT JOIN FETCH p.region r")
+    List<Shelter> findAllWithPlaceAndRegion();
+
 }

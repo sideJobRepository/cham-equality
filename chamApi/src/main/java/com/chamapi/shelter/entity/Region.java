@@ -28,7 +28,10 @@ public class Region {
     private String regionType;
 
     @Column(name = "REGION_DEPTH")
-    private Integer regionDepth;
+    private int regionDepth;
+
+    @Column(name = "REGION_FULL_NAME")
+    private String regionFullName;
 
     @Column(name = "REGION_LONGITUDE")
     private BigDecimal regionLongitude;
@@ -44,4 +47,23 @@ public class Region {
         this.regionLongitude = regionLongitude;
         this.regionLatitude = regionLatitude;
     }
+
+    public Long getParentId(){
+        return getParent() == null ? null : getParent().getRegionId();
+    }
+
+    public Region getAncestorAtDepth(int depth){
+        if(this.regionDepth < depth)
+            throw new IllegalArgumentException(
+                    "요청한 depth(" + depth + ")가 현재 region의 depth(" + this.regionDepth + ")보다 깊습니다");
+
+        Region current = this;
+        while(current != null){
+            if(current.getRegionDepth() == depth)
+                return current;
+            current = current.getParent();
+        }
+        return null;
+    }
+
 }
