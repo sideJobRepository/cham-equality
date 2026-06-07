@@ -22,6 +22,11 @@ public class Place extends DateSuperClass {
     @GeneratedValue(strategy = IDENTITY)
     private Long id;
 
+    // 지역 ID
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "REGION_ID")
+    private Region region;
+
     // 장소명
     @Column(name = "PLACE_NAME", nullable = false)
     private String name;
