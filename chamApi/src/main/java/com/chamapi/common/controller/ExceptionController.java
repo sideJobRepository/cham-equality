@@ -5,9 +5,12 @@ package com.chamapi.common.controller;
 import com.chamapi.common.exception.CustomException;
 import com.chamapi.common.dto.ErrorMessageResponse;
 import lombok.extern.slf4j.Slf4j;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.exc.InvalidFormatException;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -15,7 +18,10 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * 전역 예외 핸들러. 모든 컨트롤러의 예외를 여기서 {@link ErrorMessageResponse} 포맷으로 통일한다.
@@ -80,4 +86,27 @@ public class ExceptionController {
         }
         return ResponseEntity.status(status).body(body);
     }
+
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ErrorMessageResponse handleNotReadable(HttpMessageNotReadableException e) {
+        log.info("요청 본문 파싱 실패", e);
+        ErrorMessageResponse res = new ErrorMessageResponse(
+                String.valueOf(HttpStatus.BAD_REQUEST.value()),
+                "잘못된 요청 형식입니다."
+        );
+        if (e.getCause() instanceof InvalidFormatException ife) {
+            String field = ife.getPath().stream()
+                    .map(JacksonException.Reference::getPropertyName)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.joining("."));
+            Class<?> target = ife.getTargetType();
+            String allowed = target.isEnum()
+                    ? Arrays.toString(target.getEnumConstants())
+                    : target.getSimpleName();
+            res.addValidation(field, "허용되지 않는 값입니다. 가능한 값: " + allowed);
+        }
+        return res;
+    }
+
 }

@@ -10,7 +10,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 
-public interface ShelterRepository extends JpaRepository<Shelter, Long> {
+public interface ShelterRepository extends JpaRepository<Shelter, Long>, ShelterQueryRepository {
 
     String KEYWORD_PREDICATE =
             "(:keyword IS NULL OR :keyword = '' " +

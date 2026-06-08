@@ -1,5 +1,6 @@
 package com.chamapi.shelter.service;
 
+import com.chamapi.shelter.dto.query.ShelterSearchCondition;
 import com.chamapi.shelter.dto.response.*;
 import com.chamapi.shelter.entity.Place;
 import com.chamapi.shelter.entity.Region;
@@ -22,10 +23,8 @@ public class ShelterMapService {
 
     private final ShelterRepository shelterRepository;
 
-    // TODO: 검색
-    public ShelterAggregateResponse aggregate() {
-
-        List<Shelter> shelters = shelterRepository.findAllWithPlaceAndRegion();
+    public ShelterAggregateResponse aggregate(ShelterSearchCondition cond) {
+        List<Shelter> shelters = shelterRepository.searchByCondition(cond);
 
         Map<Long, PlaceResponse> placeMap = toPlaceResponseMap(shelters);
         RegionLevelsResponse regionSummaries = toRegionLevelResponse(shelters);

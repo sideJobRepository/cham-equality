@@ -1,5 +1,6 @@
 package com.chamapi.shelter.service;
 
+import com.chamapi.shelter.dto.query.ShelterSearchCondition;
 import com.chamapi.shelter.dto.response.PlaceResponse;
 import com.chamapi.shelter.dto.response.RegionSummaryDto;
 import com.chamapi.shelter.dto.response.ShelterAggregateResponse;
@@ -20,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -61,10 +63,10 @@ class ShelterMapServiceTest {
         Shelter s5 = shelter(25L, p4);
         Shelter s6 = shelter(26L, p4);
 
-        when(shelterRepository.findAllWithPlaceAndRegion())
+        when(shelterRepository.searchByCondition(any()))
                 .thenReturn(List.of(s1, s2, s3, s4, s5, s6));
 
-        ShelterAggregateResponse response = shelterMapService.aggregate();
+        ShelterAggregateResponse response = shelterMapService.aggregate(emptyCondition());
 
         // details — place 4개로 묶이고, 같은 place 공유한 shelter들은 한 엔트리 안에
         Map<Long, PlaceResponse> details = response.getDetails();
@@ -121,10 +123,10 @@ class ShelterMapServiceTest {
     void aggregate_excludesShelterWithoutPlace() {
         Shelter orphan = shelter(1L, null);
 
-        when(shelterRepository.findAllWithPlaceAndRegion())
+        when(shelterRepository.searchByCondition(any()))
                 .thenReturn(List.of(orphan));
 
-        ShelterAggregateResponse response = shelterMapService.aggregate();
+        ShelterAggregateResponse response = shelterMapService.aggregate(emptyCondition());
 
         assertThat(response.getDetails()).isEmpty();
         assertThat(response.getSummaries().getDepth0()).isEmpty();
@@ -139,10 +141,10 @@ class ShelterMapServiceTest {
                 new BigDecimal("127.10000000"), new BigDecimal("36.10000000"));
         Shelter s = shelter(21L, placeWithoutRegion);
 
-        when(shelterRepository.findAllWithPlaceAndRegion())
+        when(shelterRepository.searchByCondition(any()))
                 .thenReturn(List.of(s));
 
-        ShelterAggregateResponse response = shelterMapService.aggregate();
+        ShelterAggregateResponse response = shelterMapService.aggregate(emptyCondition());
 
         assertThat(response.getDetails()).containsOnlyKeys(11L);
         assertThat(response.getDetails().get(11L).regionId()).isNull();
@@ -181,6 +183,10 @@ class ShelterMapServiceTest {
                 .build();
         ReflectionTestUtils.setField(shelter, "id", id);
         return shelter;
+    }
+
+    private ShelterSearchCondition emptyCondition() {
+        return new ShelterSearchCondition(List.of(), List.of());
     }
 
     private RegionSummaryDto byRegionId(List<RegionSummaryDto> list, Long regionId) {
