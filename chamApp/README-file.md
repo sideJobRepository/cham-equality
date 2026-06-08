@@ -1,6 +1,7 @@
 # 📦 파일 업로드 (S3 Presigned URL)
 
 ## 📌 전체 흐름
+
 1. Presigned URL 요청
 2. S3 직접 업로드
 3. 업로드 완료 후 서버에 파일 정보 저장 (필수)
@@ -10,10 +11,12 @@
 ## 1️⃣ Presigned URL 요청
 
 ### API
+
 POST /api/presigned-url  
 Content-Type: application/json
 
 ### 요청 예시
+
 ```json
 {
   "fileType": "NOTICE",
@@ -33,6 +36,7 @@ Content-Type: application/json
 ```
 
 ## 📤 응답 예시
+
 ```json
 [
   {
@@ -52,59 +56,59 @@ Content-Type: application/json
 ]
 ```
 
-
 🚀 S3 업로드 + 서버 저장 (전체 코드)
 
 ```javascript
 const files = [...input.files];
 
 // 1. presigned 요청
-const presignedList = await fetch("/api/presigned-url", {
-  method: "POST",
+const presignedList = await fetch('/api/presigned-url', {
+  method: 'POST',
   headers: {
-    "Content-Type": "application/json"
+    'Content-Type': 'application/json',
   },
   body: JSON.stringify({
-    fileType: "NOTICE",
+    fileType: 'NOTICE',
     files: files.map(f => ({
       fileName: f.name,
       contentType: f.type,
-      fileSize: f.size
-    }))
-  })
+      fileSize: f.size,
+    })),
+  }),
 }).then(res => res.json());
 
 // 2. S3 업로드
 await Promise.all(
   presignedList.map((p, i) => {
     return fetch(p.url, {
-      method: "PUT",
+      method: 'PUT',
       body: files[i],
       headers: {
-        "Content-Type": files[i].type
-      }
+        'Content-Type': files[i].type,
+      },
     });
-  })
+  }),
 );
 
 // 3. 서버 저장 (필수)
-await fetch("/api/upload-file", {
-  method: "POST",
+await fetch('/api/upload-file', {
+  method: 'POST',
   headers: {
-    "Content-Type": "application/json"
+    'Content-Type': 'application/json',
   },
   body: JSON.stringify({
-    fileType: "NOTICE",
+    fileType: 'NOTICE',
     files: presignedList.map((p, i) => ({
       fileName: p.fileName,
       contentType: files[i].type,
       fileSize: files[i].size,
       objectKey: p.objectKey,
-      bucketName: p.bucketName
-    }))
-  })
+      bucketName: p.bucketName,
+    })),
+  }),
 });
 ```
+
 # 📥 파일 다운로드 (S3 Presigned URL)
 
 ## 📌 다운로드 방식
@@ -127,17 +131,21 @@ await fetch("/api/upload-file", {
 ## 📌 다운로드 API
 
 ### 요청
+
 GET /api/download-file/{id}
 
 ### Path Variable
+
 - `id`: 다운로드할 파일의 ID
 
 예시:
+
 ```http
 GET /api/download-file/1
 ```
 
 응답형식
+
 ```json
 {
   "code": 200,

@@ -1,4 +1,10 @@
-import { login, logout, me, KakaoLoginToken, KakaoUser } from '@react-native-kakao/user';
+import {
+  login,
+  logout,
+  me,
+  KakaoLoginToken,
+  KakaoUser,
+} from '@react-native-kakao/user';
 
 export type KakaoLoginResult = {
   token: KakaoLoginToken;

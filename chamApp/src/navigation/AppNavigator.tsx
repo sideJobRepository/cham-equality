@@ -1,27 +1,51 @@
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import {
+  BookOpen,
+  Home,
+  Map,
+  MoreHorizontal,
+  type LucideIcon,
+} from 'lucide-react-native';
 import HomeScreen from '../screens/HomeScreen';
-import ShelterScreen from '../screens/ShelterScreen';
-import ReportScreen from '../screens/ReportScreen';
-import SettingsScreen from '../screens/SettingsScreen';
+import MapScreen from '../screens/MapScreen';
+import ManualScreen from '../screens/ManualScreen';
+import MoreScreen from '../screens/MoreScreen';
 
 export type RootTabParamList = {
   Home: undefined;
-  Shelter: undefined;
-  Report: undefined;
-  Settings: undefined;
+  Map: undefined;
+  Manual: undefined;
+  More: undefined;
 };
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
 
-export default function 그러AppNavigator() {
+const tabIcons: Record<keyof RootTabParamList, LucideIcon> = {
+  Home,
+  Map,
+  Manual: BookOpen,
+  More: MoreHorizontal,
+};
+
+export default function AppNavigator() {
   return (
     <NavigationContainer>
       <Tab.Navigator
-        screenOptions={{
+        screenOptions={({ route }) => ({
           headerShown: false,
           tabBarActiveTintColor: '#2563eb',
           tabBarInactiveTintColor: '#9ca3af',
+          tabBarIcon: ({ color, focused, size }) => {
+            const Icon = tabIcons[route.name];
+            return (
+              <Icon
+                color={color}
+                size={focused ? size + 2 : size}
+                strokeWidth={2.4}
+              />
+            );
+          },
           tabBarStyle: {
             height: 64,
             paddingTop: 6,
@@ -32,12 +56,28 @@ export default function 그러AppNavigator() {
             fontSize: 12,
             fontWeight: '600',
           },
-        }}
+        })}
       >
-        <Tab.Screen name="Home" component={HomeScreen} options={{ tabBarLabel: '홈' }} />
-        <Tab.Screen name="Shelter" component={ShelterScreen} options={{ tabBarLabel: '대피소' }} />
-        <Tab.Screen name="Report" component={ReportScreen} options={{ tabBarLabel: '제보' }} />
-        <Tab.Screen name="Settings" component={SettingsScreen} options={{ tabBarLabel: '설정' }} />
+        <Tab.Screen
+          name="Home"
+          component={HomeScreen}
+          options={{ tabBarLabel: '홈' }}
+        />
+        <Tab.Screen
+          name="Map"
+          component={MapScreen}
+          options={{ tabBarLabel: '지도' }}
+        />
+        <Tab.Screen
+          name="Manual"
+          component={ManualScreen}
+          options={{ tabBarLabel: '메뉴얼' }}
+        />
+        <Tab.Screen
+          name="More"
+          component={MoreScreen}
+          options={{ tabBarLabel: '더보기' }}
+        />
       </Tab.Navigator>
     </NavigationContainer>
   );
