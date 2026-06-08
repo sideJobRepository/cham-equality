@@ -11,7 +11,10 @@ export default function HomeScreen() {
           <MessageTitle>재난문자 영역</MessageTitle>
         </MessageBox>
         <MessageBox2>
-          <MessageTitle2>일일 재난안전관리 상황</MessageTitle2>
+          <TopBox>
+            <MessageTitle2>일일 재난안전관리 상황</MessageTitle2>
+            <TimeText>05.14(목)</TimeText>
+          </TopBox>
         </MessageBox2>
       </TopSection>
     </Screen>
@@ -46,14 +49,26 @@ const MessageTitle = styled.Text`
 `;
 
 const MessageBox2 = styled.View`
+  display: flex;
   background-color: #edf5ff;
   margin-left: 24px;
   padding: 12px;
   border-radius: 0 8px 8px 8px;
 `;
 
+const TopBox = styled.View`
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+`;
+
 const MessageTitle2 = styled.Text`
   color: #2776e0;
   font-size: 16px;
   font-weight: 600;
+`;
+
+const TimeText = styled.Text`
+  font-size: 14px;
+  color: #a3a7ac;
 `;
