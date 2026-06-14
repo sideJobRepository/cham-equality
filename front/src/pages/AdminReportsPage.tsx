@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import {
   clearAdminPassword,
   fetchReports,
@@ -7,9 +7,10 @@ import {
   UnauthorizedError,
   type AdminReportFilter,
   type ShelterReport,
-} from '../api/adminApi'
-import AdminReportDetailModal from '../components/AdminReportDetailModal'
-import type { PageResponse } from '../types/shelter'
+} from '@/api/adminApi'
+import AdminLayout from '@/components/AdminLayout'
+import AdminReportDetailModal from '@/components/AdminReportDetailModal'
+import type { PageResponse } from '@/types/shelter'
 import './AdminReportsPage.css'
 
 const PAGE_SIZE = 20
@@ -66,26 +67,15 @@ export default function AdminReportsPage() {
     load()
   }, [load, navigate])
 
-  const logout = () => {
-    clearAdminPassword()
-    navigate('/admin/login', { replace: true })
-  }
-
   return (
+    <AdminLayout>
     <div className="admin-reports-page">
       <header className="admin-header">
         <div>
-          <h1>관리자 · 리포트 검토</h1>
+          <h1>리포트 검토</h1>
           <p className="subtitle">
             총 {data?.totalElements ?? 0}건 · 페이지 {(data?.page ?? 0) + 1} / {data?.totalPages ?? 0}
           </p>
-        </div>
-        <div className="admin-header-actions">
-          <Link to="/admin/shelters" className="shelter-link-btn">대피소 편집</Link>
-          <Link to="/shelters" className="shelter-link-btn">← 대피소 목록</Link>
-          <button type="button" className="logout-btn" onClick={logout}>
-            로그아웃
-          </button>
         </div>
       </header>
 
@@ -183,5 +173,6 @@ export default function AdminReportsPage() {
         />
       )}
     </div>
+    </AdminLayout>
   )
 }

@@ -2,10 +2,10 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import './index.css'
-import ShelterListPage from './pages/temp/ShelterListPage'
-import AdminLoginPage from './pages/AdminLoginPage'
-import AdminReportsPage from './pages/AdminReportsPage'
-import AdminSheltersPage from './pages/AdminSheltersPage'
+import ShelterListPage from '@/pages/temp/ShelterListPage'
+import AdminLoginPage from '@/pages/AdminLoginPage'
+import AdminReportsPage from '@/pages/AdminReportsPage'
+import AdminSheltersPage from '@/pages/AdminSheltersPage'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

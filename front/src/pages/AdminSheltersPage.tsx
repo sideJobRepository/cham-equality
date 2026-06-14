@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import {
   clearAdminPassword,
   fetchAdminShelters,
   getAdminPassword,
   UnauthorizedError,
-} from '../api/adminApi'
-import AdminShelterEditModal from '../components/AdminShelterEditModal'
-import { SHELTER_TYPE_LABEL, type PageResponse, type Shelter } from '../types/shelter'
+} from '@/api/adminApi'
+import AdminLayout from '@/components/AdminLayout'
+import AdminShelterEditModal from '@/components/AdminShelterEditModal'
+import { SHELTER_TYPE_LABEL, type PageResponse, type Shelter } from '@/types/shelter'
 import './AdminSheltersPage.css'
 
 const PAGE_SIZE = 20
@@ -66,22 +67,13 @@ export default function AdminSheltersPage() {
     return () => clearTimeout(t)
   }, [flash])
 
-  const logout = () => {
-    clearAdminPassword()
-    navigate('/admin/login', { replace: true })
-  }
-
   return (
+    <AdminLayout>
     <div className="admin-shelters-page">
       <header className="admin-header">
         <div>
-          <h1>관리자 · 대피소 편집</h1>
+          <h1>대피소 편집</h1>
           <p className="subtitle">시설명 / 건축년도 / 대피소 타입을 직접 수정합니다.</p>
-        </div>
-        <div className="admin-header-actions">
-          <Link to="/admin/reports" className="shelter-link-btn">← 리포트 검토</Link>
-          <Link to="/shelters" className="shelter-link-btn">대피소 목록</Link>
-          <button type="button" className="logout-btn" onClick={logout}>로그아웃</button>
         </div>
       </header>
 
@@ -168,5 +160,6 @@ export default function AdminSheltersPage() {
         />
       )}
     </div>
+    </AdminLayout>
   )
 }

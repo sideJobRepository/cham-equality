@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { fetchShelters, type ShelterSearchFilter } from '../../api/shelterApi'
-import { getAdminPassword } from '../../api/adminApi'
-import ShelterReportModal from '../../components/temp/ShelterReportModal'
-import PendingReportsListModal from '../../components/temp/PendingReportsListModal'
-import ShelterInfoViewModal from '../../components/temp/ShelterInfoViewModal'
-import { SHELTER_TYPE_LABEL, type PageResponse, type Shelter } from '../../types/shelter'
+import { fetchShelters, type ShelterSearchFilter } from '@/api/shelterApi'
+import { getAdminPassword } from '@/api/adminApi'
+import ShelterReportModal from '@/components/temp/ShelterReportModal'
+import PendingReportsListModal from '@/components/temp/PendingReportsListModal'
+import ShelterInfoViewModal from '@/components/temp/ShelterInfoViewModal'
+import { SHELTER_TYPE_LABEL, type PageResponse, type Shelter } from '@/types/shelter'
 import './ShelterListPage.css'
 
 const PAGE_SIZE = 20

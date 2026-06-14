@@ -9,8 +9,8 @@ import {
   UnauthorizedError,
   type ShelterReportDetail,
   type ShelterReportImageView,
-} from '../api/adminApi'
-import { saveBlob, triggerDownload } from '../lib/file'
+} from '@/api/adminApi'
+import { saveBlob, triggerDownload } from '@/lib/file'
 import './AdminReportDetailModal.css'
 
 type Props = {

@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react'
 import {
   updateAdminShelter,
   UnauthorizedError,
-} from '../api/adminApi'
-import { SHELTER_TYPE_LABEL, type Shelter, type ShelterType } from '../types/shelter'
+} from '@/api/adminApi'
+import { SHELTER_TYPE_LABEL, type Shelter, type ShelterType } from '@/types/shelter'
 import './AdminShelterEditModal.css'
 
 type Props = {

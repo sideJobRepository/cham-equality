@@ -4,7 +4,7 @@ import type {
   Shelter,
   ShelterSurveyStatus,
   ShelterType,
-} from '../types/shelter'
+} from '@/types/shelter'
 import type { ShelterSearchFilter } from './shelterApi'
 import { http } from './http'
 
