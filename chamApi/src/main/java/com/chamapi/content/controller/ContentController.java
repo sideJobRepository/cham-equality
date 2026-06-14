@@ -6,11 +6,13 @@ import com.chamapi.content.entity.Content;
 import com.chamapi.content.service.ContentService;
 import lombok.AllArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
-@RestController("/api/contents")
+@RestController
+@RequestMapping("/api/contents")
 @AllArgsConstructor
 public class ContentController {
 

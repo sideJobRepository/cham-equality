@@ -5,6 +5,7 @@ import com.chamapi.common.entity.DateSuperClass;
 import com.chamapi.content.enums.ContentType;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -44,5 +45,33 @@ public class Content extends DateSuperClass {
 
     @Column(name = "DISPLAY_END_DATE")
     private LocalDateTime displayEndDate;
+
+    @Builder
+    private Content(ContentType contentType, String name, Long imageFileId, String url, String additionalInfo, LocalDateTime displayStartDate, LocalDateTime displayEndDate) {
+        this.contentType = contentType;
+        this.name = name;
+        this.imageFileId = imageFileId;
+        this.url = url;
+        this.additionalInfo = additionalInfo;
+        this.displayStartDate = displayStartDate;
+        this.displayEndDate = displayEndDate;
+    }
+
+    public void update(
+            String name,
+            Long imageFileId,
+            String url,
+            String additionalInfo,
+            LocalDateTime displayStartDate,
+            LocalDateTime displayEndDate
+    ){
+       this.name = name;
+       this.imageFileId = imageFileId;
+       this.url = url;
+       this.additionalInfo = additionalInfo;
+       this.displayStartDate = displayStartDate;
+       this.displayEndDate = displayEndDate;
+    }
+
 
 }

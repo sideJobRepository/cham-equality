@@ -22,14 +22,18 @@ public class ApiResponse<T> {
     public ApiResponse(int code, boolean success, T data) {
         this(code, success, "", data);
     }
-    
+
 
     public static ApiResponse<Void> of(int code, boolean success, String message) {
         return new ApiResponse<>(code, success, message, null);
     }
 
-    public static <T> ApiResponse<T> ok(T data){
-        return new ApiResponse<T>(200, true, "", data);
+    public static ApiResponse<Void> ok() {
+        return new ApiResponse<>(200, true, "", null);
+    }
+
+    public static <T> ApiResponse<T> ok(T data) {
+        return new ApiResponse<>(200, true, "", data);
     }
 
 }
