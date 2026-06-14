@@ -27,6 +27,7 @@ import software.amazon.awssdk.services.s3.presigner.model.PresignedPutObjectRequ
 import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignRequest;
 
 import jakarta.servlet.http.HttpServletResponse;
+
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URLEncoder;
@@ -205,7 +206,9 @@ public class S3FileService {
         }
     }
 
-    /** ZIP 엔트리명 중복 회피. {@code taken}에 이미 있으면 {@code name-2.ext}, {@code name-3.ext} 순으로 증가. */
+    /**
+     * ZIP 엔트리명 중복 회피. {@code taken}에 이미 있으면 {@code name-2.ext}, {@code name-3.ext} 순으로 증가.
+     */
     private String disambiguateName(Set<String> taken, String name) {
         if (taken.add(name)) return name;
         int dot = name.lastIndexOf('.');
@@ -235,9 +238,9 @@ public class S3FileService {
      * CREATE: {@code TEMPORARY → COMPLETE} + targetId 세팅(도메인 ID와 파일을 묶음).
      * DELETE: {@code COMPLETE → TEMPORARY}로 되돌려 일일 배치가 S3/DB에서 수거하게 맡김(즉시 삭제 X).
      */
-    public void modifyFileStatus(FileRequest request,Long targetId) {
+    public void modifyFileStatus(FileRequest request, Long targetId) {
         List<FileRequest.FileChangeRequest> files = request.getFiles();
-        if(files.isEmpty()) {
+        if (files.isEmpty()) {
             return;
         }
         List<Long> createFileIds = files.stream().filter(item -> item.getFileProcessStatus() == FileProcessStatus.CREATE)
@@ -255,7 +258,17 @@ public class S3FileService {
         deleteFile.forEach(CommonFile::modifyTemporaryFileStatus);
     }
 
-    /** 조회용 Presigned GET URL을 50분 TTL 캐시로 일괄 반환. 요청된 id 순서를 유지한다. */
+
+    public void markComplete(Long fileId, Long targetId) {
+        commonFileRepository.findById(fileId)
+                .ifPresent((file) -> {
+                    file.createTargetIdAndModifyCompleteFileStatus(targetId);
+                });
+    }
+
+    /**
+     * 조회용 Presigned GET URL을 50분 TTL 캐시로 일괄 반환. 요청된 id 순서를 유지한다.
+     */
     public List<FileViewResponse> getFilesForView(List<Long> ids) {
         if (ids == null || ids.isEmpty()) {
             return List.of();

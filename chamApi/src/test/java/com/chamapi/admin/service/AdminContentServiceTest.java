@@ -6,6 +6,10 @@ import com.chamapi.admin.dto.request.AdminContentUpdateRequest;
 import com.chamapi.content.entity.Content;
 import com.chamapi.content.enums.ContentType;
 import com.chamapi.content.repository.ContentRepository;
+import com.chamapi.file.entity.CommonFile;
+import com.chamapi.file.enums.FileStatus;
+import com.chamapi.file.enums.FileType;
+import com.chamapi.file.repository.CommonFileRepository;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -31,11 +35,15 @@ class AdminContentServiceTest extends RepositoryAndServiceTestSupport {
     private ContentRepository contentRepository;
 
     @Autowired
+    private CommonFileRepository commonFileRepository;
+
+    @Autowired
     private EntityManager em;
 
     @BeforeEach
     void cleanUp() {
         contentRepository.deleteAllInBatch();
+        commonFileRepository.deleteAllInBatch();
     }
 
     @DisplayName("getAllContents - 저장된 모든 Content 를 반환한다")
@@ -51,15 +59,17 @@ class AdminContentServiceTest extends RepositoryAndServiceTestSupport {
                 .containsExactlyInAnyOrder(a.getId(), b.getId(), c.getId());
     }
 
-    @DisplayName("createContent - 요청 값으로 새 Content 가 저장되고 모든 필드가 그대로 매핑된다")
+    @DisplayName("createContent - 요청 값으로 새 Content 가 저장되고 모든 필드가 그대로 매핑되며, 첨부된 파일이 COMPLETE 로 전환되고 targetId 가 세팅된다")
     @Test
     void test2() {
+        CommonFile imageFile = saveTemporaryFile();
+
         LocalDateTime start = LocalDateTime.of(2026, 6, 14, 12, 0);
         LocalDateTime end = start.plusDays(7);
         AdminContentCreateRequest request = new AdminContentCreateRequest(
                 ContentType.IN_APP_POPUP,
                 "신규 컨텐츠",
-                100L,
+                imageFile.getId(),
                 "https://example.com",
                 "추가 정보",
                 start,
@@ -85,15 +95,19 @@ class AdminContentServiceTest extends RepositoryAndServiceTestSupport {
         ).containsExactly(
                 ContentType.IN_APP_POPUP,
                 "신규 컨텐츠",
-                100L,
+                imageFile.getId(),
                 "https://example.com",
                 "추가 정보",
                 start,
                 end
         );
+
+        CommonFile updatedFile = commonFileRepository.findById(imageFile.getId()).orElseThrow();
+        assertThat(updatedFile.getFileStatus()).isEqualTo(FileStatus.COMPLETE);
+        assertThat(updatedFile.getTargetId()).isEqualTo(saved.getId());
     }
 
-    @DisplayName("updateContent - 존재하는 id 는 필드가 업데이트되고, 존재하지 않는 id 는 IllegalArgumentException 이 발생한다")
+    @DisplayName("updateContent - 존재하는 id 는 필드가 업데이트되고, 새로 첨부된 파일은 COMPLETE 로 전환되고 targetId 가 세팅된다")
     @Test
     void test3() {
         Content content = save("원래 이름", ContentType.IN_APP_POPUP);
@@ -105,11 +119,13 @@ class AdminContentServiceTest extends RepositoryAndServiceTestSupport {
         contentRepository.saveAndFlush(content);
         em.clear();
 
+        CommonFile newImageFile = saveTemporaryFile();
+
         LocalDateTime newStart = LocalDateTime.of(2026, 6, 14, 12, 0);
         LocalDateTime newEnd = newStart.plusDays(7);
         AdminContentUpdateRequest request = new AdminContentUpdateRequest(
                 "변경된 이름",
-                200L,
+                newImageFile.getId(),
                 "https://new.example.com",
                 "변경된 정보",
                 newStart,
@@ -130,13 +146,16 @@ class AdminContentServiceTest extends RepositoryAndServiceTestSupport {
                 Content::getDisplayEndDate
         ).containsExactly(
                 "변경된 이름",
-                200L,
+                newImageFile.getId(),
                 "https://new.example.com",
                 "변경된 정보",
                 newStart,
                 newEnd
         );
 
+        CommonFile updatedFile = commonFileRepository.findById(newImageFile.getId()).orElseThrow();
+        assertThat(updatedFile.getFileStatus()).isEqualTo(FileStatus.COMPLETE);
+        assertThat(updatedFile.getTargetId()).isEqualTo(content.getId());
     }
 
     @DisplayName("updateContent - 존재하지 않는 id 는 IllegalArgumentException 이 발생한다")
@@ -179,6 +198,19 @@ class AdminContentServiceTest extends RepositoryAndServiceTestSupport {
         ReflectionTestUtils.setField(content, "contentType", contentType);
         ReflectionTestUtils.setField(content, "name", name);
         return contentRepository.saveAndFlush(content);
+    }
+
+    private CommonFile saveTemporaryFile() {
+        CommonFile file = CommonFile.builder()
+                .fileName("image.jpg")
+                .fileSize(123)
+                .fileContentType("image/jpeg")
+                .filePath("temp-object-key.jpg")
+                .fileType(FileType.CONTENT_IMAGE)
+                .bucketName("test-bucket")
+                .fileStatus(FileStatus.TEMPORARY)
+                .build();
+        return commonFileRepository.saveAndFlush(file);
     }
 
     private Content newContent() {

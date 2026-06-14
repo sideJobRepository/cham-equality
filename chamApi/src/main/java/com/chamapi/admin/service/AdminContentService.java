@@ -4,6 +4,7 @@ import com.chamapi.admin.dto.request.AdminContentCreateRequest;
 import com.chamapi.admin.dto.request.AdminContentUpdateRequest;
 import com.chamapi.content.entity.Content;
 import com.chamapi.content.repository.ContentRepository;
+import com.chamapi.file.service.S3FileService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,6 +17,7 @@ import java.util.List;
 public class AdminContentService {
 
     private final ContentRepository contentRepository;
+    private final S3FileService fileService;
 
     public List<Content> getAllContents(){
         return contentRepository.findAll();
@@ -23,7 +25,7 @@ public class AdminContentService {
 
     @Transactional
     public void createContent(AdminContentCreateRequest request){
-        Content content = Content.builder()
+        Content content = contentRepository.save(Content.builder()
                 .contentType(request.contentType())
                 .name(request.name())
                 .imageFileId(request.imageFileId())
@@ -31,9 +33,9 @@ public class AdminContentService {
                 .additionalInfo(request.additionalInfo())
                 .displayStartDate(request.displayStartDate())
                 .displayEndDate(request.displayEndDate())
-                .build();
+                .build());
 
-        contentRepository.save(content);
+        completeImageFile(content.getId(), content.getImageFileId());
     }
 
     @Transactional
@@ -51,6 +53,8 @@ public class AdminContentService {
         );
 
         contentRepository.save(content);
+
+        completeImageFile(id, content.getImageFileId());
     }
 
     @Transactional
@@ -58,4 +62,10 @@ public class AdminContentService {
        contentRepository.deleteById(id);
     }
 
+    private void completeImageFile(Long contentId, Long imageFileId){
+        if(imageFileId == null)
+            return;
+
+        fileService.markComplete(imageFileId, contentId);
+    }
 }
