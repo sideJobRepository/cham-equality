@@ -1,122 +1,203 @@
+/* Shelter edit modal — Airbnb-style. Tokens (--ab-*) come from
+   `.admin-layout` (this modal renders as a descendant of it). */
 .shelter-edit-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.45);
+  background: rgba(0, 0, 0, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 200;
+  padding: 16px;
+  box-sizing: border-box;
 }
 
 .shelter-edit-modal {
-  background: #fff;
-  border-radius: 6px;
+  background: var(--ab-canvas);
+  border-radius: var(--ab-radius-md);
   width: min(520px, 92vw);
-  max-height: 92vh;
+  max-height: calc(100vh - 32px);
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  font-family: var(--ab-font);
+  color: var(--ab-ink);
+  box-shadow: var(--ab-shadow-card);
 }
 
 .shelter-edit-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 14px 18px;
-  border-bottom: 1px solid #eee;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--ab-hairline-soft);
 }
 
+/* display-sm */
 .shelter-edit-header h2 {
   margin: 0;
-  font-size: 16px;
+  font-family: inherit;
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.20;
+  letter-spacing: -0.18px;
+  color: var(--ab-ink);
 }
 
+/* icon-button-circle */
 .shelter-edit-close {
-  background: none;
+  background: var(--ab-surface-strong);
   border: none;
-  font-size: 18px;
+  border-radius: var(--ab-radius-full);
+  width: 32px;
+  height: 32px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
   cursor: pointer;
-  color: #666;
+  color: var(--ab-ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.12s ease;
 }
 
+.shelter-edit-close:hover {
+  background: var(--ab-hairline-soft);
+}
+
+/* Address info strip */
 .shelter-edit-info {
-  padding: 12px 18px;
-  background: #f9f9f9;
-  font-size: 13px;
-  color: #555;
+  padding: 16px 24px;
+  background: var(--ab-surface-soft);
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--ab-body);
+  border-bottom: 1px solid var(--ab-hairline-soft);
 }
 
 .shelter-edit-info > div {
-  margin-bottom: 4px;
+  margin-bottom: 6px;
+  display: flex;
+  gap: 12px;
+}
+
+.shelter-edit-info > div:last-child {
+  margin-bottom: 0;
 }
 
 .shelter-edit-info span {
   display: inline-block;
   width: 60px;
-  color: #888;
-  font-size: 12px;
+  color: var(--ab-muted);
+  font-size: 13px;
+  font-weight: 400;
+  flex-shrink: 0;
 }
 
 .shelter-edit-body {
-  padding: 16px 18px;
+  padding: 20px 24px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 18px;
   overflow-y: auto;
 }
 
 .shelter-edit-body .field {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 8px;
 }
 
+/* caption */
 .shelter-edit-body label {
-  font-size: 12px;
-  color: #555;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ab-ink);
+  line-height: 1.29;
 }
 
+/* text-input */
 .shelter-edit-body input,
 .shelter-edit-body select {
-  padding: 7px 9px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  font-size: 14px;
+  padding: 13px 12px;
+  background: var(--ab-canvas);
+  border: 1px solid var(--ab-hairline);
+  border-radius: var(--ab-radius-sm);
+  font-family: inherit;
+  font-size: 16px;
+  color: var(--ab-ink);
+  min-height: 48px;
+  box-sizing: border-box;
+  transition: border-color 0.12s ease;
+}
+
+.shelter-edit-body input:focus,
+.shelter-edit-body select:focus {
+  outline: none;
+  border: 2px solid var(--ab-ink);
+  padding: 12px 11px;
 }
 
 .shelter-edit-error {
-  padding: 8px 10px;
-  background: #fde8e8;
-  color: #c0392b;
-  border-radius: 4px;
-  font-size: 13px;
+  padding: 12px 14px;
+  background: var(--ab-error-soft);
+  color: var(--ab-error);
+  border: 1px solid var(--ab-error);
+  border-radius: var(--ab-radius-sm);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
 }
 
 .shelter-edit-footer {
   display: flex;
   justify-content: flex-end;
   gap: 8px;
-  padding: 12px 18px;
-  border-top: 1px solid #eee;
+  padding: 16px 24px;
+  border-top: 1px solid var(--ab-hairline-soft);
 }
 
+/* button-secondary by default */
 .shelter-edit-footer button {
-  padding: 7px 16px;
-  border: 1px solid #ccc;
-  background: #fff;
-  border-radius: 4px;
+  padding: 13px 23px;
+  background: var(--ab-canvas);
+  color: var(--ab-ink);
+  border: 1px solid var(--ab-ink);
+  border-radius: var(--ab-radius-sm);
   cursor: pointer;
-  font-size: 13px;
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.25;
+  min-height: 48px;
+  transition: background 0.12s ease;
 }
 
+.shelter-edit-footer button:hover:not(:disabled) {
+  background: var(--ab-surface-soft);
+}
+
+/* button-primary : Rausch */
 .shelter-edit-footer button.primary {
-  background: #2c5fa8;
-  color: #fff;
-  border-color: #2c5fa8;
+  background: var(--ab-primary);
+  color: var(--ab-on-primary);
+  border: none;
+  padding: 14px 24px;
+}
+
+.shelter-edit-footer button.primary:hover:not(:disabled) {
+  background: var(--ab-primary-active);
+}
+
+.shelter-edit-footer button.primary:disabled {
+  background: var(--ab-primary-disabled);
+  opacity: 1;
 }
 
 .shelter-edit-footer button:disabled {
-  opacity: 0.6;
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
@@ -133,14 +214,8 @@
     border-radius: 0;
   }
 
-  .shelter-edit-body input,
-  .shelter-edit-body select {
-    font-size: 16px; /* iOS 자동 확대 방지 */
-    min-height: 40px;
-  }
-
   .shelter-edit-footer button {
-    min-height: 44px;
     flex: 1;
+    min-height: 48px;
   }
 }

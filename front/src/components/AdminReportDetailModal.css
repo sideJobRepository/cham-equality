@@ -1,3 +1,5 @@
+/* Report detail modal — Airbnb-style. Tokens (--ab-*) come from
+   `.admin-layout` (this modal renders as a descendant of it). */
 .detail-backdrop {
   position: fixed;
   inset: 0;
@@ -7,17 +9,19 @@
   align-items: center;
   z-index: 1000;
   padding: 20px;
+  box-sizing: border-box;
 }
 
 .detail-modal {
-  background: #fff;
-  border-radius: 8px;
+  background: var(--ab-canvas);
+  border-radius: var(--ab-radius-md);
   width: 100%;
   max-width: 720px;
   max-height: calc(100dvh - 40px);
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--ab-shadow-card);
+  font-family: var(--ab-font);
   font-size: 14px;
-  color: #222;
+  color: var(--ab-ink);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -27,169 +31,194 @@
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  padding: 16px 20px;
-  border-bottom: 1px solid #eee;
+  gap: 16px;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--ab-hairline-soft);
   flex-shrink: 0;
 }
 
+/* display-sm */
 .detail-header h2 {
-  margin: 0 0 4px;
-  font-size: 18px;
+  margin: 0 0 6px;
+  font-family: inherit;
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.20;
+  letter-spacing: -0.18px;
+  color: var(--ab-ink);
 }
 
 .detail-sub {
   margin: 0;
-  font-size: 12px;
-  color: #666;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--ab-muted);
   line-height: 1.5;
 }
 
+/* icon-button-circle */
 .detail-close {
-  background: none;
+  background: var(--ab-surface-strong);
   border: none;
-  font-size: 18px;
+  border-radius: var(--ab-radius-full);
+  width: 32px;
+  height: 32px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
   cursor: pointer;
-  color: #888;
-  padding: 4px 8px;
+  color: var(--ab-ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.12s ease;
+}
+
+.detail-close:hover {
+  background: var(--ab-hairline-soft);
 }
 
 .detail-body {
-  padding: 20px;
+  padding: 24px;
   flex: 1 1 auto;
   overflow-y: auto;
   min-height: 0;
 }
 
-.state {
-  padding: 30px;
+.detail-body .state {
+  padding: 48px 16px;
   text-align: center;
-  color: #666;
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--ab-muted);
 }
 
-.state.error {
-  color: #c0392b;
+.detail-body .state.error {
+  color: var(--ab-error);
 }
 
+/* Two-column key/value grid */
 .fields {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 10px 16px;
-  margin-bottom: 24px;
+  gap: 12px 24px;
+  margin-bottom: 32px;
 }
 
 .row {
   display: flex;
-  gap: 8px;
-  font-size: 13px;
+  gap: 12px;
+  font-family: inherit;
+  font-size: 14px;
   align-items: baseline;
 }
 
 .row-label {
-  color: #888;
-  min-width: 80px;
+  color: var(--ab-muted);
+  min-width: 88px;
   flex-shrink: 0;
+  font-size: 13px;
+  font-weight: 400;
 }
 
 .row-value {
-  color: #222;
+  color: var(--ab-ink);
   word-break: break-all;
-}
-
-.badge {
-  display: inline-block;
-  padding: 2px 8px;
-  border-radius: 12px;
-  font-size: 11px;
   font-weight: 500;
 }
 
+/* Badges : pill chips */
+.badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: var(--ab-radius-full);
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.18;
+}
+
 .badge-pending {
-  background: #fff4d6;
-  color: #8a6d00;
+  background: var(--ab-surface-strong);
+  color: var(--ab-ink);
 }
 
 .badge-approved {
-  background: #e3f4e3;
-  color: #2e7d32;
+  background: var(--ab-ink);
+  color: var(--ab-on-primary);
 }
 
 .badge-rejected {
-  background: #fde2dd;
-  color: #c0392b;
+  background: var(--ab-error-soft);
+  color: var(--ab-error);
 }
 
+/* Images section */
 .images-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
-  margin-bottom: 12px;
+  gap: 12px;
+  margin-bottom: 16px;
 }
 
 .images-section h3 {
   margin: 0;
-  font-size: 14px;
+  font-family: inherit;
+  font-size: 16px;
   font-weight: 600;
+  line-height: 1.25;
+  color: var(--ab-ink);
 }
 
+/* button-secondary (small) for ZIP download */
 .zip-btn {
-  padding: 6px 12px;
-  border: 1px solid #2c5fa8;
-  background: #2c5fa8;
-  color: #fff;
-  border-radius: 4px;
+  padding: 9px 18px;
+  border: 1px solid var(--ab-ink);
+  background: var(--ab-canvas);
+  color: var(--ab-ink);
+  border-radius: var(--ab-radius-sm);
   cursor: pointer;
-  font-size: 12px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.25;
+  transition: background 0.12s ease;
 }
 
 .zip-btn:hover:not(:disabled) {
-  background: #234a85;
+  background: var(--ab-surface-soft);
 }
 
 .zip-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.download-btn {
-  align-self: flex-start;
-  margin-top: 2px;
-  padding: 3px 8px;
-  font-size: 11px;
-  border: 1px solid #d0d0d0;
-  background: #fff;
-  color: #444;
-  border-radius: 3px;
-  cursor: pointer;
-}
-
-.download-btn:hover:not(:disabled) {
-  background: #f0f0f0;
-}
-
-.download-btn:disabled {
-  opacity: 0.6;
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
 .no-images {
-  color: #999;
-  font-size: 13px;
+  font-family: inherit;
+  color: var(--ab-muted);
+  font-size: 14px;
   margin: 0;
 }
 
 .images-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-  gap: 10px;
+  gap: 16px;
 }
 
+/* property-card-style photo card */
 .image-card {
   margin: 0;
-  background: #fafafa;
-  border: 1px solid #eee;
-  border-radius: 6px;
+  background: var(--ab-canvas);
+  border: 1px solid var(--ab-hairline-soft);
+  border-radius: var(--ab-radius-md);
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .image-card a {
@@ -206,59 +235,137 @@
 }
 
 .image-card figcaption {
-  padding: 6px 8px;
+  padding: 10px 12px;
   display: flex;
   flex-direction: column;
-  gap: 3px;
-  font-size: 11px;
+  gap: 6px;
+  font-family: inherit;
+  font-size: 12px;
 }
 
 .cat-tag {
   display: inline-block;
   padding: 2px 8px;
-  background: #2c5fa8;
-  color: #fff;
-  border-radius: 10px;
+  background: var(--ab-surface-strong);
+  color: var(--ab-ink);
+  border-radius: var(--ab-radius-full);
   align-self: flex-start;
-  font-size: 10px;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.18;
 }
 
 .desc {
-  color: #555;
-  line-height: 1.4;
+  color: var(--ab-body);
+  line-height: 1.43;
+  font-size: 13px;
 }
 
+.download-btn {
+  align-self: flex-start;
+  margin-top: 2px;
+  padding: 6px 12px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  border: 1px solid var(--ab-ink);
+  background: var(--ab-canvas);
+  color: var(--ab-ink);
+  border-radius: var(--ab-radius-sm);
+  cursor: pointer;
+  line-height: 1.25;
+  transition: background 0.12s ease;
+}
+
+.download-btn:hover:not(:disabled) {
+  background: var(--ab-surface-soft);
+}
+
+.download-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Footer */
 .detail-footer {
   display: flex;
   justify-content: flex-end;
   gap: 8px;
-  padding: 14px 20px;
-  border-top: 1px solid #eee;
-  background: #f9f9fa;
+  padding: 16px 24px;
+  border-top: 1px solid var(--ab-hairline-soft);
+  background: var(--ab-canvas);
   flex-shrink: 0;
 }
 
 .detail-footer button {
-  padding: 8px 20px;
-  border-radius: 4px;
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.25;
+  min-height: 48px;
   cursor: pointer;
-  font-size: 14px;
-  border: 1px solid;
+  transition: background 0.12s ease;
 }
 
+/* button-primary : Rausch */
 .detail-footer .approve-btn {
-  background: #2c5fa8;
-  color: #fff;
-  border-color: #2c5fa8;
+  padding: 14px 24px;
+  background: var(--ab-primary);
+  color: var(--ab-on-primary);
+  border: none;
+  border-radius: var(--ab-radius-sm);
 }
 
+.detail-footer .approve-btn:hover:not(:disabled) {
+  background: var(--ab-primary-active);
+}
+
+.detail-footer .approve-btn:disabled {
+  background: var(--ab-primary-disabled);
+  opacity: 1;
+  cursor: not-allowed;
+}
+
+/* destructive secondary */
 .detail-footer .reject-btn {
-  background: #fff;
-  color: #c0392b;
-  border-color: #c0392b;
+  padding: 13px 23px;
+  background: var(--ab-canvas);
+  color: var(--ab-error);
+  border: 1px solid var(--ab-error);
+  border-radius: var(--ab-radius-sm);
 }
 
-.detail-footer button:disabled {
+.detail-footer .reject-btn:hover:not(:disabled) {
+  background: var(--ab-error-soft);
+}
+
+.detail-footer .reject-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Re-investigate : neutral secondary */
+.reinvestigate-btn {
+  padding: 13px 23px;
+  background: var(--ab-canvas);
+  color: var(--ab-ink);
+  border: 1px solid var(--ab-ink);
+  border-radius: var(--ab-radius-sm);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.25;
+  min-height: 48px;
+  transition: background 0.12s ease;
+}
+
+.reinvestigate-btn:hover:not(:disabled) {
+  background: var(--ab-surface-soft);
+}
+
+.reinvestigate-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
@@ -276,26 +383,26 @@
   }
 
   .detail-header {
-    padding: 14px 16px;
+    padding: 16px 20px;
   }
 
   .detail-header h2 {
-    font-size: 16px;
+    font-size: 18px;
   }
 
   .detail-body {
-    padding: 16px;
+    padding: 20px;
   }
 
   .fields {
     grid-template-columns: 1fr;
-    gap: 8px 12px;
-    margin-bottom: 20px;
+    gap: 10px 16px;
+    margin-bottom: 24px;
   }
 
   .images-grid {
     grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
-    gap: 8px;
+    gap: 10px;
   }
 
   .image-card img {
@@ -306,33 +413,9 @@
     padding: 12px 16px;
   }
 
-  .detail-footer button {
-    flex: 1;
-    padding: 10px;
-  }
-}
-
-.reinvestigate-btn {
-  padding: 8px 16px;
-  background: #f4a83a;
-  color: #fff;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.reinvestigate-btn:hover {
-  background: #e09728;
-}
-
-.reinvestigate-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-@media (max-width: 640px) {
+  .detail-footer button,
   .reinvestigate-btn {
     flex: 1;
-    min-height: 44px;
+    min-height: 48px;
   }
 }

@@ -148,7 +148,7 @@ All modals follow the same pattern — copy it when adding another:
 
 ## Styling
 
-Plain CSS, one file per component, co-located (`AdminContentEditModal.tsx` + `AdminContentEditModal.css`). Global reset/typography in `src/index.css`. Do not introduce Tailwind or CSS-in-JS without discussing — the current convention is intentional.
+Visual language, color tokens, typography, and component-level design rules live in `front/DESIGN.md`. Read that file before touching styles or building new UI — do not re-derive design decisions from existing CSS.
 
 ## Gotchas
 

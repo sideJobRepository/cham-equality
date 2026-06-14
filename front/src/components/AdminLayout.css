@@ -1,109 +1,180 @@
+/* ──────────────────────────────────────────────────────────────────────
+   Admin shell — Airbnb-style design system. See front/DESIGN.md.
+   Tokens are defined here on `.admin-layout` so descendants (admin pages
+   that opt in to these tokens — currently AdminContentsPage and
+   AdminContentEditModal) can inherit them via `var(--ab-*)`.
+   ────────────────────────────────────────────────────────────────────── */
 .admin-layout {
+  /* ── colors ── */
+  --ab-canvas: #ffffff;
+  --ab-ink: #222222;
+  --ab-body: #3f3f3f;
+  --ab-muted: #6a6a6a;
+  --ab-muted-soft: #929292;
+  --ab-primary: #ff385c;
+  --ab-primary-active: #e00b41;
+  --ab-primary-disabled: #ffd1da;
+  --ab-error: #c13515;
+  --ab-error-soft: rgba(193, 53, 21, 0.08);
+  --ab-hairline: #dddddd;
+  --ab-hairline-soft: #ebebeb;
+  --ab-border-strong: #c1c1c1;
+  --ab-surface-soft: #f7f7f7;
+  --ab-surface-strong: #f2f2f2;
+  --ab-on-primary: #ffffff;
+
+  /* Single Cereal-led font stack, with Korean fallbacks for Hangul. */
+  --ab-font: 'Airbnb Cereal VF', Circular, -apple-system, system-ui, Roboto,
+    'Helvetica Neue', 'Apple SD Gothic Neo', 'Malgun Gothic', '맑은 고딕',
+    sans-serif;
+
+  /* ── radius ── */
+  --ab-radius-xs: 4px;
+  --ab-radius-sm: 8px;
+  --ab-radius-md: 14px;
+  --ab-radius-lg: 20px;
+  --ab-radius-xl: 32px;
+  --ab-radius-full: 9999px;
+
+  /* The system's single elevation tier. */
+  --ab-shadow-card:
+    rgba(0, 0, 0, 0.02) 0 0 0 1px,
+    rgba(0, 0, 0, 0.04) 0 2px 6px 0,
+    rgba(0, 0, 0, 0.1) 0 4px 8px 0;
+
   display: flex;
   min-height: 100vh;
-  background: #f7f8fa;
+  background: var(--ab-canvas);
+  color: var(--ab-ink);
+  font-family: var(--ab-font);
+  -webkit-font-smoothing: antialiased;
 }
 
+/* ── Sidebar : white rail with hairline divider, no frame, no fill banner ── */
 .admin-sidebar {
-  width: 220px;
+  width: 240px;
   flex-shrink: 0;
-  background: #1f2a3d;
-  color: #cfd6e4;
+  background: var(--ab-canvas);
+  color: var(--ab-ink);
   display: flex;
   flex-direction: column;
-  padding: 24px 0;
+  padding: 24px 16px;
   position: sticky;
   top: 0;
   height: 100vh;
   box-sizing: border-box;
+  border-right: 1px solid var(--ab-hairline);
 }
 
 .admin-sidebar-header {
-  padding: 0 22px 20px;
-  border-bottom: 1px solid #2c374b;
+  padding: 4px 8px 20px;
+  border-bottom: 1px solid var(--ab-hairline-soft);
+  margin-bottom: 12px;
 }
 
+/* display-lg */
 .admin-sidebar-title {
-  font-size: 18px;
+  font-family: inherit;
+  font-size: 22px;
   font-weight: 600;
-  color: #fff;
+  line-height: 1.18;
+  letter-spacing: -0.44px;
+  color: var(--ab-ink);
 }
 
+/* caption-sm muted */
 .admin-sidebar-subtitle {
   margin-top: 4px;
-  font-size: 11px;
-  color: #8693ab;
-  letter-spacing: 0.5px;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.23;
+  color: var(--ab-muted);
 }
 
+/* ── Nav links : pill-rounded soft buttons ── */
 .admin-sidebar-nav {
   flex: 1;
-  padding: 16px 12px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
 }
 
 .admin-sidebar-link {
   display: block;
-  padding: 10px 14px;
-  border-radius: 6px;
-  color: #cfd6e4;
+  padding: 11px 14px;
+  background: transparent;
+  color: var(--ab-body);
+  border: none;
+  border-radius: var(--ab-radius-sm);
   text-decoration: none;
-  font-size: 14px;
-  transition: background 0.15s, color 0.15s;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.25;
+  transition: background 0.12s ease, color 0.12s ease;
 }
 
 .admin-sidebar-link:hover {
-  background: #2c374b;
-  color: #fff;
+  background: var(--ab-surface-soft);
+  color: var(--ab-ink);
 }
 
 .admin-sidebar-link.active {
-  background: #2c5fa8;
-  color: #fff;
+  background: var(--ab-surface-strong);
+  color: var(--ab-ink);
   font-weight: 600;
 }
 
+/* "← 대피소 목록" : tertiary text link */
 .admin-sidebar-link.subtle {
+  background: transparent;
+  border: none;
+  color: var(--ab-muted);
+  font-family: inherit;
   font-size: 13px;
-  color: #8693ab;
+  font-weight: 400;
+  padding: 8px 6px;
+  text-decoration: none;
 }
 
 .admin-sidebar-link.subtle:hover {
-  color: #fff;
+  color: var(--ab-ink);
+  background: transparent;
+  text-decoration: underline;
 }
 
 .admin-sidebar-footer {
-  padding: 16px 12px 0;
-  border-top: 1px solid #2c374b;
+  padding-top: 12px;
+  border-top: 1px solid var(--ab-hairline-soft);
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 
+/* button-secondary : white fill, 1px ink outline, 8px radius */
 .admin-sidebar-logout {
-  margin: 0 2px;
-  padding: 9px 14px;
-  background: transparent;
-  border: 1px solid #4a5670;
-  color: #cfd6e4;
-  border-radius: 6px;
+  padding: 11px 16px;
+  background: var(--ab-canvas);
+  border: 1px solid var(--ab-ink);
+  color: var(--ab-ink);
+  border-radius: var(--ab-radius-sm);
   cursor: pointer;
-  font-size: 13px;
-  text-align: left;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.29;
+  text-align: center;
+  transition: background 0.12s ease;
 }
 
 .admin-sidebar-logout:hover {
-  background: #c0392b;
-  border-color: #c0392b;
-  color: #fff;
+  background: var(--ab-surface-soft);
 }
 
 .admin-main {
   flex: 1;
   min-width: 0;
-  background: #fff;
+  background: var(--ab-canvas);
 }
 
 @media (max-width: 768px) {
@@ -115,35 +186,47 @@
     width: 100%;
     height: auto;
     position: static;
-    padding: 12px 0;
+    padding: 12px 16px;
     flex-direction: row;
     align-items: center;
     flex-wrap: wrap;
+    border-right: none;
+    border-bottom: 1px solid var(--ab-hairline);
+    gap: 12px;
   }
 
   .admin-sidebar-header {
-    padding: 0 16px;
+    padding: 0;
     border-bottom: none;
-    border-right: 1px solid #2c374b;
+    margin-bottom: 0;
+    flex-shrink: 0;
+  }
+
+  .admin-sidebar-title {
+    font-size: 18px;
+  }
+
+  .admin-sidebar-subtitle {
+    display: none;
   }
 
   .admin-sidebar-nav {
     flex-direction: row;
     flex: 1;
-    padding: 0 12px;
-    gap: 4px;
     flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .admin-sidebar-link {
+    padding: 8px 12px;
+    font-size: 14px;
   }
 
   .admin-sidebar-footer {
+    padding-top: 0;
     border-top: none;
-    border-left: 1px solid #2c374b;
-    padding: 0 12px;
     flex-direction: row;
     align-items: center;
-  }
-
-  .admin-sidebar-logout {
-    padding: 7px 12px;
+    gap: 8px;
   }
 }

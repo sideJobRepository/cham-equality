@@ -1,151 +1,199 @@
+/* ──────────────────────────────────────────────────────────────────────
+   Contents admin page — Airbnb-style. Tokens (--ab-*) come from
+   `.admin-layout` in AdminLayout.css.
+   ────────────────────────────────────────────────────────────────────── */
 .admin-contents-page {
-  padding: 24px 32px;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  color: #222;
+  padding: 24px 32px 48px;
+  color: var(--ab-ink);
+  font-family: var(--ab-font);
+  max-width: 1280px;
 }
 
+/* ── Header ── display-xl + muted subtitle, hairline-soft underline ── */
 .admin-contents-page .admin-header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 16px;
-  margin-bottom: 16px;
+  margin-bottom: 24px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--ab-hairline-soft);
 }
 
 .admin-contents-page .admin-header h1 {
   margin: 0 0 4px;
-  font-size: 22px;
+  font-family: inherit;
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--ab-ink);
 }
 
 .admin-contents-page .subtitle {
   margin: 0;
-  color: #666;
-  font-size: 13px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.43;
+  color: var(--ab-muted);
 }
 
 .admin-contents-page .admin-header-actions {
   display: flex;
   gap: 8px;
+  flex-shrink: 0;
 }
 
+/* button-primary : Rausch fill, white text, 8px radius */
 .admin-contents-page .primary-btn {
-  padding: 8px 16px;
-  background: #2c5fa8;
-  color: #fff;
+  padding: 10px 18px;
+  background: var(--ab-primary);
+  color: var(--ab-on-primary);
   border: none;
-  border-radius: 4px;
-  font-size: 13px;
+  border-radius: var(--ab-radius-sm);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.29;
   cursor: pointer;
+  transition: background 0.12s ease;
+  min-height: 40px;
 }
 
 .admin-contents-page .primary-btn:hover {
-  background: #234e8a;
+  background: var(--ab-primary-active);
 }
 
+/* Flash : soft surface chip */
 .content-flash {
-  margin-bottom: 12px;
-  padding: 10px 14px;
-  background: #e3f4e3;
-  color: #1e6f1e;
-  border-radius: 4px;
-  font-size: 13px;
+  margin-bottom: 16px;
+  padding: 12px 16px;
+  background: var(--ab-surface-soft);
+  color: var(--ab-ink);
+  border: 1px solid var(--ab-hairline);
+  border-radius: var(--ab-radius-sm);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
 }
 
 .admin-contents-page .state {
-  padding: 30px;
+  padding: 48px 16px;
   text-align: center;
-  color: #666;
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--ab-muted);
+  background: var(--ab-canvas);
+  border: 1px solid var(--ab-hairline-soft);
+  border-radius: var(--ab-radius-md);
 }
 
 .admin-contents-page .state.error {
-  color: #c0392b;
+  color: var(--ab-error);
+  background: var(--ab-error-soft);
+  border-color: var(--ab-error);
 }
 
 .type-sections {
   display: flex;
   flex-direction: column;
-  gap: 28px;
+  gap: 32px;
 }
 
+/* No box / no tinted block — just heading + hairline + grid. */
 .type-section {
-  border: 1px solid #e6e6e6;
-  border-radius: 6px;
-  background: #fafbfc;
-  padding: 14px 16px 18px;
+  border: none;
+  background: transparent;
+  padding: 0;
 }
 
 .type-section-header {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  margin-bottom: 12px;
+  padding: 0 0 10px;
+  margin-bottom: 14px;
+  border-bottom: 1px solid var(--ab-hairline-soft);
 }
 
+/* display-md */
 .type-section-header h2 {
   margin: 0;
-  font-size: 16px;
-  color: #2c5fa8;
+  font-family: inherit;
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.35;
+  color: var(--ab-ink);
 }
 
 .type-section-meta {
   display: flex;
-  gap: 12px;
-  align-items: center;
+  gap: 16px;
+  align-items: baseline;
 }
 
 .type-section-meta .count {
-  font-size: 12px;
-  color: #888;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--ab-muted);
 }
 
+/* button-secondary (small) for "+ 추가" — ink-outlined pill */
 .link-btn {
-  background: none;
-  border: none;
-  color: #2c5fa8;
-  cursor: pointer;
+  background: var(--ab-canvas);
+  border: 1px solid var(--ab-ink);
+  color: var(--ab-ink);
+  font-family: inherit;
   font-size: 12px;
-  padding: 4px 6px;
-  border-radius: 3px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 5px 12px;
+  border-radius: var(--ab-radius-sm);
+  line-height: 1.25;
+  transition: background 0.12s ease;
 }
 
 .link-btn:hover {
-  background: #eef3fb;
+  background: var(--ab-surface-soft);
 }
 
 .type-section .empty {
-  padding: 24px;
+  padding: 32px 16px;
   text-align: center;
-  color: #999;
-  font-size: 13px;
-  border: 1px dashed #ddd;
-  border-radius: 4px;
-  background: #fff;
+  background: var(--ab-surface-soft);
+  border-radius: var(--ab-radius-md);
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--ab-muted);
 }
 
+/* ── Content grid + photo-first cards ── */
 .content-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 16px;
 }
 
 .content-card {
-  background: #fff;
-  border: 1px solid #e3e3e3;
-  border-radius: 6px;
+  background: var(--ab-canvas);
+  border: 1px solid var(--ab-hairline-soft);
+  border-radius: var(--ab-radius-md);
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  transition: border-color 0.12s, box-shadow 0.12s;
+  transition: box-shadow 0.16s ease, transform 0.16s ease;
 }
 
 .content-card:hover {
-  border-color: #2c5fa8;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+  box-shadow: var(--ab-shadow-card);
+  transform: translateY(-1px);
 }
 
+/* property-card-photo : 4:3 to save vertical space, surface-soft fallback */
 .content-card-thumb {
   aspect-ratio: 4 / 3;
-  background: #f1f3f6;
+  background: var(--ab-surface-soft);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -160,37 +208,46 @@
 }
 
 .content-card-thumb .no-image-label {
-  font-size: 12px;
-  color: #aaa;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--ab-muted-soft);
 }
 
 .content-card-thumb.no-image::after {
-  content: 'No Image';
+  content: 'No image';
   position: absolute;
-  font-size: 12px;
-  color: #aaa;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--ab-muted-soft);
 }
 
 .content-card-body {
-  padding: 10px 12px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 2px;
+  padding: 10px 12px;
   flex: 1;
 }
 
+/* title-md */
 .content-card-title {
+  color: var(--ab-ink);
+  font-family: inherit;
   font-size: 14px;
   font-weight: 600;
-  color: #222;
+  line-height: 1.3;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .content-card-url {
-  font-size: 11.5px;
-  color: #2c5fa8;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.4;
+  color: var(--ab-muted);
   text-decoration: none;
   white-space: nowrap;
   overflow: hidden;
@@ -198,15 +255,16 @@
 }
 
 .content-card-url:hover {
+  color: var(--ab-primary);
   text-decoration: underline;
 }
 
 .content-card-dates {
-  font-size: 11.5px;
-  color: #555;
-  background: #f1f5fb;
-  padding: 4px 6px;
-  border-radius: 3px;
+  margin-top: 2px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--ab-muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -215,65 +273,67 @@
 .content-card-actions {
   display: flex;
   gap: 6px;
-  padding: 8px 12px 10px;
-  border-top: 1px solid #f0f0f0;
+  padding: 0 12px 12px;
+  background: transparent;
 }
 
+/* button-secondary base */
 .content-card-actions button {
   flex: 1;
-}
-
-.edit-btn {
-  padding: 5px 10px;
-  background: #2c5fa8;
-  color: #fff;
-  border: none;
-  border-radius: 3px;
+  padding: 7px 10px;
+  background: var(--ab-canvas);
+  border: 1px solid var(--ab-ink);
+  color: var(--ab-ink);
+  border-radius: var(--ab-radius-sm);
   cursor: pointer;
+  font-family: inherit;
   font-size: 12px;
+  font-weight: 500;
+  line-height: 1.25;
+  transition: background 0.12s ease, color 0.12s ease,
+    border-color 0.12s ease;
 }
 
-.edit-btn:hover {
-  background: #234e8a;
+.content-card-actions button:hover {
+  background: var(--ab-surface-soft);
 }
 
+/* destructive flavor — uses error red as the outline color */
 .delete-btn {
-  padding: 5px 10px;
-  background: #fff;
-  color: #c0392b;
-  border: 1px solid #c0392b;
-  border-radius: 3px;
-  cursor: pointer;
-  font-size: 12px;
+  color: var(--ab-error);
+  border-color: var(--ab-error);
 }
 
 .delete-btn:hover {
-  background: #fde8e8;
+  background: var(--ab-error-soft);
 }
 
 @media (max-width: 960px) {
   .admin-contents-page {
-    padding: 20px 16px;
+    padding: 24px 24px 48px;
+  }
+  .content-grid {
+    gap: 16px;
   }
 }
 
 @media (max-width: 640px) {
   .admin-contents-page {
-    padding: 14px 12px;
+    padding: 20px 16px 32px;
   }
-
   .admin-contents-page .admin-header {
     flex-direction: column;
     align-items: stretch;
-    gap: 10px;
+    gap: 12px;
   }
-
   .admin-contents-page .admin-header h1 {
-    font-size: 19px;
+    font-size: 22px;
   }
-
+  .type-section-header h2 {
+    font-size: 18px;
+  }
   .content-grid {
     grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-    gap: 10px;
+    gap: 12px;
   }
 }

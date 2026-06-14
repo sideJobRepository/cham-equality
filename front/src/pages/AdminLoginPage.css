@@ -1,82 +1,137 @@
+/* AdminLoginPage stands outside AdminLayout, so it defines its own
+   Airbnb-style tokens locally. See front/DESIGN.md. */
 .admin-login-page {
+  --ab-canvas: #ffffff;
+  --ab-ink: #222222;
+  --ab-muted: #6a6a6a;
+  --ab-primary: #ff385c;
+  --ab-primary-active: #e00b41;
+  --ab-primary-disabled: #ffd1da;
+  --ab-error: #c13515;
+  --ab-error-soft: rgba(193, 53, 21, 0.08);
+  --ab-hairline: #dddddd;
+  --ab-hairline-soft: #ebebeb;
+  --ab-surface-soft: #f7f7f7;
+  --ab-on-primary: #ffffff;
+  --ab-font: 'Airbnb Cereal VF', Circular, -apple-system, system-ui, Roboto,
+    'Helvetica Neue', 'Apple SD Gothic Neo', 'Malgun Gothic', '맑은 고딕',
+    sans-serif;
+  --ab-radius-sm: 8px;
+  --ab-radius-md: 14px;
+  --ab-shadow-card:
+    rgba(0, 0, 0, 0.02) 0 0 0 1px,
+    rgba(0, 0, 0, 0.04) 0 2px 6px 0,
+    rgba(0, 0, 0, 0.1) 0 4px 8px 0;
+
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #f6f7f9;
-  padding: 20px;
+  background: var(--ab-canvas);
+  padding: 24px;
+  font-family: var(--ab-font);
+  color: var(--ab-ink);
+  -webkit-font-smoothing: antialiased;
 }
 
+/* Centered card, 14px radius, single shadow tier */
 .admin-login-card {
-  background: #fff;
-  padding: 32px 28px;
-  border-radius: 8px;
-  box-shadow: 0 6px 30px rgba(0, 0, 0, 0.08);
+  background: var(--ab-canvas);
+  padding: 32px;
+  border-radius: var(--ab-radius-md);
+  border: 1px solid var(--ab-hairline-soft);
+  box-shadow: var(--ab-shadow-card);
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 16px;
   width: 100%;
-  max-width: 360px;
+  max-width: 400px;
 }
 
+/* display-lg */
 .admin-login-card h1 {
   margin: 0;
-  font-size: 20px;
+  font-family: inherit;
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1.18;
+  letter-spacing: -0.44px;
+  color: var(--ab-ink);
 }
 
 .admin-login-card .hint {
-  margin: 0;
-  font-size: 13px;
-  color: #666;
+  margin: 0 0 8px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.43;
+  color: var(--ab-muted);
 }
 
+/* text-input */
 .admin-login-card input {
-  padding: 10px 12px;
-  border: 1px solid #d0d0d0;
-  border-radius: 4px;
-  font-size: 14px;
+  padding: 13px 12px;
+  background: var(--ab-canvas);
+  border: 1px solid var(--ab-hairline);
+  border-radius: var(--ab-radius-sm);
+  font-family: inherit;
+  font-size: 16px;
+  color: var(--ab-ink);
+  min-height: 48px;
+  box-sizing: border-box;
+  transition: border-color 0.12s ease;
 }
 
 .admin-login-card input:focus {
   outline: none;
-  border-color: #2c5fa8;
+  border: 2px solid var(--ab-ink);
+  padding: 12px 11px;
 }
 
+/* button-primary */
 .admin-login-card button {
-  padding: 10px;
-  background: #2c5fa8;
-  color: #fff;
+  padding: 14px 24px;
+  background: var(--ab-primary);
+  color: var(--ab-on-primary);
   border: none;
-  border-radius: 4px;
+  border-radius: var(--ab-radius-sm);
   cursor: pointer;
-  font-size: 14px;
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.25;
+  min-height: 48px;
+  transition: background 0.12s ease;
+}
+
+.admin-login-card button:hover:not(:disabled) {
+  background: var(--ab-primary-active);
 }
 
 .admin-login-card button:disabled {
-  opacity: 0.5;
+  background: var(--ab-primary-disabled);
   cursor: not-allowed;
 }
 
 .login-error {
-  padding: 8px 10px;
-  background: #fdecea;
-  color: #c0392b;
-  border-radius: 4px;
-  font-size: 13px;
+  padding: 12px 14px;
+  background: var(--ab-error-soft);
+  color: var(--ab-error);
+  border: 1px solid var(--ab-error);
+  border-radius: var(--ab-radius-sm);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
 }
 
 @media (max-width: 640px) {
   .admin-login-page {
     padding: 16px;
     align-items: flex-start;
-    padding-top: 15vh;
+    padding-top: 12vh;
   }
 
   .admin-login-card {
     padding: 24px 20px;
-  }
-
-  .admin-login-card input {
-    font-size: 16px; /* iOS 자동 확대 방지 */
   }
 }

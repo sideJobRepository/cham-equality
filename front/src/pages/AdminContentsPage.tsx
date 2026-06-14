@@ -111,7 +111,7 @@ export default function AdminContentsPage() {
         {byType && !loading && !error && (
           <div className="type-sections">
             {TYPES.map((t) => (
-              <section key={t} className="type-section">
+              <section key={t} className="type-section" data-type={t}>
                 <header className="type-section-header">
                   <h2>{CONTENT_TYPE_LABEL[t]}</h2>
                   <div className="type-section-meta">

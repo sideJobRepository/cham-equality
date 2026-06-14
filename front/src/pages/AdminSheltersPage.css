@@ -1,7 +1,10 @@
+/* AdminSheltersPage — Airbnb-style. Tokens (--ab-*) come from
+   `.admin-layout` in AdminLayout.css. */
 .admin-shelters-page {
-  padding: 24px 32px;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  color: #222;
+  padding: 32px 40px 64px;
+  font-family: var(--ab-font);
+  color: var(--ab-ink);
+  max-width: 1280px;
 }
 
 .admin-shelters-page .admin-header {
@@ -9,108 +12,137 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: 16px;
-  margin-bottom: 16px;
+  margin-bottom: 24px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--ab-hairline-soft);
 }
 
 .admin-shelters-page .admin-header h1 {
-  margin: 0 0 4px;
-  font-size: 22px;
+  margin: 0 0 6px;
+  font-family: inherit;
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.43;
+  color: var(--ab-ink);
 }
 
 .admin-shelters-page .subtitle {
   margin: 0;
-  color: #666;
-  font-size: 13px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.43;
+  color: var(--ab-muted);
 }
 
-.admin-shelters-page .admin-header-actions {
-  display: flex;
-  gap: 8px;
-}
-
-.admin-shelters-page .shelter-link-btn {
-  padding: 7px 14px;
-  border: 1px solid #2c5fa8;
-  color: #2c5fa8;
-  background: #fff;
-  border-radius: 4px;
-  font-size: 13px;
-  text-decoration: none;
-  white-space: nowrap;
-}
-
-.admin-shelters-page .logout-btn {
-  padding: 7px 14px;
-  border: 1px solid #c0392b;
-  color: #c0392b;
-  background: #fff;
-  border-radius: 4px;
-  font-size: 13px;
-  cursor: pointer;
-}
-
+/* Pill-shaped search bar */
 .admin-shelters-page .search-bar {
-  margin: 12px 0 16px;
+  margin: 0 0 20px;
   position: relative;
   max-width: 480px;
 }
 
 .admin-shelters-page .search-bar input {
   width: 100%;
-  padding: 8px 32px 8px 12px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
+  padding: 14px 44px 14px 20px;
+  background: var(--ab-canvas);
+  border: 1px solid var(--ab-hairline);
+  border-radius: var(--ab-radius-full);
+  font-family: inherit;
   font-size: 14px;
+  color: var(--ab-ink);
+  min-height: 48px;
   box-sizing: border-box;
+  transition: border-color 0.12s ease, box-shadow 0.12s ease;
 }
 
+.admin-shelters-page .search-bar input::placeholder {
+  color: var(--ab-muted);
+}
+
+.admin-shelters-page .search-bar input:focus {
+  outline: none;
+  border-color: var(--ab-ink);
+  box-shadow: var(--ab-shadow-card);
+}
+
+/* Circular clear button inside the pill */
 .admin-shelters-page .search-clear {
   position: absolute;
-  right: 8px;
+  right: 10px;
   top: 50%;
   transform: translateY(-50%);
-  background: none;
+  width: 28px;
+  height: 28px;
+  background: var(--ab-surface-strong);
   border: none;
+  border-radius: var(--ab-radius-full);
   cursor: pointer;
-  color: #999;
-  font-size: 14px;
+  color: var(--ab-ink);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.12s ease;
+}
+
+.admin-shelters-page .search-clear:hover {
+  background: var(--ab-hairline-soft);
 }
 
 .shelter-flash {
-  margin-bottom: 12px;
-  padding: 10px 14px;
-  background: #e3f4e3;
-  color: #1e6f1e;
-  border-radius: 4px;
-  font-size: 13px;
+  margin-bottom: 16px;
+  padding: 12px 16px;
+  background: var(--ab-surface-soft);
+  color: var(--ab-ink);
+  border: 1px solid var(--ab-hairline);
+  border-radius: var(--ab-radius-sm);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
 }
 
+/* Table : rounded card */
 .shelters-table-wrap {
   overflow-x: auto;
-  border: 1px solid #e3e3e3;
-  border-radius: 4px;
+  border: 1px solid var(--ab-hairline-soft);
+  border-radius: var(--ab-radius-md);
 }
 
 .shelters-table {
   width: 100%;
   border-collapse: collapse;
+  font-family: inherit;
   font-size: 13px;
+  min-width: 960px;
 }
 
-.shelters-table thead {
-  background: #f5f7fa;
-}
-
-.shelters-table th,
-.shelters-table td {
-  padding: 9px 10px;
-  border-bottom: 1px solid #efefef;
+.shelters-table thead th {
+  background: var(--ab-surface-soft);
+  padding: 10px 8px;
   text-align: left;
+  border-bottom: 1px solid var(--ab-hairline);
+  font-weight: 600;
+  font-size: 12px;
+  color: var(--ab-muted);
+  white-space: nowrap;
+}
+
+.shelters-table tbody td {
+  padding: 10px 8px;
+  border-bottom: 1px solid var(--ab-hairline-soft);
   vertical-align: middle;
+  color: var(--ab-ink);
+}
+
+.shelters-table tbody tr:last-child td {
+  border-bottom: none;
 }
 
 .shelters-table tbody tr:hover {
-  background: #fafafa;
+  background: var(--ab-surface-soft);
 }
 
 .shelters-table td.num {
@@ -123,42 +155,57 @@
 }
 
 .shelters-table td.ellipsis {
-  max-width: 220px;
+  max-width: 110px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.edit-btn {
-  padding: 4px 10px;
-  background: #2c5fa8;
-  color: #fff;
-  border: none;
-  border-radius: 3px;
+/* button-secondary (small) */
+.admin-shelters-page .edit-btn {
+  padding: 7px 14px;
+  background: var(--ab-canvas);
+  color: var(--ab-ink);
+  border: 1px solid var(--ab-ink);
+  border-radius: var(--ab-radius-sm);
   cursor: pointer;
-  font-size: 12px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.25;
+  transition: background 0.12s ease;
 }
 
-.edit-btn:hover {
-  background: #234e8a;
+.admin-shelters-page .edit-btn:hover {
+  background: var(--ab-surface-soft);
 }
 
+/* Pagination */
 .admin-shelters-page .pagination {
-  margin-top: 16px;
+  margin-top: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 4px;
 }
 
 .admin-shelters-page .pagination button {
-  min-width: 32px;
-  height: 32px;
-  border: 1px solid #ccc;
-  background: #fff;
-  border-radius: 3px;
+  min-width: 40px;
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid var(--ab-hairline);
+  background: var(--ab-canvas);
+  color: var(--ab-ink);
+  border-radius: var(--ab-radius-full);
   cursor: pointer;
-  font-size: 13px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background 0.12s ease;
+}
+
+.admin-shelters-page .pagination button:hover:not(:disabled) {
+  background: var(--ab-surface-soft);
 }
 
 .admin-shelters-page .pagination button:disabled {
@@ -166,39 +213,45 @@
   cursor: not-allowed;
 }
 
+.admin-shelters-page .pagination span {
+  margin: 0 12px;
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--ab-muted);
+}
+
 .admin-shelters-page .state {
-  padding: 30px;
+  padding: 48px 16px;
   text-align: center;
-  color: #666;
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--ab-muted);
 }
 
 .admin-shelters-page .state.error {
-  color: #c0392b;
+  color: var(--ab-error);
 }
 
 @media (max-width: 960px) {
   .admin-shelters-page {
-    padding: 20px 16px;
+    padding: 24px 24px 48px;
   }
 }
 
 @media (max-width: 640px) {
   .admin-shelters-page {
-    padding: 14px 12px;
+    padding: 20px 16px 32px;
   }
 
   .admin-shelters-page .admin-header {
     flex-direction: column;
     align-items: stretch;
-    gap: 10px;
+    gap: 12px;
+    padding-bottom: 16px;
   }
 
   .admin-shelters-page .admin-header h1 {
-    font-size: 19px;
-  }
-
-  .admin-shelters-page .admin-header-actions {
-    flex-wrap: wrap;
+    font-size: 22px;
   }
 
   .admin-shelters-page .search-bar {
@@ -211,11 +264,15 @@
 
   .shelters-table {
     font-size: 12px;
-    min-width: 720px;
+    min-width: 900px;
   }
 
-  .edit-btn {
-    min-height: 32px;
-    padding: 6px 12px;
+  .shelters-table thead th,
+  .shelters-table tbody td {
+    padding: 9px 6px;
+  }
+
+  .shelters-table td.ellipsis {
+    max-width: 100px;
   }
 }
