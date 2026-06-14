@@ -6,6 +6,7 @@ import ShelterListPage from '@/pages/temp/ShelterListPage'
 import AdminLoginPage from '@/pages/AdminLoginPage'
 import AdminReportsPage from '@/pages/AdminReportsPage'
 import AdminSheltersPage from '@/pages/AdminSheltersPage'
+import AdminContentsPage from '@/pages/AdminContentsPage'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -17,6 +18,7 @@ createRoot(document.getElementById('root')!).render(
         <Route path="/admin/login" element={<AdminLoginPage />} />
         <Route path="/admin/reports" element={<AdminReportsPage />} />
         <Route path="/admin/shelters" element={<AdminSheltersPage />} />
+        <Route path="/admin/contents" element={<AdminContentsPage />} />
       </Routes>
     </BrowserRouter>
   </StrictMode>,
