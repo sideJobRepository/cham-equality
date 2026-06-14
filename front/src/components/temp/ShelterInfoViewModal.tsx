@@ -5,8 +5,8 @@ import {
   type ShelterImageCategory,
   type ShelterReportDetail,
   type ShelterReportImageView,
-} from '../api/shelterApi'
-import { SHELTER_TYPE_LABEL, type Shelter } from '../types/shelter'
+} from '../../api/shelterApi'
+import { SHELTER_TYPE_LABEL, type Shelter } from '../../types/shelter'
 import './ShelterInfoViewModal.css'
 
 type Props = {

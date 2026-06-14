@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react'
 import {
   fetchPendingReportsByShelter,
   type ShelterReportSummary,
-} from '../api/shelterApi'
-import type { Shelter } from '../types/shelter'
+} from '../../api/shelterApi'
+import type { Shelter } from '../../types/shelter'
 import './PendingReportsListModal.css'
 
 type Props = {
