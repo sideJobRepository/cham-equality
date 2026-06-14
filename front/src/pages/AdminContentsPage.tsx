@@ -18,8 +18,6 @@ import {
 } from '@/types/content'
 import './AdminContentsPage.css'
 
-const FETCH_SIZE = 100
-
 const TYPES = Object.keys(CONTENT_TYPE_LABEL) as ContentType[]
 
 type ModalState =
@@ -44,9 +42,9 @@ export default function AdminContentsPage() {
     setLoading(true)
     setError(null)
     try {
-      const results = await Promise.all(TYPES.map((t) => fetchContents(0, FETCH_SIZE, t)))
-      const next = TYPES.reduce((acc, t, i) => {
-        acc[t] = results[i].content
+      const contents = await fetchContents()
+      const next = TYPES.reduce((acc, t) => {
+        acc[t] = contents.filter((c) => c.type === t)
         return acc
       }, {} as Record<ContentType, Content[]>)
       setByType(next)
@@ -162,9 +160,9 @@ export default function AdminContentsPage() {
                               {c.url}
                             </a>
                           )}
-                          {c.type === 'IN_APP_POPUP' && (c.startDate || c.endDate) && (
+                          {(c.displayStartDate || c.displayEndDate) && (
                             <div className="content-card-dates">
-                              {c.startDate ?? '…'} ~ {c.endDate ?? '…'}
+                              {c.displayStartDate ?? '…'} ~ {c.displayEndDate ?? '…'}
                             </div>
                           )}
                         </div>

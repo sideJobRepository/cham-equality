@@ -57,10 +57,11 @@ Web routes are all under the Vite base path `/research/`:
 
 | Path                              | Page                  |
 |-----------------------------------|-----------------------|
-| `/research/shelters`              | ShelterListPage       |
+| `/research/shelters`              | ShelterListPage *(legacy citizen survey, under `front/src/pages/temp/`)* |
 | `/research/admin/login`           | AdminLoginPage        |
 | `/research/admin/reports`         | AdminReportsPage      |
 | `/research/admin/shelters`        | AdminSheltersPage     |
+| `/research/admin/contents`        | AdminContentsPage     |
 
 Core API endpoints (see `chamApi/CLAUDE.md` for auth/authorization details):
 
@@ -78,13 +79,30 @@ POST   /api/admin/reports/{id}/approve | /reject
 POST   /api/admin/reports/{id}/re-investigate     (unlock shelter for citizen resubmit)
 GET    /api/admin/shelters?keyword=&page=&size=
 PUT    /api/admin/shelters/{id}                   (admin-only fields: name, builtYear, shelterType)
+GET    /api/admin/contents                        (admin list — every content row, all types)
+POST   /api/admin/contents                        (create: contentType + name + imageFileId + url + additionalInfo + displayStart/EndDate)
+PUT    /api/admin/contents/{id}                   (full replacement — contentType ignored, every other field overwritten)
+DELETE /api/admin/contents/{id}
 
-POST   /api/presigned-url                         (S3 upload URL)
-POST   /api/upload-file                           (register uploaded file)
+GET    /api/contents/                             (public — currently-displayable content for app/web consumers)
+
+POST   /api/presigned-url                         (S3 upload URL; fileType ∈ SHELTER_IMAGE|CONTENT_IMAGE)
+POST   /api/upload-file                           (register uploaded file; same fileType set)
 GET    /api/download-file/{id}                    (filename rewritten by FileNameResolver beans)
 POST   /api/download-file/zip                     (bulk by ids; same rewrite applies)
 POST   /api/refresh
 ```
+
+## Content domain
+
+`Content` (Spring entity in `chamApi/.../content/`) drives in-app popups, organisation-activity cards, and citizen-participation links shown by `chamApp/`. Each row has:
+
+- `contentType` (`IN_APP_POPUP | ORGANIZATION_ACTIVITY | CITIZEN_PARTICIPATION`) — fixed at creation; ignored by PUT.
+- `name`, optional `url`, optional `additionalInfo` (long text).
+- `imageFileId` — points at a `FILE` row uploaded via the `CONTENT_IMAGE` presigned flow.
+- `displayStartDate` / `displayEndDate` (`LocalDateTime`) — the public `/api/contents/` endpoint filters by "now in range" using these.
+
+Admin UI lives at `/research/admin/contents`. The `front/` wrapper converts `displayStartDate/EndDate` between server `LocalDateTime` (start = `T00:00:00`, end = `T23:59:59`) and the UI's `YYYY-MM-DD` date inputs.
 
 ## Citizen submission gate (Shelter.surveyStatus)
 

@@ -68,35 +68,14 @@
   font-family: inherit;
 }
 
-.content-edit-body .type-tabs {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-  gap: 6px;
-}
-
-.content-edit-body .type-tab {
-  padding: 9px 10px;
-  border: 1.5px solid #d0d4da;
-  background: #f7f8fa;
-  color: #555;
+.content-edit-body .type-readonly {
+  padding: 7px 9px;
+  border: 1px solid #e2e6ec;
   border-radius: 4px;
-  font-size: 13px;
+  background: #f7f8fa;
+  color: #333;
+  font-size: 14px;
   font-weight: 500;
-  cursor: pointer;
-  transition: background 0.12s, border-color 0.12s, color 0.12s, box-shadow 0.12s;
-}
-
-.content-edit-body .type-tab:hover:not(.active) {
-  background: #eef1f5;
-  border-color: #b8c0cc;
-}
-
-.content-edit-body .type-tab.active {
-  background: #2c5fa8;
-  border-color: #2c5fa8;
-  color: #fff;
-  font-weight: 600;
-  box-shadow: 0 1px 3px rgba(44, 95, 168, 0.35);
 }
 
 .content-edit-body .date-range {

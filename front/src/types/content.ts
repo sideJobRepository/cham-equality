@@ -6,24 +6,24 @@ export const CONTENT_TYPE_LABEL: Record<ContentType, string> = {
   CITIZEN_PARTICIPATION: '시민참여',
 }
 
-// 타입별 extra 응답 — 백엔드가 type에 맞춰 채워서 내려준다.
-// IN_APP_POPUP만 노출 기간(startDate/endDate)을 사용한다.
 export type Content = {
   id: number
   name: string
   imageFileId: number | null
-  imageUrl: string | null // 서버가 fileId로부터 렌더링해 내려주는 표시용 URL
+  imageUrl: string | null // fileId → /download-file 로 클라이언트에서 해석한 표시용 URL
   type: ContentType
   url: string | null
-  startDate: string | null // YYYY-MM-DD, IN_APP_POPUP 전용
-  endDate: string | null // YYYY-MM-DD, IN_APP_POPUP 전용
+  additionalInfo: string | null
+  displayStartDate: string | null // YYYY-MM-DD (서버 LocalDateTime에서 날짜만 추출)
+  displayEndDate: string | null // YYYY-MM-DD
 }
 
 export type ContentUpsertRequest = {
   name: string
   imageFileId: number | null
-  type: ContentType
+  type: ContentType // 서버는 PUT 시 contentType을 무시함 (생성 시에만 사용)
   url: string | null
-  startDate: string | null // IN_APP_POPUP에서만 사용, 그 외 타입은 null로 전송
-  endDate: string | null
+  additionalInfo: string | null
+  displayStartDate: string | null // YYYY-MM-DD; 전송 시 LocalDateTime으로 변환됨
+  displayEndDate: string | null
 }

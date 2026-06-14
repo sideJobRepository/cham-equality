@@ -21,10 +21,6 @@ type Props = {
   onUnauthorized: () => void
 }
 
-const TYPE_OPTIONS: { value: ContentType; label: string }[] = (
-  Object.entries(CONTENT_TYPE_LABEL) as [ContentType, string][]
-).map(([value, label]) => ({ value, label }))
-
 type ImageUploadStatus = 'uploading' | 'done' | 'failed'
 
 type ImageState =
@@ -37,7 +33,7 @@ type ImageState =
 export default function AdminContentEditModal({ content, defaultType, onClose, onSaved, onUnauthorized }: Props) {
   const isEdit = content !== null
   const [name, setName] = useState(content?.name ?? '')
-  const [type, setType] = useState<ContentType>(content?.type ?? defaultType ?? 'IN_APP_POPUP')
+  const type: ContentType = content?.type ?? defaultType ?? 'IN_APP_POPUP'
   const [image, setImage] = useState<ImageState>(() => {
     if (content?.imageUrl) {
       return { kind: 'existing', fileId: content.imageFileId, url: content.imageUrl }
@@ -45,8 +41,8 @@ export default function AdminContentEditModal({ content, defaultType, onClose, o
     return null
   })
   const [url, setUrl] = useState(content?.url ?? '')
-  const [startDate, setStartDate] = useState(content?.startDate ?? '')
-  const [endDate, setEndDate] = useState(content?.endDate ?? '')
+  const [displayStartDate, setDisplayStartDate] = useState(content?.displayStartDate ?? '')
+  const [displayEndDate, setDisplayEndDate] = useState(content?.displayEndDate ?? '')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -120,9 +116,8 @@ export default function AdminContentEditModal({ content, defaultType, onClose, o
   const isUploading = image?.kind === 'new' && image.status === 'uploading'
   const isFailed = image?.kind === 'new' && image.status === 'failed'
 
-  const showPopupDates = type === 'IN_APP_POPUP'
   const dateRangeError =
-    showPopupDates && startDate && endDate && startDate > endDate
+    displayStartDate && displayEndDate && displayStartDate > displayEndDate
       ? '종료일은 시작일 이후여야 합니다'
       : null
 
@@ -157,8 +152,10 @@ export default function AdminContentEditModal({ content, defaultType, onClose, o
         type,
         imageFileId,
         url: url.trim() || null,
-        startDate: showPopupDates ? (startDate || null) : null,
-        endDate: showPopupDates ? (endDate || null) : null,
+        // PUT은 전체 교체 — 모달이 다루지 않는 additionalInfo는 기존 값을 그대로 돌려보내 보존
+        additionalInfo: content?.additionalInfo ?? null,
+        displayStartDate: displayStartDate || null,
+        displayEndDate: displayEndDate || null,
       }
       if (isEdit && content) {
         await updateContent(content.id, body)
@@ -189,21 +186,8 @@ export default function AdminContentEditModal({ content, defaultType, onClose, o
           </div>
 
           <div className="field">
-            <label>타입 *</label>
-            <div className="type-tabs" role="radiogroup" aria-label="컨텐츠 타입">
-              {TYPE_OPTIONS.map((opt) => (
-                <button
-                  key={opt.value}
-                  type="button"
-                  role="radio"
-                  aria-checked={type === opt.value}
-                  className={'type-tab' + (type === opt.value ? ' active' : '')}
-                  onClick={() => setType(opt.value)}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
+            <label>타입</label>
+            <div className="type-readonly">{CONTENT_TYPE_LABEL[type]}</div>
           </div>
 
           <div className="field">
@@ -278,34 +262,32 @@ export default function AdminContentEditModal({ content, defaultType, onClose, o
             />
           </div>
 
-          {showPopupDates && (
-            <div className="field">
-              <label>노출 기간</label>
-              <div className="date-range">
-                <span className="date-input" data-empty={!startDate || undefined}>
-                  <input
-                    type="date"
-                    value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
-                    aria-label="시작일"
-                  />
-                  <span className="date-input-display">{startDate || 'YYYY-MM-DD'}</span>
-                </span>
-                <span className="date-range-sep">~</span>
-                <span className="date-input" data-empty={!endDate || undefined}>
-                  <input
-                    type="date"
-                    value={endDate}
-                    onChange={(e) => setEndDate(e.target.value)}
-                    aria-label="종료일"
-                  />
-                  <span className="date-input-display">{endDate || 'YYYY-MM-DD'}</span>
-                </span>
-              </div>
-              {dateRangeError && <div className="content-edit-hint error">{dateRangeError}</div>}
-              {!dateRangeError && <div className="content-edit-hint">비워두면 기간 제한 없이 노출됩니다</div>}
+          <div className="field">
+            <label>노출 기간</label>
+            <div className="date-range">
+              <span className="date-input" data-empty={!displayStartDate || undefined}>
+                <input
+                  type="date"
+                  value={displayStartDate}
+                  onChange={(e) => setDisplayStartDate(e.target.value)}
+                  aria-label="시작일"
+                />
+                <span className="date-input-display">{displayStartDate || 'YYYY-MM-DD'}</span>
+              </span>
+              <span className="date-range-sep">~</span>
+              <span className="date-input" data-empty={!displayEndDate || undefined}>
+                <input
+                  type="date"
+                  value={displayEndDate}
+                  onChange={(e) => setDisplayEndDate(e.target.value)}
+                  aria-label="종료일"
+                />
+                <span className="date-input-display">{displayEndDate || 'YYYY-MM-DD'}</span>
+              </span>
             </div>
-          )}
+            {dateRangeError && <div className="content-edit-hint error">{dateRangeError}</div>}
+            {!dateRangeError && <div className="content-edit-hint">비워두면 기간 제한 없이 노출됩니다</div>}
+          </div>
 
           {error && <div className="content-edit-error">{error}</div>}
 
