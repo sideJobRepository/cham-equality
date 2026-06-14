@@ -29,7 +29,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20px 24px;
+  padding: 14px 18px;
   border-bottom: 1px solid var(--ab-hairline-soft);
 }
 
@@ -37,9 +37,9 @@
 .shelter-edit-header h2 {
   margin: 0;
   font-family: inherit;
-  font-size: 20px;
+  font-size: 17px;
   font-weight: 600;
-  line-height: 1.20;
+  line-height: 1.25;
   letter-spacing: -0.18px;
   color: var(--ab-ink);
 }
@@ -49,10 +49,10 @@
   background: var(--ab-surface-strong);
   border: none;
   border-radius: var(--ab-radius-full);
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   font-family: inherit;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   cursor: pointer;
   color: var(--ab-ink);
@@ -68,18 +68,18 @@
 
 /* Address info strip */
 .shelter-edit-info {
-  padding: 16px 24px;
+  padding: 12px 18px;
   background: var(--ab-surface-soft);
   font-family: inherit;
-  font-size: 14px;
+  font-size: 13px;
   color: var(--ab-body);
   border-bottom: 1px solid var(--ab-hairline-soft);
 }
 
 .shelter-edit-info > div {
-  margin-bottom: 6px;
+  margin-bottom: 4px;
   display: flex;
-  gap: 12px;
+  gap: 10px;
 }
 
 .shelter-edit-info > div:last-child {
@@ -88,31 +88,31 @@
 
 .shelter-edit-info span {
   display: inline-block;
-  width: 60px;
+  width: 56px;
   color: var(--ab-muted);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 400;
   flex-shrink: 0;
 }
 
 .shelter-edit-body {
-  padding: 20px 24px;
+  padding: 14px 18px;
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 12px;
   overflow-y: auto;
 }
 
 .shelter-edit-body .field {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
 /* caption */
 .shelter-edit-body label {
   font-family: inherit;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
   color: var(--ab-ink);
   line-height: 1.29;
@@ -121,14 +121,14 @@
 /* text-input */
 .shelter-edit-body input,
 .shelter-edit-body select {
-  padding: 13px 12px;
+  padding: 9px 10px;
   background: var(--ab-canvas);
   border: 1px solid var(--ab-hairline);
   border-radius: var(--ab-radius-sm);
   font-family: inherit;
-  font-size: 16px;
+  font-size: 14px;
   color: var(--ab-ink);
-  min-height: 48px;
+  min-height: 38px;
   box-sizing: border-box;
   transition: border-color 0.12s ease;
 }
@@ -137,41 +137,41 @@
 .shelter-edit-body select:focus {
   outline: none;
   border: 2px solid var(--ab-ink);
-  padding: 12px 11px;
+  padding: 8px 9px;
 }
 
 .shelter-edit-error {
-  padding: 12px 14px;
+  padding: 9px 12px;
   background: var(--ab-error-soft);
   color: var(--ab-error);
   border: 1px solid var(--ab-error);
   border-radius: var(--ab-radius-sm);
   font-family: inherit;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
 }
 
 .shelter-edit-footer {
   display: flex;
   justify-content: flex-end;
-  gap: 8px;
-  padding: 16px 24px;
+  gap: 6px;
+  padding: 12px 18px;
   border-top: 1px solid var(--ab-hairline-soft);
 }
 
 /* button-secondary by default */
 .shelter-edit-footer button {
-  padding: 13px 23px;
+  padding: 8px 16px;
   background: var(--ab-canvas);
   color: var(--ab-ink);
   border: 1px solid var(--ab-ink);
   border-radius: var(--ab-radius-sm);
   cursor: pointer;
   font-family: inherit;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 500;
   line-height: 1.25;
-  min-height: 48px;
+  min-height: 38px;
   transition: background 0.12s ease;
 }
 
@@ -184,7 +184,7 @@
   background: var(--ab-primary);
   color: var(--ab-on-primary);
   border: none;
-  padding: 14px 24px;
+  padding: 9px 17px;
 }
 
 .shelter-edit-footer button.primary:hover:not(:disabled) {
@@ -214,8 +214,14 @@
     border-radius: 0;
   }
 
+  .shelter-edit-body input,
+  .shelter-edit-body select {
+    font-size: 16px; /* iOS 자동 확대 방지 */
+    min-height: 42px;
+  }
+
   .shelter-edit-footer button {
     flex: 1;
-    min-height: 48px;
+    min-height: 44px;
   }
 }

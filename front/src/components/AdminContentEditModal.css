@@ -34,7 +34,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20px 24px;
+  padding: 14px 18px;
   background: var(--ab-canvas);
   color: var(--ab-ink);
   border-bottom: 1px solid var(--ab-hairline-soft);
@@ -44,9 +44,9 @@
 .content-edit-header h2 {
   margin: 0;
   font-family: inherit;
-  font-size: 20px;
+  font-size: 17px;
   font-weight: 600;
-  line-height: 1.20;
+  line-height: 1.25;
   letter-spacing: -0.18px;
   color: var(--ab-ink);
 }
@@ -56,10 +56,10 @@
   background: var(--ab-surface-strong);
   border: none;
   border-radius: var(--ab-radius-full);
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   font-family: inherit;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   cursor: pointer;
   color: var(--ab-ink);
@@ -75,10 +75,10 @@
 }
 
 .content-edit-body {
-  padding: 20px 24px;
+  padding: 14px 18px;
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 12px;
   overflow-y: auto;
   background: var(--ab-canvas);
 }
@@ -86,31 +86,31 @@
 .content-edit-body .field {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
 /* caption */
 .content-edit-body label {
   font-family: inherit;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
   color: var(--ab-ink);
   line-height: 1.29;
 }
 
-/* text-input : hairline outline, 8px radius, 48px height, focus → 2px ink */
+/* text-input : hairline outline, 8px radius, focus → 2px ink */
 .content-edit-body input,
 .content-edit-body select,
 .content-edit-body textarea {
-  padding: 13px 12px;
+  padding: 9px 10px;
   background: var(--ab-canvas);
   border: 1px solid var(--ab-hairline);
   border-radius: var(--ab-radius-sm);
   font-family: inherit;
-  font-size: 16px;
+  font-size: 14px;
   color: var(--ab-ink);
   box-sizing: border-box;
-  min-height: 48px;
+  min-height: 38px;
   transition: border-color 0.12s ease;
 }
 
@@ -119,17 +119,17 @@
 .content-edit-body textarea:focus {
   outline: none;
   border: 2px solid var(--ab-ink);
-  padding: 12px 11px;
+  padding: 8px 9px;
 }
 
 /* Type readonly chip = soft surface chip */
 .content-edit-body .type-readonly {
-  padding: 10px 14px;
+  padding: 7px 12px;
   background: var(--ab-surface-soft);
   border: 1px solid var(--ab-hairline-soft);
   border-radius: var(--ab-radius-sm);
   font-family: inherit;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
   color: var(--ab-ink);
   line-height: 1.4;
@@ -139,7 +139,7 @@
 .content-edit-body .date-range {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
 }
 
 .content-edit-body .date-range .date-input {
@@ -166,12 +166,12 @@
 
 .content-edit-body .date-range .date-input-display {
   position: absolute;
-  left: 13px;
+  left: 11px;
   top: 50%;
   transform: translateY(-50%);
   pointer-events: none;
   font-family: inherit;
-  font-size: 16px;
+  font-size: 14px;
   color: var(--ab-ink);
 }
 
@@ -181,7 +181,7 @@
 
 .content-edit-body .date-range-sep {
   font-family: inherit;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 400;
   color: var(--ab-muted);
 }
@@ -192,8 +192,8 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 4px;
-  padding: 32px 12px;
+  gap: 2px;
+  padding: 22px 12px;
   background: var(--ab-surface-soft);
   border: 1px dashed var(--ab-hairline);
   border-radius: var(--ab-radius-md);
@@ -212,14 +212,14 @@
 
 .content-image-picker-label {
   font-family: inherit;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 500;
   color: var(--ab-ink);
 }
 
 .content-image-picker-hint {
   font-family: inherit;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 400;
   color: var(--ab-muted);
 }
@@ -227,9 +227,9 @@
 /* ── Image card (uploaded / existing) : rounded white panel ── */
 .content-image-card {
   display: flex;
-  gap: 16px;
+  gap: 12px;
   align-items: flex-start;
-  padding: 12px;
+  padding: 10px;
   background: var(--ab-canvas);
   border: 1px solid var(--ab-hairline);
   border-radius: var(--ab-radius-md);
@@ -242,8 +242,8 @@
 
 .content-image-thumb {
   position: relative;
-  width: 120px;
-  height: 90px;
+  width: 96px;
+  height: 72px;
   flex-shrink: 0;
   border-radius: var(--ab-radius-sm);
   overflow: hidden;
@@ -268,7 +268,7 @@
   align-items: center;
   justify-content: center;
   font-family: inherit;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 500;
 }
 
@@ -282,14 +282,14 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   font-family: inherit;
-  font-size: 13px;
+  font-size: 12px;
 }
 
 .content-image-status {
   font-family: inherit;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 400;
   color: var(--ab-muted);
   margin-right: auto;
@@ -308,9 +308,9 @@
 .content-image-retry,
 .content-image-replace,
 .content-image-remove {
-  padding: 7px 14px;
+  padding: 5px 11px;
   font-family: inherit;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 500;
   border-radius: var(--ab-radius-sm);
   border: 1px solid var(--ab-ink);
@@ -351,7 +351,7 @@
 /* ── Hints / errors ── */
 .content-edit-hint {
   font-family: inherit;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 400;
   color: var(--ab-muted);
 }
@@ -363,13 +363,13 @@
 
 /* Error band : soft error tint with error-color text */
 .content-edit-error {
-  padding: 12px 14px;
+  padding: 9px 12px;
   background: var(--ab-error-soft);
   color: var(--ab-error);
   border: 1px solid var(--ab-error);
   border-radius: var(--ab-radius-sm);
   font-family: inherit;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
 }
 
@@ -377,25 +377,25 @@
 .content-edit-footer {
   display: flex;
   justify-content: flex-end;
-  gap: 8px;
-  padding: 16px 24px;
+  gap: 6px;
+  padding: 12px 18px;
   background: var(--ab-canvas);
   border-top: 1px solid var(--ab-hairline-soft);
 }
 
 /* button-secondary by default */
 .content-edit-footer button {
-  padding: 13px 23px;
+  padding: 8px 16px;
   background: var(--ab-canvas);
   color: var(--ab-ink);
   border: 1px solid var(--ab-ink);
   border-radius: var(--ab-radius-sm);
   cursor: pointer;
   font-family: inherit;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 500;
   line-height: 1.25;
-  min-height: 48px;
+  min-height: 38px;
   transition: background 0.12s ease;
 }
 
@@ -408,7 +408,7 @@
   background: var(--ab-primary);
   color: var(--ab-on-primary);
   border: none;
-  padding: 14px 24px;
+  padding: 9px 17px;
 }
 
 .content-edit-footer button.primary:hover {
@@ -438,8 +438,15 @@
     border-radius: 0;
   }
 
+  .content-edit-body input,
+  .content-edit-body select,
+  .content-edit-body textarea {
+    font-size: 16px; /* iOS 자동 확대 방지 */
+    min-height: 42px;
+  }
+
   .content-edit-footer button {
-    min-height: 48px;
+    min-height: 44px;
     flex: 1;
   }
 }

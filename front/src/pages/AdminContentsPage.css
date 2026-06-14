@@ -299,13 +299,15 @@
 }
 
 /* destructive flavor — uses error red as the outline color */
-.delete-btn {
+.content-card-actions .delete-btn {
   color: var(--ab-error);
   border-color: var(--ab-error);
 }
 
-.delete-btn:hover {
-  background: var(--ab-error-soft);
+.content-card-actions .delete-btn:hover {
+  background: var(--ab-error);
+  color: var(--ab-on-primary);
+  border-color: var(--ab-error);
 }
 
 @media (max-width: 960px) {
