@@ -1,7 +1,13 @@
 import styled from 'styled-components/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFetchMap } from '../services/map.service.ts';
+import { useMapStore } from '../store/map.ts';
 
 export default function MapScreen() {
+  useFetchMap({ refreshOnFocus: true });
+  const mapData = useMapStore(state => state.map);
+  console.log('mapData', mapData);
+
   return (
     <Screen>
       <Title>지도</Title>

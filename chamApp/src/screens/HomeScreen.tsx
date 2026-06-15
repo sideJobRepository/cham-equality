@@ -1,4 +1,5 @@
-import { Linking } from 'react-native';
+import { useState } from 'react';
+import { Linking, Modal } from 'react-native';
 import styled from 'styled-components/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import SpeakerIcon from '../assets/icons/SpeakerIcon';
@@ -25,11 +26,10 @@ export default function HomeScreen() {
   useFetchSMS();
   useFetchDisaster();
   const smsData = useSMSStore(state => state.sms);
-  console.log('smsdata', smsData);
   const disasterData = useDisasterStore(state => state.disaster);
-  console.log('disasterData', disasterData);
   const disasterSummary = disasterData?.summary?.slice(0, 3) ?? [];
   const disasterDate = formatDisasterDate(disasterData?.createDate);
+  const [isSMSModalVisible, setIsSMSModalVisible] = useState(false);
   const handlePressDisaster = () => {
     if (!disasterData?.originUrl) return;
     Linking.openURL(disasterData.originUrl);
@@ -38,9 +38,17 @@ export default function HomeScreen() {
   return (
     <Screen>
       <TopSection>
-        <MessageBox>
+        <MessageBox
+          disabled={!smsData?.message?.content}
+          onPress={() => {
+            if (!smsData?.message?.content) return;
+            setIsSMSModalVisible(true);
+          }}
+        >
           <SpeakerIcon size={32} />
-          <MessageTitle>재난문자 영역</MessageTitle>
+          <MessageTitle numberOfLines={1} ellipsizeMode="tail">
+            {smsData?.message?.content ?? '현재 발령된 재난이 없습니다.'}
+          </MessageTitle>
         </MessageBox>
         <MessageBox2
           disabled={!disasterData?.originUrl}
@@ -60,6 +68,26 @@ export default function HomeScreen() {
           </CenterBox>
         </MessageBox2>
       </TopSection>
+      <Modal
+        animationType="fade"
+        transparent
+        visible={isSMSModalVisible}
+        onRequestClose={() => setIsSMSModalVisible(false)}
+      >
+        <ModalOverlay onPress={() => setIsSMSModalVisible(false)}>
+          <ModalCard onPress={e => e.stopPropagation()}>
+            <ModalCategory>
+              {smsData?.message?.category ?? '재난문자'}
+            </ModalCategory>
+            <ModalContent>
+              {smsData?.message?.content ?? '표시할 재난문자가 없습니다.'}
+            </ModalContent>
+            <ModalButton onPress={() => setIsSMSModalVisible(false)}>
+              <ModalButtonText>닫기</ModalButtonText>
+            </ModalButton>
+          </ModalCard>
+        </ModalOverlay>
+      </Modal>
     </Screen>
   );
 }
@@ -77,15 +105,17 @@ const TopSection = styled.View`
   width: 100%;
 `;
 
-const MessageBox = styled.View`
+const MessageBox = styled.Pressable`
   display: flex;
   flex-direction: row;
   gap: 12px;
   align-items: center;
   padding: 12px 0;
+  width: 100%;
 `;
 
 const MessageTitle = styled.Text`
+  flex: 1;
   color: #999999;
   font-size: 18px;
   font-weight: 700;
@@ -94,6 +124,7 @@ const MessageTitle = styled.Text`
 const MessageBox2 = styled.Pressable`
   display: flex;
   background-color: #edf5ff;
+  margin-top: 14px;
   margin-left: 24px;
   padding: 12px;
   border-radius: 0 8px 8px 8px;
@@ -145,4 +176,45 @@ const SummaryText = styled.Text`
   line-height: 20px;
   flex: 1;
   font-weight: 500;
+`;
+
+const ModalOverlay = styled.Pressable`
+  flex: 1;
+  justify-content: center;
+  padding: 24px;
+  background-color: rgba(15, 23, 42, 0.45);
+`;
+
+const ModalCard = styled.Pressable`
+  display: flex;
+  gap: 16px;
+  padding: 20px;
+  border-radius: 18px;
+  background-color: #ffffff;
+`;
+
+const ModalCategory = styled.Text`
+  color: #dc2626;
+  font-size: 18px;
+  font-weight: 800;
+`;
+
+const ModalContent = styled.Text`
+  color: #111827;
+  font-size: 15px;
+  line-height: 24px;
+  font-weight: 500;
+`;
+
+const ModalButton = styled.Pressable`
+  align-self: flex-end;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background-color: #f3f4f6;
+`;
+
+const ModalButtonText = styled.Text`
+  color: #111827;
+  font-size: 14px;
+  font-weight: 700;
 `;
