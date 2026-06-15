@@ -1,5 +1,5 @@
-export * from './article';
-export * from './comment';
+export * from './sms.ts';
+export * from './disaster.ts';
 export * from './loading';
 export * from './menu';
 export * from './user';

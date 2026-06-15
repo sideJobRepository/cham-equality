@@ -16,35 +16,15 @@ const api = axios.create({
   withCredentials: true,
 });
 
-let refreshing: Promise<string | null> | null = null;
-
-export async function refreshToken(): Promise<string | null> {
-  try {
-    const { data } = await axios.post('/cham/refresh', null, {
-      baseURL: api.defaults.baseURL,
-      withCredentials: true,
-    });
-    const newToken = data?.token ?? null;
-
-    tokenStore.set(newToken);
-    return newToken;
-  } catch (error) {
-    console.error(error);
-    tokenStore.clear();
-    return null;
-  } finally {
-    refreshing = null;
-  }
-}
-
 api.interceptors.request.use(async (config: AuthAxiosRequestConfig) => {
-  if (config.url?.includes('/cham/refresh')) return config;
+  if (config.url?.includes('/api/refresh')) return config;
 
   let token = tokenStore.get();
-  if (!token) {
-    if (!refreshing) refreshing = refreshToken();
-    token = await refreshing;
-  }
+  // Refresh token flow is temporarily disabled.
+  // if (!token) {
+  //   if (!refreshing) refreshing = refreshToken();
+  //   token = await refreshing;
+  // }
 
   config.__hadAuth = !!token;
   if (token) {
@@ -53,18 +33,6 @@ api.interceptors.request.use(async (config: AuthAxiosRequestConfig) => {
 
   return config;
 });
-
-let isRefreshing = false;
-let waiters: Array<(token: string) => void> = [];
-
-const addWaiter = (callback: (token: string) => void) => {
-  waiters.push(callback);
-};
-
-const notifyAll = (token: string) => {
-  waiters.forEach(callback => callback(token));
-  waiters = [];
-};
 
 api.interceptors.response.use(
   response => response,
@@ -76,7 +44,7 @@ api.interceptors.response.use(
 
     if (!error.response) return Promise.reject(error);
 
-    if (original?.url?.includes('/cham/refresh')) {
+    if (original?.url?.includes('/api/refresh')) {
       return Promise.reject(error);
     }
 
@@ -88,43 +56,31 @@ api.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    const retryPromise = new Promise((resolve, reject) => {
-      addWaiter((token: string) => {
-        try {
-          original.__isRetryRequest = true;
-          original.headers = original.headers ?? {};
-          original.headers.Authorization = `Bearer ${token}`;
-          resolve(api(original));
-        } catch (retryError) {
-          reject(retryError);
-        }
-      });
-    });
-
-    if (!isRefreshing) {
-      isRefreshing = true;
-      axios
-        .post('/cham/refresh', null, {
-          baseURL: api.defaults.baseURL,
-          withCredentials: true,
-        })
-        .then(({ data }) => {
-          const newToken = data?.token;
-          if (!newToken) throw new Error('No access token from refresh');
-          tokenStore.set(newToken);
-          notifyAll(newToken);
-        })
-        .catch(refreshError => {
-          console.error(refreshError);
-          waiters = [];
-          tokenStore.clear();
-        })
-        .finally(() => {
-          isRefreshing = false;
-        });
-    }
-
-    return retryPromise;
+    // if (!isRefreshing) {
+    //   isRefreshing = true;
+    //   axios
+    //     .post('/api/refresh', null, {
+    //       baseURL: api.defaults.baseURL,
+    //       withCredentials: true,
+    //     })
+    //     .then(({ data }) => {
+    //       const newToken = data?.token;
+    //       if (!newToken) throw new Error('No access token from refresh');
+    //       tokenStore.set(newToken);
+    //       notifyAll(newToken);
+    //     })
+    //     .catch(refreshError => {
+    //       console.error(refreshError);
+    //       waiters = [];
+    //       tokenStore.clear();
+    //     })
+    //     .finally(() => {
+    //       isRefreshing = false;
+    //     });
+    // }
+    //
+    // return retryPromise;
+    return Promise.reject(error);
   },
 );
 
