@@ -20,7 +20,7 @@ public class ShelterMapController {
             @RequestBody ShelterMapSearchRequest request
     ) {
         ShelterSearchCondition condition = request.toCondition();
-        ShelterAggregateResponse aggregate = shelterMapService.aggregate(condition);
+        ShelterAggregateResponse aggregate = shelterMapService.aggregate(condition, request.accessibilityFeatures());
         return new ApiResponse<>(200, true, aggregate);
     }
 

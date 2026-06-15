@@ -8,6 +8,6 @@ import java.util.Map;
 @Getter
 @AllArgsConstructor
 public class ShelterAggregateResponse {
-    private Map<Long, PlaceResponse> details;
+    private Map<Long, PlaceMapResponse> details;
     private RegionLevelsResponse summaries;
 }

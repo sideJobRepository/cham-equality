@@ -3,14 +3,17 @@ package com.chamapi.shelter.dto.response;
 import com.chamapi.shelter.entity.Place;
 import com.chamapi.shelter.entity.Shelter;
 import com.chamapi.shelter.entity.ShelterAccessibility;
+import com.chamapi.shelter.enums.AccessibilityFeature;
+import com.chamapi.shelter.enums.AccessibilityMatchStatus;
 import com.chamapi.shelter.enums.ShelterSurveyStatus;
 import com.chamapi.shelter.enums.ShelterType;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 import static com.chamapi.common.util.NullSafe.mapOrNull;
 
-public record ShelterResponse(
+public record ShelterMapResponse(
         Long shelterId,
         Long placeId,
         String name,
@@ -30,12 +33,13 @@ public record ShelterResponse(
         Boolean elevator,
         Boolean brailleBlock,
         String etcFacilities,
-        ShelterSurveyStatus surveyStatus
+        ShelterSurveyStatus surveyStatus,
+        AccessibilityMatchStatus accessibilityMatchStatus
 ) {
-    public static ShelterResponse fromDomain(Shelter shelter) {
+    public static ShelterMapResponse fromDomain(Shelter shelter, List<AccessibilityFeature> accessibilityFeatures) {
         Place p = shelter.getPlace();
         ShelterAccessibility a = shelter.getAccessibility();
-        return new ShelterResponse(
+        return new ShelterMapResponse(
                 shelter.getId(),
                 mapOrNull(p, Place::getId),
                 shelter.getName(),
@@ -55,7 +59,8 @@ public record ShelterResponse(
                 mapOrNull(a, ShelterAccessibility::getElevator),
                 mapOrNull(a, ShelterAccessibility::getBrailleBlock),
                 mapOrNull(a, ShelterAccessibility::getEtcFacilities),
-                shelter.getSurveyStatus()
+                shelter.getSurveyStatus(),
+                shelter.evaluateAccessibility(accessibilityFeatures)
         );
     }
 }

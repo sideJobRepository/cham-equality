@@ -11,6 +11,6 @@ public record ShelterMapSearchRequest(
         List<AccessibilityFeature> accessibilityFeatures
 ) {
     public ShelterSearchCondition toCondition() {
-        return new ShelterSearchCondition(shelterTypes, accessibilityFeatures);
+        return new ShelterSearchCondition(shelterTypes);
     }
 }

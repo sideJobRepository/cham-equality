@@ -5,6 +5,7 @@ import com.chamapi.shelter.dto.response.*;
 import com.chamapi.shelter.entity.Place;
 import com.chamapi.shelter.entity.Region;
 import com.chamapi.shelter.entity.Shelter;
+import com.chamapi.shelter.enums.AccessibilityFeature;
 import com.chamapi.shelter.repository.ShelterRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -23,26 +24,27 @@ public class ShelterMapService {
 
     private final ShelterRepository shelterRepository;
 
-    public ShelterAggregateResponse aggregate(ShelterSearchCondition cond) {
+    public ShelterAggregateResponse aggregate(ShelterSearchCondition cond, List<AccessibilityFeature> accessibilityFeatures) {
         List<Shelter> shelters = shelterRepository.searchByCondition(cond);
 
-        Map<Long, PlaceResponse> placeMap = toPlaceResponseMap(shelters);
+        Map<Long, PlaceMapResponse> placeMap = toPlaceResponseMap(shelters, accessibilityFeatures);
         RegionLevelsResponse regionSummaries = toRegionLevelResponse(shelters);
 
         return new ShelterAggregateResponse(placeMap, regionSummaries);
     }
 
-    private Map<Long, PlaceResponse> toPlaceResponseMap(List<Shelter> shelters) {
-        Map<Long, List<Shelter>> sheltersByPlaceId = shelters.stream()
+    private Map<Long, PlaceMapResponse> toPlaceResponseMap(List<Shelter> shelters, List<AccessibilityFeature> accessibilityFeatures) {
+        Map<Long, List<ShelterMapResponse>> sheltersByPlaceId = shelters.stream()
                 .filter(s -> Objects.nonNull(s.getPlace()))
-                .collect(groupingBy(s -> s.getPlace().getId()));
+                .map(s -> ShelterMapResponse.fromDomain(s, accessibilityFeatures))
+                .collect(groupingBy(ShelterMapResponse::placeId));
 
         return shelters.stream()
                 .map(Shelter::getPlace)
                 .filter(Objects::nonNull)
                 .collect(toMap(
                         Place::getId,
-                        p -> PlaceResponse.fromDomain(p, sheltersByPlaceId.getOrDefault(p.getId(), List.of())),
+                        p -> PlaceMapResponse.fromDomain(p, sheltersByPlaceId.getOrDefault(p.getId(), List.of())),
                         (existing, duplicate) -> existing
                 ));
     }

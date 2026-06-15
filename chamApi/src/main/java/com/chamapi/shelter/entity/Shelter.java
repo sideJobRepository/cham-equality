@@ -1,14 +1,18 @@
 package com.chamapi.shelter.entity;
 
 import com.chamapi.common.entity.DateSuperClass;
+import com.chamapi.shelter.enums.AccessibilityFeature;
+import com.chamapi.shelter.enums.AccessibilityMatchStatus;
 import com.chamapi.shelter.enums.ShelterSurveyStatus;
 import com.chamapi.shelter.enums.ShelterType;
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 import static jakarta.persistence.GenerationType.IDENTITY;
+import static org.springframework.util.CollectionUtils.*;
 
 @Table(name = "SHELTER")
 @Entity
@@ -101,5 +105,19 @@ public class Shelter extends DateSuperClass {
         this.builtYear = builtYear;
         this.shelterType = shelterType;
         this.safetyGrade = safetyGrade;
+    }
+
+    public AccessibilityMatchStatus evaluateAccessibility(List<AccessibilityFeature> accessibilityFeatures) {
+        if (isEmpty(accessibilityFeatures)) {
+            return AccessibilityMatchStatus.NONE;
+        }
+
+        long satisfied = accessibilityFeatures.stream()
+                .filter(f -> f.isSatisfiedBy(this))
+                .count();
+
+        if (satisfied == accessibilityFeatures.size()) return AccessibilityMatchStatus.ACCESSIBLE;
+        if (satisfied == 0) return AccessibilityMatchStatus.INACCESSIBLE;
+        return AccessibilityMatchStatus.PARTIAL;
     }
 }

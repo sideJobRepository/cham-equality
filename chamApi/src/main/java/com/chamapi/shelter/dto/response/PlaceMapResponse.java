@@ -9,7 +9,7 @@ import java.util.List;
 
 import static com.chamapi.common.util.NullSafe.mapOrNull;
 
-public record PlaceResponse(
+public record PlaceMapResponse(
         Long placeId,
         Long regionId,
         String name,
@@ -18,11 +18,11 @@ public record PlaceResponse(
         String description,
         BigDecimal x,
         BigDecimal y,
-        List<ShelterResponse> shelters
+        List<ShelterMapResponse> shelters
 ) {
-    public static PlaceResponse fromDomain(Place place, List<Shelter> shelters) {
+    public static PlaceMapResponse fromDomain(Place place, List<ShelterMapResponse> shelters) {
         Region r = place.getRegion();
-        return new PlaceResponse(
+        return new PlaceMapResponse(
                 place.getId(),
                 mapOrNull(r, Region::getRegionId),
                 place.getName(),
@@ -31,7 +31,7 @@ public record PlaceResponse(
                 place.getDescription(),
                 place.getLongitude(),
                 place.getLatitude(),
-                shelters.stream().map(ShelterResponse::fromDomain).toList()
+                shelters
         );
     }
 }
