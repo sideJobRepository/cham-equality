@@ -14,7 +14,7 @@ export function useFetchMap(options?: UseFetchMapOptions) {
 
   const fetchMap = useCallback(() => {
     request(
-      () => api.post(`/api/shelters/map`, {}).then(res => res.data),
+      () => api.post(`/api/shelters/map`, {}).then(res => res.data.data),
       setMap,
       {
         ignoreErrorRedirect: true,
