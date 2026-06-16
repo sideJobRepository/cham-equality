@@ -9,6 +9,7 @@ public enum FileType {
 
     NOTICE("공지사항"),
     SHELTER_IMAGE("대피소 사진"),
+    APP_SHELTER_IMAGE("앱 대피소 제보 사진"),
     CONTENT_IMAGE("컨텐츠 이미지");
 
     private final String value;
