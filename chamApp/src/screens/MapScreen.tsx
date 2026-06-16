@@ -346,7 +346,7 @@ export default function MapScreen() {
           <DetailMeta>연결된 대피소 {selectedPlace.shelterCount}개</DetailMeta>
         </DetailCard>
       ) : (
-        <DetailPl정aceholder>설명 문구 넣을 예정</DetailPl정aceholder>
+        <DetailPlaceholder>설명 문구 넣을 예정</DetailPlaceholder>
       )}
     </Screen>
   );
