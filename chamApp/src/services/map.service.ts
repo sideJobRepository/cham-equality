@@ -5,6 +5,10 @@ import api from '../lib/axiosInstance.ts';
 import { useMapStore } from '../store/map.ts';
 
 interface UseFetchMapOptions {
+  body?: {
+    shelterTypes?: string[];
+    accessibilityFeatures?: string[];
+  };
   refreshOnFocus?: boolean;
 }
 
@@ -14,13 +18,14 @@ export function useFetchMap(options?: UseFetchMapOptions) {
 
   const fetchMap = useCallback(() => {
     request(
-      () => api.post(`/api/shelters/map`, {}).then(res => res.data.data),
+      () =>
+        api.post(`/api/shelters/map`, options?.body ?? {}).then(res => res.data.data),
       setMap,
       {
         ignoreErrorRedirect: true,
       },
     );
-  }, [request, setMap]);
+  }, [options?.body, request, setMap]);
 
   useRefreshOnFocus(fetchMap, options?.refreshOnFocus ?? false);
 

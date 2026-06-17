@@ -7,6 +7,41 @@ import styled from 'styled-components/native';
 import { useFetchMap } from '../services/map.service.ts';
 import { useMapStore } from '../store/map.ts';
 
+const shelterTypeOptions = [
+  '전체',
+  '민방위대피시설',
+  '지진대피장소',
+  '화학사고대피장소',
+  '지진겸용 임시주거시설',
+  '이재민 임시주거시설',
+];
+
+const accessibilityOptions = [
+  '접근성 전체',
+  '경사로',
+  '엘리베이터',
+  '점자블록',
+];
+
+const SHELTER_ALL_LABEL = '전체';
+const ACCESSIBILITY_ALL_LABEL = '접근성 전체';
+const SHELTER_SELECTED_COLOR = '#4aa199';
+const ACCESSIBILITY_SELECTED_COLOR = '#5088dc';
+
+const shelterTypeValueMap: Record<string, string> = {
+  민방위대피시설: 'CIVIL_DEFENSE',
+  지진대피장소: 'EARTHQUAKE',
+  화학사고대피장소: 'CHEMICAL_ACCIDENT',
+  '지진겸용 임시주거시설': 'EARTHQUAKE_TEMPORARY_HOUSING',
+  '이재민 임시주거시설': 'DISASTER_TEMPORARY_HOUSING',
+};
+
+const accessibilityValueMap: Record<string, string> = {
+  경사로: 'RAMP',
+  엘리베이터: 'ELEVATOR',
+  점자블록: 'BRAILLE_BLOCK',
+};
+
 interface MapMessageEvent {
   nativeEvent: {
     data: string;
@@ -237,7 +272,33 @@ function buildMapHtml(mapKey: string, mapPayloadJson: string) {
 }
 
 export default function MapScreen() {
-  useFetchMap({ refreshOnFocus: true });
+  const [selectedShelterTypes, setSelectedShelterTypes] = useState<string[]>([
+    SHELTER_ALL_LABEL,
+  ]);
+  const [selectedAccessibility, setSelectedAccessibility] = useState<string[]>([
+    ACCESSIBILITY_ALL_LABEL,
+  ]);
+  const mapRequestBody = useMemo(() => {
+    const shelterTypes = selectedShelterTypes
+      .filter(item => item !== SHELTER_ALL_LABEL)
+      .map(item => shelterTypeValueMap[item])
+      .filter(Boolean);
+
+    const accessibilityFeatures = selectedAccessibility
+      .filter(item => item !== ACCESSIBILITY_ALL_LABEL)
+      .map(item => accessibilityValueMap[item])
+      .filter(Boolean);
+
+    return {
+      ...(shelterTypes.length ? { shelterTypes } : {}),
+      ...(accessibilityFeatures.length ? { accessibilityFeatures } : {}),
+    };
+  }, [selectedAccessibility, selectedShelterTypes]);
+
+  useFetchMap({
+    body: mapRequestBody,
+    refreshOnFocus: true,
+  });
   const mapData = useMapStore(state => state.map);
   const [selectedPlace, setSelectedPlace] = useState<SelectedPlace | null>(
     null,
@@ -259,7 +320,6 @@ export default function MapScreen() {
   }, [mapData]);
 
   const webViewSource = useMemo(() => ({ html: mapHtml }), [mapHtml]);
-  const summaryDepth1 = mapData?.summaries?.depth1 ?? [];
 
   const handleMessage = (event: MapMessageEvent) => {
     try {
@@ -287,21 +347,85 @@ export default function MapScreen() {
     }
   };
 
+  const handleShelterTypePress = (item: string) => {
+    if (item === SHELTER_ALL_LABEL) {
+      setSelectedShelterTypes([SHELTER_ALL_LABEL]);
+      return;
+    }
+
+    setSelectedShelterTypes(prev => {
+      const next = prev.filter(value => value !== SHELTER_ALL_LABEL);
+
+      if (next.includes(item)) {
+        const filtered = next.filter(value => value !== item);
+        return filtered.length ? filtered : [SHELTER_ALL_LABEL];
+      }
+
+      return [...next, item];
+    });
+  };
+
+  const handleAccessibilityPress = (item: string) => {
+    if (item === ACCESSIBILITY_ALL_LABEL) {
+      setSelectedAccessibility([ACCESSIBILITY_ALL_LABEL]);
+      return;
+    }
+
+    setSelectedAccessibility(prev => {
+      const next = prev.filter(value => value !== ACCESSIBILITY_ALL_LABEL);
+
+      if (next.includes(item)) {
+        const filtered = next.filter(value => value !== item);
+        return filtered.length ? filtered : [ACCESSIBILITY_ALL_LABEL];
+      }
+
+      return [...next, item];
+    });
+  };
+
   return (
     <Screen>
       <Header>
-        <Title>지도</Title>
-        <Description>검색조건 넣을거</Description>
+        <Description>여기에 내 위치 띄울거임.</Description>
       </Header>
 
-      <SummaryScroll horizontal showsHorizontalScrollIndicator={false}>
-        {summaryDepth1.map((item: any) => (
-          <SummaryChip key={`${item.regionId}-${item.path}`}>
-            <SummaryPath numberOfLines={1}>{item.path}</SummaryPath>
-            <SummaryCount>{item.count}</SummaryCount>
-          </SummaryChip>
-        ))}
-      </SummaryScroll>
+      <FilterSection>
+        <FilterGroup>
+          <FilterRow horizontal showsHorizontalScrollIndicator={false}>
+            {shelterTypeOptions.map(item => (
+              <FilterChip
+                key={item}
+                $selected={selectedShelterTypes.includes(item)}
+                $selectedColor={SHELTER_SELECTED_COLOR}
+                onPress={() => handleShelterTypePress(item)}
+              >
+                <FilterChipText $selected={selectedShelterTypes.includes(item)}>
+                  {item}
+                </FilterChipText>
+              </FilterChip>
+            ))}
+          </FilterRow>
+        </FilterGroup>
+
+        <FilterGroup>
+          <FilterRow horizontal showsHorizontalScrollIndicator={false}>
+            {accessibilityOptions.map(item => (
+              <FilterChip
+                key={item}
+                $selected={selectedAccessibility.includes(item)}
+                $selectedColor={ACCESSIBILITY_SELECTED_COLOR}
+                onPress={() => handleAccessibilityPress(item)}
+              >
+                <FilterChipText
+                  $selected={selectedAccessibility.includes(item)}
+                >
+                  {item}
+                </FilterChipText>
+              </FilterChip>
+            ))}
+          </FilterRow>
+        </FilterGroup>
+      </FilterSection>
 
       <MapFrame>
         {mapHtml ? (
@@ -373,38 +497,46 @@ const Description = styled.Text`
   font-size: 15px;
 `;
 
-const SummaryScroll = styled.ScrollView`
-  max-height: 54px;
-  padding-left: 20px;
+const FilterSection = styled.View`
+  gap: 10px;
+  padding: 0 20px;
 `;
 
-const SummaryChip = styled.View`
-  flex-direction: row;
-  align-items: center;
+const FilterGroup = styled.View`
   gap: 8px;
-  margin-right: 8px;
-  padding: 10px 12px;
-  border-radius: 999px;
-  background-color: #ffffff;
 `;
 
-const SummaryPath = styled.Text`
-  max-width: 140px;
-  color: #1f2937;
+const FilterLabel = styled.Text`
+  color: #6b7280;
+  font-size: 13px;
+  font-weight: 700;
+`;
+
+const FilterRow = styled.ScrollView`
+  max-height: 46px;
+`;
+
+const FilterChip = styled.Pressable<{
+  $selected: boolean;
+  $selectedColor: string;
+}>`
+  margin-right: 8px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  background-color: ${({ $selected, $selectedColor }) =>
+    $selected ? $selectedColor : '#ffffff'};
+`;
+
+const FilterChipText = styled.Text<{ $selected: boolean }>`
+  color: ${({ $selected }) => ($selected ? '#ffffff' : '#374151')};
   font-size: 13px;
   font-weight: 600;
-`;
-
-const SummaryCount = styled.Text`
-  color: #2563eb;
-  font-size: 13px;
-  font-weight: 800;
 `;
 
 const MapFrame = styled.View`
   flex: 1;
   overflow: hidden;
-  margin: 12px 20px 0;
+  margin: 14px 20px 0;
   border-radius: 22px;
   background-color: #dbeafe;
 `;
