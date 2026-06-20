@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { ActivityIndicator } from 'react-native';
 import Config from 'react-native-config';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -42,10 +42,80 @@ const accessibilityValueMap: Record<string, string> = {
   점자블록: 'BRAILLE_BLOCK',
 };
 
+const shelterTypeLabelMap: Record<string, string> = {
+  CIVIL_DEFENSE: '민방위대피시설',
+  EARTHQUAKE: '지진대피장소',
+  CHEMICAL_ACCIDENT: '화학사고대피장소',
+  EARTHQUAKE_TEMPORARY_HOUSING: '지진겸용 임시주거시설',
+  DISASTER_TEMPORARY_HOUSING: '이재민 임시주거시설',
+};
+
+function getShelterTypeLabel(type?: string) {
+  if (!type) return '유형 정보 없음';
+  return shelterTypeLabelMap[type] ?? type;
+}
+
+function getAccessibilityChips(shelter: ShelterSummary) {
+  return [
+    { label: '경사로', active: shelter.ramp === true },
+    { label: '엘리베이터', active: shelter.elevator === true },
+    { label: '점자블록', active: shelter.brailleBlock === true },
+    { label: '장애인 화장실', active: shelter.accessibleToilet === true },
+  ];
+}
+
+function getShelterTypeCounts(shelters: ShelterSummary[]) {
+  const countMap = shelters.reduce<Record<string, number>>((acc, shelter) => {
+    const type = shelter.shelterType ?? 'UNKNOWN';
+    acc[type] = (acc[type] ?? 0) + 1;
+    return acc;
+  }, {});
+
+  return Object.entries(countMap)
+    .map(([type, count]) => ({
+      type,
+      label: getShelterTypeLabel(type),
+      count,
+    }))
+    .sort((a, b) => {
+      const order = Object.keys(shelterTypeLabelMap);
+      const aIndex = order.indexOf(a.type);
+      const bIndex = order.indexOf(b.type);
+      return (aIndex === -1 ? 999 : aIndex) - (bIndex === -1 ? 999 : bIndex);
+    });
+}
+
+function getShelterMetaText(shelter: ShelterSummary) {
+  const parts = [
+    typeof shelter.capacity === 'number'
+      ? `수용 ${shelter.capacity.toLocaleString()}명`
+      : null,
+    typeof shelter.area === 'number'
+      ? `${shelter.area.toLocaleString()}㎡`
+      : null,
+  ].filter(Boolean);
+
+  return parts.join(' · ') || '규모 정보 없음';
+}
+
 interface MapMessageEvent {
   nativeEvent: {
     data: string;
   };
+}
+
+interface ShelterSummary {
+  shelterId: number;
+  name: string;
+  shelterType?: string;
+  capacity?: number;
+  area?: number;
+  managingAuthorityName?: string;
+  managingAuthorityTelNo?: string;
+  accessibleToilet?: boolean;
+  ramp?: boolean;
+  elevator?: boolean;
+  brailleBlock?: boolean;
 }
 
 interface SelectedPlace {
@@ -54,17 +124,36 @@ interface SelectedPlace {
   address: string;
   description: string;
   shelterCount: number;
+  shelters: ShelterSummary[];
 }
 
 interface WebMessagePayload {
-  type: 'marker' | 'ready' | 'error';
+  type: 'marker' | 'ready' | 'error' | 'viewport';
   payload?: SelectedPlace;
   message?: string;
   totalCount?: number;
   visibleCount?: number;
+  visiblePlaces?: SelectedPlace[];
+  center?: {
+    lat: number;
+    lng: number;
+  };
+  level?: number;
 }
 
-function buildMapHtml(mapKey: string, mapPayloadJson: string) {
+interface MapViewState {
+  center: {
+    lat: number;
+    lng: number;
+  };
+  level: number;
+}
+
+function buildMapHtml(
+  mapKey: string,
+  mapPayloadJson: string,
+  initialViewJson: string,
+) {
   return `<!DOCTYPE html>
 <html lang="ko">
   <head>
@@ -87,6 +176,7 @@ function buildMapHtml(mapKey: string, mapPayloadJson: string) {
     <div id="map"></div>
     <script>
       window.__MAP_DATA__ = ${mapPayloadJson};
+      window.__INITIAL_VIEW__ = ${initialViewJson};
       window.__notify = function(payload) {
         if (window.ReactNativeWebView) {
           window.ReactNativeWebView.postMessage(JSON.stringify(payload));
@@ -124,6 +214,32 @@ function buildMapHtml(mapKey: string, mapPayloadJson: string) {
         const path = String(item.path || '');
         const last = path.split(' ').filter(Boolean).slice(-1)[0] || path;
         return last + ' ' + item.count;
+      }
+
+      function normalizePlace(item) {
+        const shelters = Array.isArray(item.shelters) ? item.shelters : [];
+        return {
+          placeId: item.placeId,
+          name: item.name || '대피소',
+          address: item.address || item.oldAddress || '',
+          description: item.description || '',
+          shelterCount: shelters.length,
+          shelters: shelters.map(function(shelter) {
+            return {
+              shelterId: shelter.shelterId,
+              name: shelter.name || item.name || '대피소',
+              shelterType: shelter.shelterType,
+              capacity: shelter.capacity,
+              area: shelter.area,
+              managingAuthorityName: shelter.managingAuthorityName,
+              managingAuthorityTelNo: shelter.managingAuthorityTelNo,
+              accessibleToilet: shelter.accessibleToilet,
+              ramp: shelter.ramp,
+              elevator: shelter.elevator,
+              brailleBlock: shelter.brailleBlock,
+            };
+          }),
+        };
       }
 
       function createSummaryOverlay(map, item, position) {
@@ -172,13 +288,7 @@ function buildMapHtml(mapKey: string, mapPayloadJson: string) {
         el.addEventListener('click', function() {
           window.__notify({
             type: 'marker',
-            payload: {
-              placeId: item.placeId,
-              name: item.name || '대피소',
-              address: item.address || '',
-              description: item.description || '',
-              shelterCount: Array.isArray(item.shelters) ? item.shelters.length : 0,
-            },
+            payload: normalizePlace(item),
           });
         });
 
@@ -201,18 +311,33 @@ function buildMapHtml(mapKey: string, mapPayloadJson: string) {
         const details = Array.isArray(payload.details) ? payload.details : [];
         const summaries = payload.summaries || {};
         const container = document.getElementById('map');
-        const center = new window.kakao.maps.LatLng(36.3504, 127.3845);
+        const initialView = window.__INITIAL_VIEW__ || {};
+        const initialCenter = initialView.center || {};
+        const centerLat = Number.isFinite(Number(initialCenter.lat))
+          ? Number(initialCenter.lat)
+          : 36.3504;
+        const centerLng = Number.isFinite(Number(initialCenter.lng))
+          ? Number(initialCenter.lng)
+          : 127.3845;
+        const initialLevel = Number.isFinite(Number(initialView.level))
+          ? Math.max(1, Math.min(14, Number(initialView.level)))
+          : 9;
+        const center = new window.kakao.maps.LatLng(centerLat, centerLng);
 
         const map = new window.kakao.maps.Map(container, {
           center: center,
-          level: 9,
+          level: initialLevel,
           mapTypeId: window.kakao.maps.MapTypeId.ROADMAP,
         });
 
         map.relayout();
         map.setCenter(center);
-        map.setLevel(9);
+        map.setLevel(initialLevel);
         map.setMapTypeId(window.kakao.maps.MapTypeId.ROADMAP);
+        map.addControl(
+          new window.kakao.maps.ZoomControl(),
+          window.kakao.maps.ControlPosition.RIGHT
+        );
 
         let overlays = [];
 
@@ -230,6 +355,25 @@ function buildMapHtml(mapKey: string, mapPayloadJson: string) {
           return { kind: 'summary', items: summaries.depth0 || [] };
         }
 
+        function isInBounds(coords) {
+          const bounds = map.getBounds();
+          const sw = bounds.getSouthWest();
+          const ne = bounds.getNorthEast();
+          return (
+            coords.lat >= sw.getLat() &&
+            coords.lat <= ne.getLat() &&
+            coords.lng >= sw.getLng() &&
+            coords.lng <= ne.getLng()
+          );
+        }
+
+        function currentVisiblePlaces() {
+          return details.filter(function(item) {
+            const coords = toLatLng(item);
+            return coords && isInBounds(coords);
+          }).map(normalizePlace);
+        }
+
         function draw() {
           clearOverlays();
 
@@ -239,6 +383,7 @@ function buildMapHtml(mapKey: string, mapPayloadJson: string) {
           mode.items.forEach(function(item) {
             const coords = toLatLng(item);
             if (!coords) return;
+            if (!isInBounds(coords)) return;
             visibleCount += 1;
 
             const position = new window.kakao.maps.LatLng(coords.lat, coords.lng);
@@ -249,20 +394,39 @@ function buildMapHtml(mapKey: string, mapPayloadJson: string) {
             overlays.push(overlay);
           });
 
-          if (!visibleCount) {
-            window.__notify({ type: 'error', message: '지도에 표시할 좌표가 없습니다' });
-            return;
-          }
+          const visiblePlaces = currentVisiblePlaces();
 
           window.__notify({
             type: 'ready',
             totalCount: details.length,
             visibleCount: visibleCount,
+            visiblePlaces: visiblePlaces,
+          });
+
+          if (!visibleCount && !visiblePlaces.length) {
+            window.__notify({ type: 'error', message: '지도에 표시할 좌표가 없습니다' });
+          }
+        }
+
+        function notifyViewport() {
+          const currentCenter = map.getCenter();
+          window.__notify({
+            type: 'viewport',
+            center: {
+              lat: currentCenter.getLat(),
+              lng: currentCenter.getLng(),
+            },
+            level: map.getLevel(),
           });
         }
 
         draw();
+        notifyViewport();
         window.kakao.maps.event.addListener(map, 'zoom_changed', draw);
+        window.kakao.maps.event.addListener(map, 'idle', function() {
+          draw();
+          notifyViewport();
+        });
       }
 
       window.kakao.maps.load(renderMap);
@@ -300,11 +464,17 @@ export default function MapScreen() {
     refreshOnFocus: true,
   });
   const mapData = useMapStore(state => state.map);
+  console.log('mapData', mapData);
   const [selectedPlace, setSelectedPlace] = useState<SelectedPlace | null>(
     null,
   );
+
+  console.log('selectedPlace', selectedPlace);
+
+  const [visiblePlaces, setVisiblePlaces] = useState<SelectedPlace[]>([]);
   const [mapError, setMapError] = useState('');
   const [mapDebug, setMapDebug] = useState({ totalCount: 0, visibleCount: 0 });
+  const mapViewRef = useRef<MapViewState | null>(null);
 
   const mapHtml = useMemo(() => {
     const mapKey =
@@ -316,7 +486,11 @@ export default function MapScreen() {
       summaries: mapData?.summaries ?? {},
     };
 
-    return buildMapHtml(mapKey, JSON.stringify(payload));
+    return buildMapHtml(
+      mapKey,
+      JSON.stringify(payload),
+      JSON.stringify(mapViewRef.current),
+    );
   }, [mapData]);
 
   const webViewSource = useMemo(() => ({ html: mapHtml }), [mapHtml]);
@@ -341,6 +515,21 @@ export default function MapScreen() {
           totalCount: parsed.totalCount ?? 0,
           visibleCount: parsed.visibleCount ?? 0,
         });
+        setVisiblePlaces(parsed.visiblePlaces ?? []);
+        return;
+      }
+
+      if (
+        parsed.type === 'viewport' &&
+        parsed.center &&
+        Number.isFinite(parsed.center.lat) &&
+        Number.isFinite(parsed.center.lng) &&
+        Number.isFinite(parsed.level)
+      ) {
+        mapViewRef.current = {
+          center: parsed.center,
+          level: parsed.level,
+        };
       }
     } catch {
       // no-op
@@ -348,6 +537,8 @@ export default function MapScreen() {
   };
 
   const handleShelterTypePress = (item: string) => {
+    setSelectedPlace(null);
+
     if (item === SHELTER_ALL_LABEL) {
       setSelectedShelterTypes([SHELTER_ALL_LABEL]);
       return;
@@ -366,6 +557,8 @@ export default function MapScreen() {
   };
 
   const handleAccessibilityPress = (item: string) => {
+    setSelectedPlace(null);
+
     if (item === ACCESSIBILITY_ALL_LABEL) {
       setSelectedAccessibility([ACCESSIBILITY_ALL_LABEL]);
       return;
@@ -384,7 +577,7 @@ export default function MapScreen() {
   };
 
   return (
-    <Screen>
+    <Screen edges={['top', 'left', 'right']}>
       <Header>
         <Description>여기에 내 위치 띄울거임.</Description>
       </Header>
@@ -452,26 +645,103 @@ export default function MapScreen() {
 
       {mapError ? <ErrorText>{mapError}</ErrorText> : null}
 
-      <DebugText>
-        details {mapDebug.totalCount}개 / 현재표시 {mapDebug.visibleCount}개
-      </DebugText>
+      <BottomPanel>
+        {selectedPlace ? (
+          <>
+            <PanelHeader>
+              <BackButton onPress={() => setSelectedPlace(null)}>
+                <BackButtonText>뒤로</BackButtonText>
+              </BackButton>
+              <PanelTitle numberOfLines={1}>{selectedPlace.name}</PanelTitle>
+            </PanelHeader>
 
-      {selectedPlace ? (
-        <DetailCard>
-          <DetailTitle>{selectedPlace.name}</DetailTitle>
-          <DetailAddress numberOfLines={2}>
-            {selectedPlace.address || '주소 정보 없음'}
-          </DetailAddress>
-          {selectedPlace.description ? (
-            <DetailDescription numberOfLines={3}>
-              {selectedPlace.description}
-            </DetailDescription>
-          ) : null}
-          <DetailMeta>연결된 대피소 {selectedPlace.shelterCount}개</DetailMeta>
-        </DetailCard>
-      ) : (
-        <DetailPlaceholder>설명 문구 넣을 예정</DetailPlaceholder>
-      )}
+            <DetailAddress numberOfLines={2}>
+              {selectedPlace.address || '주소 정보 없음'}
+            </DetailAddress>
+            {selectedPlace.description ? (
+              <DetailDescription numberOfLines={2}>
+                {selectedPlace.description}
+              </DetailDescription>
+            ) : null}
+            <DetailMeta>대피소 {selectedPlace.shelterCount}개</DetailMeta>
+
+            <PanelScroll showsVerticalScrollIndicator={false}>
+              {selectedPlace.shelters.length ? (
+                selectedPlace.shelters.map(shelter => (
+                  <ShelterItem key={String(shelter.shelterId)}>
+                    <ShelterTitleRow>
+                      <ShelterName>{shelter.name}</ShelterName>
+                      <TypeChip>
+                        <TypeChipText>
+                          {getShelterTypeLabel(shelter.shelterType)}
+                        </TypeChipText>
+                      </TypeChip>
+                    </ShelterTitleRow>
+                    <ShelterMeta>{getShelterMetaText(shelter)}</ShelterMeta>
+                    <ShelterMeta>
+                      {[
+                        shelter.managingAuthorityName,
+                        shelter.managingAuthorityTelNo,
+                      ]
+                        .filter(Boolean)
+                        .join(' · ') || '관리기관 정보 없음'}
+                    </ShelterMeta>
+                    <ChipRow>
+                      {getAccessibilityChips(shelter).map(chip => (
+                        <AccessChip
+                          key={`${shelter.shelterId}-${chip.label}`}
+                          $active={chip.active}
+                        >
+                          <AccessChipText $active={chip.active}>
+                            {chip.label}
+                          </AccessChipText>
+                        </AccessChip>
+                      ))}
+                    </ChipRow>
+                  </ShelterItem>
+                ))
+              ) : (
+                <EmptyPanelText>연결된 대피소가 없습니다.</EmptyPanelText>
+              )}
+            </PanelScroll>
+          </>
+        ) : (
+          <>
+            <PanelHeader>
+              <PanelCount>총 대피소 {visiblePlaces.length}</PanelCount>
+            </PanelHeader>
+
+            <PanelScroll showsVerticalScrollIndicator={false}>
+              {visiblePlaces.length ? (
+                visiblePlaces.map(place => (
+                  <PlaceItem
+                    key={String(place.placeId)}
+                    onPress={() => setSelectedPlace(place)}
+                  >
+                    <PlaceName numberOfLines={1}>{place.name}</PlaceName>
+                    <PlaceAddress numberOfLines={1}>
+                      {place.address || '주소 정보 없음'}
+                    </PlaceAddress>
+                    <ChipRow>
+                      {getShelterTypeCounts(place.shelters).map(item => (
+                        <TypeCountChip key={`${place.placeId}-${item.type}`}>
+                          <TypeCountText>
+                            {item.label} {item.count}개
+                          </TypeCountText>
+                        </TypeCountChip>
+                      ))}
+                    </ChipRow>
+                  </PlaceItem>
+                ))
+              ) : (
+                <EmptyPanelText>
+                  현재 화면에 표시할 대피소가 없습니다.
+                </EmptyPanelText>
+              )}
+            </PanelScroll>
+          </>
+        )}
+      </BottomPanel>
     </Screen>
   );
 }
@@ -483,12 +753,6 @@ const Screen = styled(SafeAreaView)`
 
 const Header = styled.View`
   padding: 20px 20px 12px;
-`;
-
-const Title = styled.Text`
-  color: #111827;
-  font-size: 28px;
-  font-weight: 800;
 `;
 
 const Description = styled.Text`
@@ -504,12 +768,6 @@ const FilterSection = styled.View`
 
 const FilterGroup = styled.View`
   gap: 8px;
-`;
-
-const FilterLabel = styled.Text`
-  color: #6b7280;
-  font-size: 13px;
-  font-weight: 700;
 `;
 
 const FilterRow = styled.ScrollView`
@@ -534,10 +792,10 @@ const FilterChipText = styled.Text<{ $selected: boolean }>`
 `;
 
 const MapFrame = styled.View`
-  flex: 1;
+  flex: 6;
   overflow: hidden;
-  margin: 14px 20px 0;
-  border-radius: 22px;
+  margin: 10px 12px 0;
+  border-radius: 18px;
   background-color: #dbeafe;
 `;
 
@@ -556,56 +814,181 @@ const EmptyText = styled.Text`
 `;
 
 const ErrorText = styled.Text`
-  margin: 10px 20px 0;
+  margin: 6px 12px 0;
   color: #dc2626;
   font-size: 13px;
   font-weight: 600;
 `;
 
 const DebugText = styled.Text`
-  margin: 8px 20px 0;
+  margin: 4px 12px 0;
   color: #6b7280;
   font-size: 12px;
 `;
 
-const DetailCard = styled.View`
-  gap: 8px;
-  margin: 14px 20px 20px;
-  padding: 16px;
-  border-radius: 20px;
+const BottomPanel = styled.View`
+  flex: 4;
+  gap: 6px;
+  margin: 6px 12px 0;
+  padding: 10px;
+  border-radius: 16px;
   background-color: #ffffff;
+  min-height: 0;
 `;
 
-const DetailTitle = styled.Text`
+const PanelHeader = styled.View`
+  min-height: 26px;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+`;
+
+const PanelTitle = styled.Text`
+  flex: 1;
   color: #111827;
   font-size: 17px;
   font-weight: 800;
 `;
 
+const PanelCount = styled.Text`
+  color: #2563eb;
+  font-size: 13px;
+  font-weight: 800;
+  margin-left: auto;
+`;
+
+const BackButton = styled.Pressable`
+  padding: 4px 8px;
+  border-radius: 999px;
+  background-color: #eff6ff;
+`;
+
+const BackButtonText = styled.Text`
+  color: #2563eb;
+  font-size: 13px;
+  font-weight: 800;
+`;
+
+const PanelScroll = styled.ScrollView`
+  flex: 1;
+`;
+
+const PlaceItem = styled.Pressable`
+  gap: 4px;
+  padding: 9px 0;
+  border-bottom-width: 1px;
+  border-bottom-color: #eef2f7;
+`;
+
+const PlaceName = styled.Text`
+  color: #111827;
+  font-size: 15px;
+  font-weight: 800;
+`;
+
+const PlaceAddress = styled.Text`
+  color: #4b5563;
+  font-size: 13px;
+  line-height: 18px;
+`;
+
 const DetailAddress = styled.Text`
   color: #4b5563;
-  font-size: 14px;
-  line-height: 20px;
+  font-size: 13px;
+  line-height: 18px;
 `;
 
 const DetailDescription = styled.Text`
   color: #374151;
-  font-size: 14px;
-  line-height: 20px;
+  font-size: 13px;
+  line-height: 18px;
 `;
 
 const DetailMeta = styled.Text`
   color: #2563eb;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
 `;
 
-const DetailPlaceholder = styled.Text`
-  margin: 14px 20px 20px;
-  padding: 16px;
-  border-radius: 20px;
+const ShelterItem = styled.View`
+  gap: 5px;
+  margin-bottom: 8px;
+  padding: 10px;
+  border-radius: 12px;
+  background-color: #f8fafc;
+  border-width: 1px;
+  border-color: #e5e7eb;
+`;
+
+const ShelterTitleRow = styled.View`
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+`;
+
+const ShelterName = styled.Text`
+  width: 100%;
+  color: #111827;
+  font-size: 14px;
+  line-height: 19px;
+  font-weight: 800;
+`;
+
+const ShelterMeta = styled.Text`
+  color: #4b5563;
+  font-size: 12px;
+  line-height: 18px;
+`;
+
+const ChipRow = styled.View`
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 2px;
+`;
+
+const TypeChip = styled.View`
+  padding: 4px 7px;
+  border-radius: 999px;
+  background-color: #eff6ff;
+`;
+
+const TypeChipText = styled.Text`
+  color: #2563eb;
+  font-size: 10px;
+  font-weight: 800;
+`;
+
+const TypeCountChip = styled.View`
+  padding: 5px 8px;
+  border-radius: 999px;
+  background-color: #eefbf8;
+`;
+
+const TypeCountText = styled.Text`
+  color: #15803d;
+  font-size: 11px;
+  font-weight: 800;
+`;
+
+const AccessChip = styled.View<{ $active: boolean }>`
+  padding: 5px 7px;
+  border-radius: 999px;
+  background-color: ${({ $active }) => ($active ? '#fff7ed' : '#f3f4f6')};
+  border-width: 1px;
+  border-color: ${({ $active }) => ($active ? '#fed7aa' : '#e5e7eb')};
+`;
+
+const AccessChipText = styled.Text<{ $active: boolean }>`
+  color: ${({ $active }) => ($active ? '#c2410c' : '#9ca3af')};
+  font-size: 10px;
+  font-weight: 800;
+`;
+
+const EmptyPanelText = styled.Text`
+  padding: 18px 0;
   color: #6b7280;
   font-size: 14px;
   text-align: center;
-  background-color: #ffffff;
 `;
