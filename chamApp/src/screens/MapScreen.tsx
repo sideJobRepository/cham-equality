@@ -1,5 +1,10 @@
-import { useMemo, useRef, useState } from 'react';
-import { ActivityIndicator } from 'react-native';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import {
+  ActivityIndicator,
+  NativeModules,
+  PermissionsAndroid,
+  Platform,
+} from 'react-native';
 import Config from 'react-native-config';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
@@ -28,6 +33,20 @@ const ACCESSIBILITY_ALL_LABEL = '접근성 전체';
 const SHELTER_SELECTED_COLOR = '#4aa199';
 const ACCESSIBILITY_SELECTED_COLOR = '#5088dc';
 
+type LocationStatus = 'checking' | 'granted' | 'denied' | 'unavailable';
+type UserLocation = {
+  lat: number;
+  lng: number;
+  accuracy?: number;
+  address?: string;
+};
+
+const { ChamLocation } = NativeModules as {
+  ChamLocation?: {
+    getCurrentLocation: () => Promise<UserLocation>;
+  };
+};
+
 const shelterTypeValueMap: Record<string, string> = {
   민방위대피시설: 'CIVIL_DEFENSE',
   지진대피장소: 'EARTHQUAKE',
@@ -53,6 +72,15 @@ const shelterTypeLabelMap: Record<string, string> = {
 function getShelterTypeLabel(type?: string) {
   if (!type) return '유형 정보 없음';
   return shelterTypeLabelMap[type] ?? type;
+}
+
+function isKoreaLocation(location: UserLocation) {
+  return (
+    location.lat >= 32 &&
+    location.lat <= 39.5 &&
+    location.lng >= 124 &&
+    location.lng <= 132.5
+  );
 }
 
 function getAccessibilityChips(shelter: ShelterSummary) {
@@ -98,6 +126,22 @@ function getShelterMetaText(shelter: ShelterSummary) {
   return parts.join(' · ') || '규모 정보 없음';
 }
 
+async function requestLocationPermission() {
+  if (Platform.OS !== 'android') return true;
+
+  const result = await PermissionsAndroid.request(
+    PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+    {
+      title: '위치 권한 필요',
+      message: '현재 위치 주변 대피소를 보여주기 위해 위치 권한이 필요합니다.',
+      buttonPositive: '허용',
+      buttonNegative: '거부',
+    },
+  );
+
+  return result === PermissionsAndroid.RESULTS.GRANTED;
+}
+
 interface MapMessageEvent {
   nativeEvent: {
     data: string;
@@ -128,9 +172,10 @@ interface SelectedPlace {
 }
 
 interface WebMessagePayload {
-  type: 'marker' | 'ready' | 'error' | 'viewport';
+  type: 'marker' | 'ready' | 'error' | 'viewport' | 'locationAddress';
   payload?: SelectedPlace;
   message?: string;
+  address?: string;
   totalCount?: number;
   visibleCount?: number;
   visiblePlaces?: SelectedPlace[];
@@ -153,6 +198,7 @@ function buildMapHtml(
   mapKey: string,
   mapPayloadJson: string,
   initialViewJson: string,
+  userLocationJson: string,
 ) {
   return `<!DOCTYPE html>
 <html lang="ko">
@@ -177,6 +223,7 @@ function buildMapHtml(
     <script>
       window.__MAP_DATA__ = ${mapPayloadJson};
       window.__INITIAL_VIEW__ = ${initialViewJson};
+      window.__USER_LOCATION__ = ${userLocationJson};
       window.__notify = function(payload) {
         if (window.ReactNativeWebView) {
           window.ReactNativeWebView.postMessage(JSON.stringify(payload));
@@ -187,7 +234,7 @@ function buildMapHtml(
       };
     </script>
     <script
-      src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=${mapKey}&autoload=false"
+      src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=${mapKey}&autoload=false&libraries=services"
       onerror="window.__notify({ type: 'error', message: '카카오 지도 SDK 로드 실패' })"
     ></script>
     <script>
@@ -341,6 +388,130 @@ function buildMapHtml(
 
         let overlays = [];
 
+        function getUserLocationCoords() {
+          const userLocation = window.__USER_LOCATION__;
+          if (!userLocation) return null;
+
+          const lat = Number(userLocation.lat);
+          const lng = Number(userLocation.lng);
+          if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+          if (!isKoreaRange(lat, lng)) return null;
+
+          return { lat: lat, lng: lng };
+        }
+
+        window.__moveToUserLocation = function() {
+          const coords = getUserLocationCoords();
+          if (!coords) return;
+
+          const markerPosition = new window.kakao.maps.LatLng(coords.lat, coords.lng);
+          map.setCenter(markerPosition);
+          map.setLevel(6);
+        };
+
+        function drawUserLocation() {
+          const coords = getUserLocationCoords();
+          if (!coords) return;
+
+          const markerPosition = new window.kakao.maps.LatLng(coords.lat, coords.lng);
+          const markerEl = document.createElement('div');
+          markerEl.style.cssText = [
+            'transform:translate(-50%, -50%)',
+            'display:flex',
+            'align-items:center',
+            'justify-content:center',
+            'pointer-events:none',
+          ].join(';');
+          markerEl.innerHTML =
+            '<div style="width:22px;height:22px;border-radius:999px;background:#ef4444;border:4px solid #ffffff;box-shadow:0 0 0 6px rgba(239,68,68,.18),0 3px 12px rgba(239,68,68,.45);"></div>';
+
+          new window.kakao.maps.CustomOverlay({
+            map: map,
+            position: markerPosition,
+            content: markerEl,
+            xAnchor: 0.5,
+            yAnchor: 0.5,
+            zIndex: 10000,
+          });
+        }
+
+        function notifyUserLocationAddress() {
+          const coords = getUserLocationCoords();
+          if (!coords) {
+            window.__notify({
+              type: 'locationAddress',
+              address: '주소 확인 실패: 위치 좌표가 없습니다',
+            });
+            return;
+          }
+
+          if (!window.kakao.maps.services || !window.kakao.maps.services.Geocoder) {
+            window.__notify({
+              type: 'locationAddress',
+              address: '주소 확인 실패: Kakao services Geocoder 로드 안 됨',
+            });
+            return;
+          }
+
+          const geocoder = new window.kakao.maps.services.Geocoder();
+          const coordText = coords.lat.toFixed(6) + ', ' + coords.lng.toFixed(6);
+
+          function notifyAddressFailure(reason) {
+            window.__notify({
+              type: 'locationAddress',
+              address: '주소 확인 실패: ' + reason + ' (' + coordText + ')',
+            });
+          }
+
+          function notifyLegalAddress(regionStatusText) {
+            geocoder.coord2Address(coords.lng, coords.lat, function(result, status) {
+              const resultCount = Array.isArray(result) ? result.length : 0;
+              if (status !== window.kakao.maps.services.Status.OK || !result.length) {
+                notifyAddressFailure(
+                  'region=' + regionStatusText + ', address=' + status + ', addressCount=' + resultCount
+                );
+                return;
+              }
+
+              const first = result[0];
+              const address =
+                (first.address && first.address.address_name) ||
+                (first.road_address && first.road_address.address_name);
+
+              if (address) {
+                window.__notify({ type: 'locationAddress', address: address });
+              } else {
+                notifyAddressFailure(
+                  '주소 결과는 있으나 address_name 없음, region=' + regionStatusText + ', address=' + status
+                );
+              }
+            });
+          }
+
+          geocoder.coord2RegionCode(coords.lng, coords.lat, function(result, status) {
+            const resultCount = Array.isArray(result) ? result.length : 0;
+            if (status !== window.kakao.maps.services.Status.OK || !result.length) {
+              notifyLegalAddress(status + ', regionCount=' + resultCount);
+              return;
+            }
+
+            const region = result.find(function(item) {
+              return item.region_type === 'H';
+            }) || result[0];
+            const address = region.address_name || [
+              region.region_1depth_name,
+              region.region_2depth_name,
+              region.region_3depth_name,
+            ].filter(Boolean).join(' ');
+
+            if (address) {
+              window.__notify({ type: 'locationAddress', address: address });
+            } else {
+              notifyLegalAddress(status + ', regionCount=' + resultCount + ', region address_name 없음');
+            }
+          });
+        }
+
         function clearOverlays() {
           overlays.forEach(function(overlay) {
             overlay.setMap(null);
@@ -403,9 +574,6 @@ function buildMapHtml(
             visiblePlaces: visiblePlaces,
           });
 
-          if (!visibleCount && !visiblePlaces.length) {
-            window.__notify({ type: 'error', message: '지도에 표시할 좌표가 없습니다' });
-          }
         }
 
         function notifyViewport() {
@@ -420,6 +588,8 @@ function buildMapHtml(
           });
         }
 
+        drawUserLocation();
+        notifyUserLocationAddress();
         draw();
         notifyViewport();
         window.kakao.maps.event.addListener(map, 'zoom_changed', draw);
@@ -429,7 +599,27 @@ function buildMapHtml(
         });
       }
 
-      window.kakao.maps.load(renderMap);
+      function bootKakaoMap(retryCount) {
+        if (
+          window.kakao &&
+          window.kakao.maps &&
+          typeof window.kakao.maps.load === 'function'
+        ) {
+          window.kakao.maps.load(renderMap);
+          return;
+        }
+
+        if (retryCount > 40) {
+          window.__notify({ type: 'error', message: '카카오 지도 SDK 로드 실패' });
+          return;
+        }
+
+        setTimeout(function() {
+          bootKakaoMap(retryCount + 1);
+        }, 100);
+      }
+
+      bootKakaoMap(0);
     </script>
   </body>
 </html>`;
@@ -442,6 +632,62 @@ export default function MapScreen() {
   const [selectedAccessibility, setSelectedAccessibility] = useState<string[]>([
     ACCESSIBILITY_ALL_LABEL,
   ]);
+  const [locationStatus, setLocationStatus] =
+    useState<LocationStatus>('checking');
+  const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
+  const [locationErrorMessage, setLocationErrorMessage] = useState('');
+  const [locationAddress, setLocationAddress] = useState('');
+
+  useEffect(() => {
+    async function loadLocation() {
+      const granted = await requestLocationPermission();
+      if (!granted) {
+        setLocationStatus('denied');
+        return;
+      }
+
+      setLocationStatus('checking');
+      setLocationErrorMessage('');
+      setLocationAddress('');
+
+      if (!ChamLocation) {
+        setLocationStatus('unavailable');
+        setLocationErrorMessage('위치 모듈을 사용할 수 없습니다');
+        return;
+      }
+
+      try {
+        const location = await ChamLocation.getCurrentLocation();
+        if (!isKoreaLocation(location)) {
+          setUserLocation(null);
+          setLocationStatus('unavailable');
+          setLocationAddress('');
+          setLocationErrorMessage(
+            `현재 위치 좌표가 한국 범위 밖입니다 (${location.lat.toFixed(
+              4,
+            )}, ${location.lng.toFixed(4)})`,
+          );
+          return;
+        }
+
+        setUserLocation(location);
+        setLocationStatus('granted');
+        setLocationAddress(location.address ?? '');
+        setLocationErrorMessage('');
+      } catch (error) {
+        const message =
+          error instanceof Error
+            ? error.message
+            : '현재 위치를 확인할 수 없습니다';
+        setLocationStatus('unavailable');
+        setLocationAddress('');
+        setLocationErrorMessage(message);
+      }
+    }
+
+    loadLocation();
+  }, []);
+
   const mapRequestBody = useMemo(() => {
     const shelterTypes = selectedShelterTypes
       .filter(item => item !== SHELTER_ALL_LABEL)
@@ -473,8 +719,27 @@ export default function MapScreen() {
 
   const [visiblePlaces, setVisiblePlaces] = useState<SelectedPlace[]>([]);
   const [mapError, setMapError] = useState('');
-  const [mapDebug, setMapDebug] = useState({ totalCount: 0, visibleCount: 0 });
+  const [panelReady, setPanelReady] = useState(false);
   const mapViewRef = useRef<MapViewState | null>(null);
+  const webViewRef = useRef<WebView>(null);
+
+  useEffect(() => {
+    setSelectedPlace(null);
+    setVisiblePlaces([]);
+    setPanelReady(false);
+  }, [mapData]);
+
+  useEffect(() => {
+    if (locationStatus !== 'granted' || !userLocation || locationAddress) {
+      return;
+    }
+
+    const timeoutId = setTimeout(() => {
+      setLocationAddress('주소 확인 실패: Kakao Geocoder 콜백 없음');
+    }, 5000);
+
+    return () => clearTimeout(timeoutId);
+  }, [locationAddress, locationStatus, userLocation]);
 
   const mapHtml = useMemo(() => {
     const mapKey =
@@ -490,8 +755,9 @@ export default function MapScreen() {
       mapKey,
       JSON.stringify(payload),
       JSON.stringify(mapViewRef.current),
+      JSON.stringify(userLocation),
     );
-  }, [mapData]);
+  }, [mapData, userLocation]);
 
   const webViewSource = useMemo(() => ({ html: mapHtml }), [mapHtml]);
 
@@ -509,13 +775,19 @@ export default function MapScreen() {
         return;
       }
 
+      if (parsed.type === 'locationAddress' && parsed.address) {
+        console.log('locationAddress', parsed.address);
+        if (locationAddress && parsed.address.startsWith('주소 확인 실패')) {
+          return;
+        }
+        setLocationAddress(parsed.address);
+        return;
+      }
+
       if (parsed.type === 'ready') {
         setMapError('');
-        setMapDebug({
-          totalCount: parsed.totalCount ?? 0,
-          visibleCount: parsed.visibleCount ?? 0,
-        });
         setVisiblePlaces(parsed.visiblePlaces ?? []);
+        setPanelReady(true);
         return;
       }
 
@@ -530,6 +802,7 @@ export default function MapScreen() {
           center: parsed.center,
           level: parsed.level,
         };
+        return;
       }
     } catch {
       // no-op
@@ -576,10 +849,37 @@ export default function MapScreen() {
     });
   };
 
+  const handleMoveToUserLocation = () => {
+    webViewRef.current?.injectJavaScript(`
+      if (window.__moveToUserLocation) {
+        window.__moveToUserLocation();
+      }
+      true;
+    `);
+  };
+
+  const locationStatusText =
+    locationStatus === 'checking'
+      ? '현재 위치 확인 중'
+      : locationStatus === 'granted'
+      ? locationAddress || '현재 위치 주소 확인 중'
+      : locationStatus === 'denied'
+      ? '위치 권한이 필요합니다'
+      : locationErrorMessage || '현재 위치를 확인할 수 없습니다';
+
   return (
     <Screen edges={['top', 'left', 'right']}>
       <Header>
-        <Description>여기에 내 위치 띄울거임.</Description>
+        <HeaderRow>
+          <Description numberOfLines={1}>
+            {locationStatusText}
+          </Description>
+          {locationStatus === 'granted' && userLocation ? (
+            <LocationButton onPress={handleMoveToUserLocation}>
+              <LocationButtonText>내 위치 주변 보기</LocationButtonText>
+            </LocationButton>
+          ) : null}
+        </HeaderRow>
       </Header>
 
       <FilterSection>
@@ -623,6 +923,7 @@ export default function MapScreen() {
       <MapFrame>
         {mapHtml ? (
           <WebView
+            ref={webViewRef}
             originWhitelist={['*']}
             source={webViewSource}
             onMessage={handleMessage}
@@ -712,7 +1013,12 @@ export default function MapScreen() {
             </PanelHeader>
 
             <PanelScroll showsVerticalScrollIndicator={false}>
-              {visiblePlaces.length ? (
+              {!mapData || !panelReady ? (
+                <PanelLoading>
+                  <ActivityIndicator color="#2563eb" />
+                  <PanelLoadingText>대피소 정보를 불러오는 중</PanelLoadingText>
+                </PanelLoading>
+              ) : visiblePlaces.length ? (
                 visiblePlaces.map(place => (
                   <PlaceItem
                     key={String(place.placeId)}
@@ -755,10 +1061,31 @@ const Header = styled.View`
   padding: 20px 20px 12px;
 `;
 
+const HeaderRow = styled.View`
+  min-height: 34px;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+`;
+
 const Description = styled.Text`
-  margin-top: 6px;
+  flex: 1;
   color: #6b7280;
-  font-size: 15px;
+  font-size: 12px;
+`;
+
+const LocationButton = styled.Pressable`
+  flex-shrink: 0;
+  padding: 8px 10px;
+  border-radius: 999px;
+  background-color: #ef4444;
+`;
+
+const LocationButtonText = styled.Text`
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 800;
 `;
 
 const FilterSection = styled.View`
@@ -820,12 +1147,6 @@ const ErrorText = styled.Text`
   font-weight: 600;
 `;
 
-const DebugText = styled.Text`
-  margin: 4px 12px 0;
-  color: #6b7280;
-  font-size: 12px;
-`;
-
 const BottomPanel = styled.View`
   flex: 4;
   gap: 6px;
@@ -871,6 +1192,20 @@ const BackButtonText = styled.Text`
 
 const PanelScroll = styled.ScrollView`
   flex: 1;
+`;
+
+const PanelLoading = styled.View`
+  flex: 1;
+  min-height: 120px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+`;
+
+const PanelLoadingText = styled.Text`
+  color: #6b7280;
+  font-size: 13px;
+  font-weight: 700;
 `;
 
 const PlaceItem = styled.Pressable`
