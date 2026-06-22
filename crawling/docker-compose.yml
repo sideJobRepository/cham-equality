@@ -1,0 +1,12 @@
+services:
+  app:
+    image: cham-eq-crawling:latest
+    build: .
+    env_file:
+      - .env
+    volumes:
+      - app-data:/data
+    restart: unless-stopped
+
+volumes:
+  app-data:
