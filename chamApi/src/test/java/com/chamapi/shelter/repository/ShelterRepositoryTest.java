@@ -6,6 +6,8 @@ import com.chamapi.shelter.entity.Place;
 import com.chamapi.shelter.entity.Region;
 import com.chamapi.shelter.entity.Shelter;
 import com.chamapi.shelter.entity.ShelterAccessibility;
+import com.chamapi.shelter.entity.ShelterImage;
+import com.chamapi.shelter.enums.ShelterImageCategory;
 import com.chamapi.shelter.enums.ShelterType;
 import jakarta.persistence.EntityManager;
 import org.hibernate.Hibernate;
@@ -15,6 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -109,6 +112,79 @@ class ShelterRepositoryTest extends RepositoryAndServiceTestSupport {
         assertThat(Hibernate.isInitialized(found.getPlace().getRegion())).isTrue();
     }
 
+    @DisplayName("findImagesGroupedByShelterId - shelterIds 가 null 이거나 빈 리스트면, DB 에 이미지가 있어도 빈 맵을 반환한다")
+    @Test
+    void findImagesGroupedByShelterId_nullOrEmpty_returnsEmptyMap() {
+        Place place = persistPlace();
+        Shelter shelter = persistShelter(place, ShelterType.CIVIL_DEFENSE, null);
+        persistShelterImage(shelter.getId(), ShelterImageCategory.EXTERIOR);
+        flushAndClear();
+
+        assertThat(shelterRepository.findImagesGroupedByShelterId(null)).isEmpty();
+        assertThat(shelterRepository.findImagesGroupedByShelterId(List.of())).isEmpty();
+    }
+
+    @DisplayName("findImagesGroupedByShelterId - shelterIds 가 1 개이고 이미지가 여러 개면, id ASC 순으로 묶여 반환된다")
+    @Test
+    void findImagesGroupedByShelterId_singleShelter_returnsImagesSortedByIdAsc() {
+        Place place = persistPlace();
+        Shelter shelter = persistShelter(place, ShelterType.CIVIL_DEFENSE, null);
+        ShelterImage img1 = persistShelterImage(shelter.getId(), ShelterImageCategory.EXTERIOR);
+        ShelterImage img2 = persistShelterImage(shelter.getId(), ShelterImageCategory.RAMP);
+        ShelterImage img3 = persistShelterImage(shelter.getId(), ShelterImageCategory.ELEVATOR);
+        flushAndClear();
+
+        Map<Long, List<ShelterImage>> result =
+                shelterRepository.findImagesGroupedByShelterId(List.of(shelter.getId()));
+
+        assertThat(result).containsOnlyKeys(shelter.getId());
+        assertThat(result.get(shelter.getId()))
+                .extracting(ShelterImage::getId)
+                .containsExactly(img1.getId(), img2.getId(), img3.getId());
+    }
+
+    @DisplayName("findImagesGroupedByShelterId - 요청한 shelterId 들은 각 키로 분리되어 자기 이미지만 가지고, 요청 목록에 없는 shelter 의 이미지는 결과에 포함되지 않는다")
+    @Test
+    void findImagesGroupedByShelterId_multipleShelters_groupsByShelterIdAndExcludesNonRequested() {
+        Place place = persistPlace();
+        Shelter a = persistShelter(place, ShelterType.CIVIL_DEFENSE, null);
+        Shelter b = persistShelter(place, ShelterType.EARTHQUAKE, null);
+        Shelter unrequested = persistShelter(place, ShelterType.CHEMICAL_ACCIDENT, null);
+
+        ShelterImage aImg1 = persistShelterImage(a.getId(), ShelterImageCategory.EXTERIOR);
+        ShelterImage aImg2 = persistShelterImage(a.getId(), ShelterImageCategory.RAMP);
+        ShelterImage bImg = persistShelterImage(b.getId(), ShelterImageCategory.ELEVATOR);
+        persistShelterImage(unrequested.getId(), ShelterImageCategory.TOILET);
+        flushAndClear();
+
+        Map<Long, List<ShelterImage>> result =
+                shelterRepository.findImagesGroupedByShelterId(List.of(a.getId(), b.getId()));
+
+        assertThat(result).containsOnlyKeys(a.getId(), b.getId());
+        assertThat(result.get(a.getId()))
+                .extracting(ShelterImage::getId)
+                .containsExactly(aImg1.getId(), aImg2.getId());
+        assertThat(result.get(b.getId()))
+                .extracting(ShelterImage::getId)
+                .containsExactly(bImg.getId());
+    }
+
+    @DisplayName("findImagesGroupedByShelterId - 요청한 shelterId 중 이미지가 0 개인 shelter 는 결과 맵의 키로 포함되지 않는다")
+    @Test
+    void findImagesGroupedByShelterId_shelterWithNoImages_isAbsentFromResult() {
+        Place place = persistPlace();
+        Shelter withImg = persistShelter(place, ShelterType.CIVIL_DEFENSE, null);
+        Shelter withoutImg = persistShelter(place, ShelterType.EARTHQUAKE, null);
+        persistShelterImage(withImg.getId(), ShelterImageCategory.EXTERIOR);
+        flushAndClear();
+
+        Map<Long, List<ShelterImage>> result = shelterRepository.findImagesGroupedByShelterId(
+                List.of(withImg.getId(), withoutImg.getId()));
+
+        assertThat(result).containsOnlyKeys(withImg.getId());
+        assertThat(result.get(withImg.getId())).hasSize(1);
+    }
+
     private List<Long> filterSaved(List<Shelter> results, Set<Long> savedIds) {
         return results.stream()
                 .map(Shelter::getId)
@@ -136,6 +212,15 @@ class ShelterRepositoryTest extends RepositoryAndServiceTestSupport {
                 .accessibility(accessibility)
                 .build();
         return shelterRepository.save(shelter);
+    }
+
+    private ShelterImage persistShelterImage(Long shelterId, ShelterImageCategory category) {
+        ShelterImage image = ShelterImage.builder()
+                .shelterId(shelterId)
+                .category(category)
+                .build();
+        em.persist(image);
+        return image;
     }
 
     private ShelterAccessibility accessibility(Boolean ramp, Boolean elevator, Boolean brailleBlock) {

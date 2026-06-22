@@ -34,9 +34,10 @@ public record ShelterMapResponse(
         Boolean brailleBlock,
         String etcFacilities,
         ShelterSurveyStatus surveyStatus,
-        AccessibilityMatchStatus accessibilityMatchStatus
+        AccessibilityMatchStatus accessibilityMatchStatus,
+        List<ShelterMapImageResponse> images
 ) {
-    public static ShelterMapResponse fromDomain(Shelter shelter, List<AccessibilityFeature> accessibilityFeatures) {
+    public static ShelterMapResponse fromDomain(Shelter shelter, List<AccessibilityFeature> accessibilityFeatures, List<ShelterMapImageResponse> images) {
         Place p = shelter.getPlace();
         ShelterAccessibility a = shelter.getAccessibility();
         return new ShelterMapResponse(
@@ -60,7 +61,8 @@ public record ShelterMapResponse(
                 mapOrNull(a, ShelterAccessibility::getBrailleBlock),
                 mapOrNull(a, ShelterAccessibility::getEtcFacilities),
                 shelter.getSurveyStatus(),
-                shelter.evaluateAccessibility(accessibilityFeatures)
+                shelter.evaluateAccessibility(accessibilityFeatures),
+                images
         );
     }
 }

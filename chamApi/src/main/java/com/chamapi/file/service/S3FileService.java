@@ -33,13 +33,7 @@ import java.io.OutputStream;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -279,4 +273,7 @@ public class S3FileService {
                 .toList();
     }
 
+    public FileViewResponse getFileForView(Long fileId){
+        return fileViewUrlCache.getFileUrl(fileId);
+    }
 }

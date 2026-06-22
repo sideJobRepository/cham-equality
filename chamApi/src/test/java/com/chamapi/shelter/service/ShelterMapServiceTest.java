@@ -1,12 +1,19 @@
 package com.chamapi.shelter.service;
 
+import com.chamapi.file.dto.response.FileViewResponse;
+import com.chamapi.file.enums.FileType;
+import com.chamapi.file.service.S3FileService;
 import com.chamapi.shelter.dto.query.ShelterSearchCondition;
 import com.chamapi.shelter.dto.response.PlaceMapResponse;
 import com.chamapi.shelter.dto.response.RegionSummaryDto;
 import com.chamapi.shelter.dto.response.ShelterAggregateResponse;
+import com.chamapi.shelter.dto.response.ShelterMapImageResponse;
+import com.chamapi.shelter.dto.response.ShelterMapResponse;
 import com.chamapi.shelter.entity.Place;
 import com.chamapi.shelter.entity.Region;
 import com.chamapi.shelter.entity.Shelter;
+import com.chamapi.shelter.entity.ShelterImage;
+import com.chamapi.shelter.enums.ShelterImageCategory;
 import com.chamapi.shelter.repository.ShelterRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -17,10 +24,12 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
@@ -29,6 +38,9 @@ class ShelterMapServiceTest {
 
     @Mock
     private ShelterRepository shelterRepository;
+
+    @Mock
+    private S3FileService fileService;
 
     @InjectMocks
     private ShelterMapService shelterMapService;
@@ -65,6 +77,8 @@ class ShelterMapServiceTest {
 
         when(shelterRepository.searchByCondition(any()))
                 .thenReturn(List.of(s1, s2, s3, s4, s5, s6));
+        when(shelterRepository.findImagesGroupedByShelterId(any()))
+                .thenReturn(Map.of());
 
         ShelterAggregateResponse response = shelterMapService.aggregate(emptyCondition(), List.of());
 
@@ -125,6 +139,8 @@ class ShelterMapServiceTest {
 
         when(shelterRepository.searchByCondition(any()))
                 .thenReturn(List.of(orphan));
+        when(shelterRepository.findImagesGroupedByShelterId(any()))
+                .thenReturn(Map.of());
 
         ShelterAggregateResponse response = shelterMapService.aggregate(emptyCondition(), List.of());
 
@@ -143,6 +159,8 @@ class ShelterMapServiceTest {
 
         when(shelterRepository.searchByCondition(any()))
                 .thenReturn(List.of(s));
+        when(shelterRepository.findImagesGroupedByShelterId(any()))
+                .thenReturn(Map.of());
 
         ShelterAggregateResponse response = shelterMapService.aggregate(emptyCondition(), List.of());
 
@@ -152,6 +170,48 @@ class ShelterMapServiceTest {
         assertThat(response.getSummaries().getDepth0()).isEmpty();
         assertThat(response.getSummaries().getDepth1()).isEmpty();
         assertThat(response.getSummaries().getDepth2()).isEmpty();
+    }
+
+    @DisplayName("aggregate — 각 shelter의 이미지가 (category, presigned url)로 변환되어 ShelterMapResponse.images에 채워지고, 이미지 없는 shelter는 빈 리스트가 된다")
+    @Test
+    void aggregate_attachesImagesPerShelter() {
+        Region daejeon = region(1L, null, 0, "대전",
+                new BigDecimal("127.38450000"), new BigDecimal("36.35040000"));
+        Region seogu = region(2L, daejeon, 1, "대전 서구",
+                new BigDecimal("127.38000000"), new BigDecimal("36.35000000"));
+        Region dunsan = region(3L, seogu, 2, "대전 서구 둔산동",
+                new BigDecimal("127.38500000"), new BigDecimal("36.35000000"));
+        Place place = place(11L, dunsan,
+                new BigDecimal("127.10000000"), new BigDecimal("36.10000000"));
+
+        Shelter s1 = shelter(21L, place);
+        Shelter s2 = shelter(22L, place); // 이미지 없는 shelter
+
+        ShelterImage img1 = shelterImage(101L, 21L, 1001L, ShelterImageCategory.EXTERIOR);
+        ShelterImage img2 = shelterImage(102L, 21L, 1002L, ShelterImageCategory.RAMP);
+
+        when(shelterRepository.searchByCondition(any()))
+                .thenReturn(List.of(s1, s2));
+        when(shelterRepository.findImagesGroupedByShelterId(any()))
+                .thenReturn(Map.of(21L, List.of(img1, img2)));
+        when(fileService.getFileForView(1001L))
+                .thenReturn(fileView(1001L, "https://s3.example/exterior.jpg"));
+        when(fileService.getFileForView(1002L))
+                .thenReturn(fileView(1002L, "https://s3.example/ramp.jpg"));
+
+        ShelterAggregateResponse response = shelterMapService.aggregate(emptyCondition(), List.of());
+
+        List<ShelterMapResponse> shelters = response.getDetails().get(11L).shelters();
+        ShelterMapResponse r1 = shelters.stream().filter(r -> r.shelterId().equals(21L)).findFirst().orElseThrow();
+        ShelterMapResponse r2 = shelters.stream().filter(r -> r.shelterId().equals(22L)).findFirst().orElseThrow();
+
+        assertThat(r1.images())
+                .extracting(ShelterMapImageResponse::category, ShelterMapImageResponse::url)
+                .containsExactly(
+                        tuple(ShelterImageCategory.EXTERIOR, "https://s3.example/exterior.jpg"),
+                        tuple(ShelterImageCategory.RAMP, "https://s3.example/ramp.jpg")
+                );
+        assertThat(r2.images()).isEmpty();
     }
 
     private Region region(Long id, Region parent, int depth, String fullName,
@@ -183,6 +243,21 @@ class ShelterMapServiceTest {
                 .build();
         ReflectionTestUtils.setField(shelter, "id", id);
         return shelter;
+    }
+
+    private ShelterImage shelterImage(Long id, Long shelterId, Long fileId, ShelterImageCategory category) {
+        ShelterImage image = ShelterImage.builder()
+                .shelterId(shelterId)
+                .fileId(fileId)
+                .category(category)
+                .build();
+        ReflectionTestUtils.setField(image, "id", id);
+        return image;
+    }
+
+    private FileViewResponse fileView(Long fileId, String url) {
+        return new FileViewResponse(fileId, "file" + fileId + ".jpg", 0, "image/jpeg",
+                FileType.SHELTER_IMAGE, url, LocalDateTime.now());
     }
 
     private ShelterSearchCondition emptyCondition() {
