@@ -209,9 +209,10 @@ public class ShelterInfoReportService {
             cleanupImagesOf(prev);
         }
 
-        // 2) shelter에 새 본문 반영 + report status 전환.
+        // 2) shelter에 새 본문 반영 + report status 전환 + 첨부 이미지 승인 전환.
         shelter.applyReport(report);
         report.approve();
+        approveImagesOf(report);
 
         // 3) 같은 대피소의 나머지 대기 신고를 일괄 반려. 방금 승인한 건은 이미 APPROVED라 목록에 안 들어오지만
         // 동일 트랜잭션의 영속성 컨텍스트 때문에 이중 체크로 건너뛴다.
@@ -223,6 +224,21 @@ public class ShelterInfoReportService {
             if (other.getId().equals(reportId)) continue;
             rejectInternal(other);
         }
+    }
+
+    /**
+     * 승인된 신고의 첨부 사진을 승인 상태로 전환. 제보 시점엔 미승인으로 저장되므로
+     * 이 시점에 {@code ShelterImage.approved}를 켜야 공개 지도에 노출된다.
+     * 영속성 컨텍스트의 dirty checking으로 UPDATE가 나간다.
+     */
+    private void approveImagesOf(ShelterInfoReport report) {
+        List<CommonFile> files = commonFileRepository
+                .findByTargetIdAndFileType(report.getId(), FileType.SHELTER_IMAGE);
+        if (files.isEmpty()) return;
+
+        List<Long> fileIds = files.stream().map(CommonFile::getId).toList();
+        shelterImageRepository.findAllByFileIdIn(fileIds)
+                .forEach(ShelterImage::approve);
     }
 
     /**

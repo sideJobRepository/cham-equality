@@ -40,7 +40,8 @@ public class ShelterQueryRepositoryImpl implements ShelterQueryRepository {
 
         return queryFactory
                 .selectFrom(shelterImage)
-                .where(shelterImage.shelterId.in(shelterIds))
+                .where(shelterImage.shelterId.in(shelterIds)
+                        .and(shelterImage.approved.isTrue()))
                 .orderBy(shelterImage.id.asc())
                 .transform(GroupBy.groupBy(shelterImage.shelterId).as(GroupBy.list(shelterImage)));
     }

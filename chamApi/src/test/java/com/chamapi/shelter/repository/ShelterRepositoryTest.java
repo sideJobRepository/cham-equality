@@ -169,6 +169,37 @@ class ShelterRepositoryTest extends RepositoryAndServiceTestSupport {
                 .containsExactly(bImg.getId());
     }
 
+    @DisplayName("findImagesGroupedByShelterId - 미승인(approved=false) 이미지는 결과에서 제외되고 승인된 이미지만 반환된다")
+    @Test
+    void findImagesGroupedByShelterId_excludesUnapprovedImages() {
+        Place place = persistPlace();
+        Shelter shelter = persistShelter(place, ShelterType.CIVIL_DEFENSE, null);
+        ShelterImage approvedImg = persistShelterImage(shelter.getId(), ShelterImageCategory.EXTERIOR, true);
+        persistShelterImage(shelter.getId(), ShelterImageCategory.RAMP, false);
+        flushAndClear();
+        
+        Map<Long, List<ShelterImage>> result = shelterRepository.findImagesGroupedByShelterId(List.of(shelter.getId()));
+
+        assertThat(result).containsOnlyKeys(shelter.getId());
+        assertThat(result.get(shelter.getId()))
+                .extracting(ShelterImage::getId)
+                .containsExactly(approvedImg.getId());
+    }
+
+    @DisplayName("findImagesGroupedByShelterId - 승인된 이미지가 하나도 없는 shelter 는 결과 맵의 키로 포함되지 않는다")
+    @Test
+    void findImagesGroupedByShelterId_allUnapproved_isAbsentFromResult() {
+        Place place = persistPlace();
+        Shelter shelter = persistShelter(place, ShelterType.CIVIL_DEFENSE, null);
+        persistShelterImage(shelter.getId(), ShelterImageCategory.EXTERIOR, false);
+        flushAndClear();
+
+        Map<Long, List<ShelterImage>> result =
+                shelterRepository.findImagesGroupedByShelterId(List.of(shelter.getId()));
+
+        assertThat(result).isEmpty();
+    }
+
     @DisplayName("findImagesGroupedByShelterId - 요청한 shelterId 중 이미지가 0 개인 shelter 는 결과 맵의 키로 포함되지 않는다")
     @Test
     void findImagesGroupedByShelterId_shelterWithNoImages_isAbsentFromResult() {
@@ -215,9 +246,14 @@ class ShelterRepositoryTest extends RepositoryAndServiceTestSupport {
     }
 
     private ShelterImage persistShelterImage(Long shelterId, ShelterImageCategory category) {
+        return persistShelterImage(shelterId, category, true);
+    }
+
+    private ShelterImage persistShelterImage(Long shelterId, ShelterImageCategory category, boolean approved) {
         ShelterImage image = ShelterImage.builder()
                 .shelterId(shelterId)
                 .category(category)
+                .approved(approved)
                 .build();
         em.persist(image);
         return image;

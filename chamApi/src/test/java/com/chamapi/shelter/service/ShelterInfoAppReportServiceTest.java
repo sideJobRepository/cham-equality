@@ -202,6 +202,30 @@ class ShelterInfoAppReportServiceTest extends RepositoryAndServiceTestSupport {
                 });
     }
 
+    @DisplayName("앱 제보로 올라온 이미지는 미승인(approved=false)으로 저장돼 공개 지도에 노출되지 않는다")
+    @Test
+    void test9() {
+        Member member = persistMember();
+        Shelter shelter = persistShelter(ShelterSurveyStatus.NOT_INVESTIGATED);
+        CommonFile file = commonFileRepository.save(CommonFile.builder()
+                .fileName("ramp.jpg")
+                .filePath("app-shelter/ramp.jpg")
+                .fileType(FileType.APP_SHELTER_IMAGE)
+                .fileStatus(FileStatus.TEMPORARY)
+                .build());
+
+        appReportService.createReport(
+                new ShelterInfoAppReportCreateRequest(
+                        shelter.getId(), "한국어", null, true, null, null, null,
+                        List.of(new ShelterInfoAppReportCreateRequest.ImageItem(
+                                file.getId(), ShelterImageCategory.RAMP, "경사로"))),
+                member.getId());
+
+        assertThat(shelterImageRepository.findAllByFileIdIn(List.of(file.getId())))
+                .singleElement()
+                .satisfies(img -> assertThat(img.isApproved()).isFalse());
+    }
+
     private Member persistMember() {
         return memberRepository.save(Member.builder()
                 .memberName("테스트유저")
