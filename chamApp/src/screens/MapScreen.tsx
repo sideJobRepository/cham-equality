@@ -8,6 +8,7 @@ import {
 import Config from 'react-native-config';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
+import { ChevronLeft } from 'lucide-react-native';
 import styled from 'styled-components/native';
 import { useFetchMap } from '../services/map.service.ts';
 import { useMapStore } from '../store/map.ts';
@@ -168,6 +169,7 @@ interface SelectedPlace {
   address: string;
   description: string;
   shelterCount: number;
+  accessibilityMatchStatus?: string;
   shelters: ShelterSummary[];
 }
 
@@ -263,6 +265,18 @@ function buildMapHtml(
         return last + ' ' + item.count;
       }
 
+      function accessibilityMatchColor(status) {
+        const value = String(status || '').toUpperCase();
+        if (!value) return '#2563eb';
+
+        if (value === 'ACCESSIBLE') return '#16a34a';
+        if (value === 'PARTIAL') return '#f59e0b';
+        if (value === 'INACCESSIBLE') return '#dc2626';
+        if (value === 'NONE') return '#2563eb';
+
+        return '#2563eb';
+      }
+
       function normalizePlace(item) {
         const shelters = Array.isArray(item.shelters) ? item.shelters : [];
         return {
@@ -271,6 +285,7 @@ function buildMapHtml(
           address: item.address || item.oldAddress || '',
           description: item.description || '',
           shelterCount: shelters.length,
+          accessibilityMatchStatus: item.accessibilityMatchStatus,
           shelters: shelters.map(function(shelter) {
             return {
               shelterId: shelter.shelterId,
@@ -314,29 +329,30 @@ function buildMapHtml(
           content: el,
           xAnchor: 0.5,
           yAnchor: 0.5,
+          zIndex: 10,
         });
       }
 
-      function createDetailOverlay(map, item, position) {
+      function createDetailOverlay(map, item, position, selectedPlaceId, onSelect) {
         const el = document.createElement('div');
+        const markerColor = accessibilityMatchColor(item.accessibilityMatchStatus);
+        const isSelected = String(item.placeId) === String(selectedPlaceId);
         el.style.cssText = [
           'display:flex',
           'align-items:center',
           'justify-content:center',
-          'width:14px',
-          'height:14px',
+          'width:' + (isSelected ? '20px' : '14px'),
+          'height:' + (isSelected ? '20px' : '14px'),
           'border-radius:999px',
-          'background:#2563eb',
-          'border:2px solid #ffffff',
-          'box-shadow:0 2px 8px rgba(37,99,235,.35)',
+          'background:' + markerColor,
+          'border:' + (isSelected ? '4px' : '2px') + ' solid #ffffff',
+          'box-shadow:0 0 0 ' + (isSelected ? '5px' : '0') + ' ' + markerColor + '33,0 2px 10px ' + markerColor + '80',
           'cursor:pointer',
+          'transition:width .12s ease,height .12s ease,box-shadow .12s ease',
         ].join(';');
 
         el.addEventListener('click', function() {
-          window.__notify({
-            type: 'marker',
-            payload: normalizePlace(item),
-          });
+          onSelect(item);
         });
 
         return new window.kakao.maps.CustomOverlay({
@@ -345,6 +361,7 @@ function buildMapHtml(
           content: el,
           xAnchor: 0.5,
           yAnchor: 0.5,
+          zIndex: isSelected ? 9000 : 10,
         });
       }
 
@@ -381,12 +398,17 @@ function buildMapHtml(
         map.setCenter(center);
         map.setLevel(initialLevel);
         map.setMapTypeId(window.kakao.maps.MapTypeId.ROADMAP);
+        setTimeout(function() {
+          map.relayout();
+          map.setCenter(center);
+        }, 100);
         map.addControl(
           new window.kakao.maps.ZoomControl(),
           window.kakao.maps.ControlPosition.RIGHT
         );
 
         let overlays = [];
+        window.__selectedPlaceId = null;
 
         function getUserLocationCoords() {
           const userLocation = window.__USER_LOCATION__;
@@ -545,6 +567,26 @@ function buildMapHtml(
           }).map(normalizePlace);
         }
 
+        window.__selectPlaceMarker = function(placeId) {
+          const selected = details.find(function(item) {
+            return String(item.placeId) === String(placeId);
+          });
+          if (!selected) return;
+
+          const coords = toLatLng(selected);
+          if (!coords) return;
+
+          window.__selectedPlaceId = selected.placeId;
+          map.setLevel(6);
+          map.panTo(new window.kakao.maps.LatLng(coords.lat, coords.lng));
+          draw();
+        };
+
+        window.__clearSelectedPlaceMarker = function() {
+          window.__selectedPlaceId = null;
+          draw();
+        };
+
         function draw() {
           clearOverlays();
 
@@ -559,7 +601,20 @@ function buildMapHtml(
 
             const position = new window.kakao.maps.LatLng(coords.lat, coords.lng);
             const overlay = mode.kind === 'detail'
-              ? createDetailOverlay(map, item, position)
+              ? createDetailOverlay(
+                  map,
+                  item,
+                  position,
+                  window.__selectedPlaceId,
+                  function(selectedItem) {
+                    window.__selectedPlaceId = selectedItem.placeId;
+                    window.__notify({
+                      type: 'marker',
+                      payload: normalizePlace(selectedItem),
+                    });
+                    setTimeout(draw, 0);
+                  }
+                )
               : createSummaryOverlay(map, item, position);
 
             overlays.push(overlay);
@@ -710,12 +765,9 @@ export default function MapScreen() {
     refreshOnFocus: true,
   });
   const mapData = useMapStore(state => state.map);
-  console.log('mapData', mapData);
   const [selectedPlace, setSelectedPlace] = useState<SelectedPlace | null>(
     null,
   );
-
-  console.log('selectedPlace', selectedPlace);
 
   const [visiblePlaces, setVisiblePlaces] = useState<SelectedPlace[]>([]);
   const [mapError, setMapError] = useState('');
@@ -766,6 +818,7 @@ export default function MapScreen() {
       const parsed = JSON.parse(event.nativeEvent.data) as WebMessagePayload;
 
       if (parsed.type === 'marker' && parsed.payload) {
+        setMapError('');
         setSelectedPlace(parsed.payload);
         return;
       }
@@ -776,7 +829,6 @@ export default function MapScreen() {
       }
 
       if (parsed.type === 'locationAddress' && parsed.address) {
-        console.log('locationAddress', parsed.address);
         if (locationAddress && parsed.address.startsWith('주소 확인 실패')) {
           return;
         }
@@ -811,6 +863,8 @@ export default function MapScreen() {
 
   const handleShelterTypePress = (item: string) => {
     setSelectedPlace(null);
+    setVisiblePlaces([]);
+    setPanelReady(false);
 
     if (item === SHELTER_ALL_LABEL) {
       setSelectedShelterTypes([SHELTER_ALL_LABEL]);
@@ -831,6 +885,8 @@ export default function MapScreen() {
 
   const handleAccessibilityPress = (item: string) => {
     setSelectedPlace(null);
+    setVisiblePlaces([]);
+    setPanelReady(false);
 
     if (item === ACCESSIBILITY_ALL_LABEL) {
       setSelectedAccessibility([ACCESSIBILITY_ALL_LABEL]);
@@ -858,6 +914,26 @@ export default function MapScreen() {
     `);
   };
 
+  const handlePlacePress = (place: SelectedPlace) => {
+    setSelectedPlace(place);
+    webViewRef.current?.injectJavaScript(`
+      if (window.__selectPlaceMarker) {
+        window.__selectPlaceMarker(${JSON.stringify(place.placeId)});
+      }
+      true;
+    `);
+  };
+
+  const handleBackToPlaceList = () => {
+    setSelectedPlace(null);
+    webViewRef.current?.injectJavaScript(`
+      if (window.__clearSelectedPlaceMarker) {
+        window.__clearSelectedPlaceMarker();
+      }
+      true;
+    `);
+  };
+
   const locationStatusText =
     locationStatus === 'checking'
       ? '현재 위치 확인 중'
@@ -871,9 +947,7 @@ export default function MapScreen() {
     <Screen edges={['top', 'left', 'right']}>
       <Header>
         <HeaderRow>
-          <Description numberOfLines={1}>
-            {locationStatusText}
-          </Description>
+          <Description numberOfLines={1}>{locationStatusText}</Description>
           {locationStatus === 'granted' && userLocation ? (
             <LocationButton onPress={handleMoveToUserLocation}>
               <LocationButtonText>내 위치 주변 보기</LocationButtonText>
@@ -950,8 +1024,11 @@ export default function MapScreen() {
         {selectedPlace ? (
           <>
             <PanelHeader>
-              <BackButton onPress={() => setSelectedPlace(null)}>
-                <BackButtonText>뒤로</BackButtonText>
+              <BackButton
+                accessibilityLabel="뒤로가기"
+                onPress={handleBackToPlaceList}
+              >
+                <ChevronLeft color="#111827" size={20} strokeWidth={2.8} />
               </BackButton>
               <PanelTitle numberOfLines={1}>{selectedPlace.name}</PanelTitle>
             </PanelHeader>
@@ -1022,7 +1099,7 @@ export default function MapScreen() {
                 visiblePlaces.map(place => (
                   <PlaceItem
                     key={String(place.placeId)}
-                    onPress={() => setSelectedPlace(place)}
+                    onPress={() => handlePlacePress(place)}
                   >
                     <PlaceName numberOfLines={1}>{place.name}</PlaceName>
                     <PlaceAddress numberOfLines={1}>
@@ -1179,15 +1256,8 @@ const PanelCount = styled.Text`
 `;
 
 const BackButton = styled.Pressable`
-  padding: 4px 8px;
-  border-radius: 999px;
-  background-color: #eff6ff;
-`;
-
-const BackButtonText = styled.Text`
-  color: #2563eb;
-  font-size: 13px;
-  font-weight: 800;
+  align-items: center;
+  justify-content: center;
 `;
 
 const PanelScroll = styled.ScrollView`
@@ -1243,6 +1313,7 @@ const DetailMeta = styled.Text`
   color: #2563eb;
   font-size: 12px;
   font-weight: 700;
+  text-align: right;
 `;
 
 const ShelterItem = styled.View`
@@ -1286,11 +1357,11 @@ const ChipRow = styled.View`
 const TypeChip = styled.View`
   padding: 4px 7px;
   border-radius: 999px;
-  background-color: #eff6ff;
+  background-color: ${SHELTER_SELECTED_COLOR};
 `;
 
 const TypeChipText = styled.Text`
-  color: #2563eb;
+  color: #ffffff;
   font-size: 10px;
   font-weight: 800;
 `;
@@ -1298,11 +1369,11 @@ const TypeChipText = styled.Text`
 const TypeCountChip = styled.View`
   padding: 5px 8px;
   border-radius: 999px;
-  background-color: #eefbf8;
+  background-color: ${SHELTER_SELECTED_COLOR};
 `;
 
 const TypeCountText = styled.Text`
-  color: #15803d;
+  color: #ffffff;
   font-size: 11px;
   font-weight: 800;
 `;
@@ -1310,13 +1381,15 @@ const TypeCountText = styled.Text`
 const AccessChip = styled.View<{ $active: boolean }>`
   padding: 5px 7px;
   border-radius: 999px;
-  background-color: ${({ $active }) => ($active ? '#fff7ed' : '#f3f4f6')};
+  background-color: ${({ $active }) =>
+    $active ? ACCESSIBILITY_SELECTED_COLOR : '#f3f4f6'};
   border-width: 1px;
-  border-color: ${({ $active }) => ($active ? '#fed7aa' : '#e5e7eb')};
+  border-color: ${({ $active }) =>
+    $active ? ACCESSIBILITY_SELECTED_COLOR : '#e5e7eb'};
 `;
 
 const AccessChipText = styled.Text<{ $active: boolean }>`
-  color: ${({ $active }) => ($active ? '#c2410c' : '#9ca3af')};
+  color: ${({ $active }) => ($active ? '#ffffff' : '#9ca3af')};
   font-size: 10px;
   font-weight: 800;
 `;
