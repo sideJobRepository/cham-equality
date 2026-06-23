@@ -168,6 +168,7 @@ interface SelectedPlace {
   address: string;
   description: string;
   shelterCount: number;
+  accessibilityMatchStatus?: string;
   shelters: ShelterSummary[];
 }
 
@@ -263,6 +264,19 @@ function buildMapHtml(
         return last + ' ' + item.count;
       }
 
+      function accessibilityMatchColor(status) {
+        const value = String(status || '').toUpperCase();
+        if (!value) return '#2563eb';
+
+        if (value === 'ACCESSIBLE') return '#16a34a';
+        if (value === 'PARTIAL') return '#f59e0b';
+        if (value === 'INACCESSIBLE') return '#ef4444';
+        if (value === 'NONE') return '#2563eb';
+
+        console.log('unknown accessibilityMatchStatus', status);
+        return '#2563eb';
+      }
+
       function normalizePlace(item) {
         const shelters = Array.isArray(item.shelters) ? item.shelters : [];
         return {
@@ -271,6 +285,7 @@ function buildMapHtml(
           address: item.address || item.oldAddress || '',
           description: item.description || '',
           shelterCount: shelters.length,
+          accessibilityMatchStatus: item.accessibilityMatchStatus,
           shelters: shelters.map(function(shelter) {
             return {
               shelterId: shelter.shelterId,
@@ -319,6 +334,7 @@ function buildMapHtml(
 
       function createDetailOverlay(map, item, position) {
         const el = document.createElement('div');
+        const markerColor = accessibilityMatchColor(item.accessibilityMatchStatus);
         el.style.cssText = [
           'display:flex',
           'align-items:center',
@@ -326,9 +342,9 @@ function buildMapHtml(
           'width:14px',
           'height:14px',
           'border-radius:999px',
-          'background:#2563eb',
+          'background:' + markerColor,
           'border:2px solid #ffffff',
-          'box-shadow:0 2px 8px rgba(37,99,235,.35)',
+          'box-shadow:0 2px 8px ' + markerColor + '59',
           'cursor:pointer',
         ].join(';');
 
