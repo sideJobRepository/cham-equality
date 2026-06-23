@@ -9,6 +9,7 @@ import java.util.function.Predicate;
 import static java.lang.Boolean.*;
 
 public enum AccessibilityFeature {
+    ACCESSIBLE_TOILET(fromAccessibility(ShelterAccessibility::getAccessibleToilet)), // 장애인화장실
     RAMP(fromAccessibility(ShelterAccessibility::getRamp)),                  // 경사로
     ELEVATOR(fromAccessibility(ShelterAccessibility::getElevator)),          // 엘리베이터
     BRAILLE_BLOCK(fromAccessibility(ShelterAccessibility::getBrailleBlock)); // 점자블록

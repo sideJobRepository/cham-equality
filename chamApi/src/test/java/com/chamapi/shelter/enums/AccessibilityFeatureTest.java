@@ -10,6 +10,22 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class AccessibilityFeatureTest {
 
+    @DisplayName("ACCESSIBLE_TOILET - 장애인화장실이 있는 대피소는 true")
+    @Test
+    void ACCESSIBLE_TOILET_isSatisfiedBy_returnsTrue() {
+        Shelter shelter = shelterWith(ShelterAccessibility.builder().accessibleToilet(true).build());
+
+        assertThat(ACCESSIBLE_TOILET.isSatisfiedBy(shelter)).isTrue();
+    }
+
+    @DisplayName("ACCESSIBLE_TOILET - 장애인화장실이 없는 대피소는 false")
+    @Test
+    void ACCESSIBLE_TOILET_isSatisfiedBy_returnsFalse() {
+        Shelter shelter = shelterWith(ShelterAccessibility.builder().accessibleToilet(false).build());
+
+        assertThat(ACCESSIBLE_TOILET.isSatisfiedBy(shelter)).isFalse();
+    }
+
     @DisplayName("RAMP - 경사로가 있는 대피소는 true")
     @Test
     void RAMP_isSatisfiedBy_returnsTrue() {
