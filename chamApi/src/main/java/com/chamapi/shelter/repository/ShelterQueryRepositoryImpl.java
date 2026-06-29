@@ -34,6 +34,25 @@ public class ShelterQueryRepositoryImpl implements ShelterQueryRepository {
     }
 
     @Override
+    public List<Shelter> findAllWithPlaceAndRegion() {
+        return queryFactory
+                .selectFrom(shelter)
+                .leftJoin(shelter.place, place).fetchJoin()
+                .leftJoin(place.region, region).fetchJoin()
+                .fetch();
+    }
+
+    @Override
+    public List<ShelterImage> findImagesByShelterId(Long shelterId) {
+        return queryFactory
+                .selectFrom(shelterImage)
+                .where(shelterImage.shelterId.eq(shelterId)
+                        .and(shelterImage.approved.isTrue()))
+                .orderBy(shelterImage.id.asc())
+                .fetch();
+    }
+
+    @Override
     public Map<Long, List<ShelterImage>> findImagesGroupedByShelterId(List<Long> shelterIds) {
         if (isNull(shelterIds) || shelterIds.isEmpty())
             return Map.of();

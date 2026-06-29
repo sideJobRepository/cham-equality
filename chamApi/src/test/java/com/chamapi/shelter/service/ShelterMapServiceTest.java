@@ -1,8 +1,10 @@
 package com.chamapi.shelter.service;
 
+import com.chamapi.common.exception.BadRequestException;
 import com.chamapi.file.dto.response.FileViewResponse;
 import com.chamapi.file.enums.FileType;
 import com.chamapi.file.service.S3FileService;
+import com.chamapi.shelter.dto.query.NearestShelterCondition;
 import com.chamapi.shelter.dto.query.ShelterSearchCondition;
 import com.chamapi.shelter.dto.response.PlaceMapResponse;
 import com.chamapi.shelter.dto.response.RegionSummaryDto;
@@ -12,7 +14,10 @@ import com.chamapi.shelter.dto.response.ShelterMapResponse;
 import com.chamapi.shelter.entity.Place;
 import com.chamapi.shelter.entity.Region;
 import com.chamapi.shelter.entity.Shelter;
+import com.chamapi.shelter.entity.ShelterAccessibility;
 import com.chamapi.shelter.entity.ShelterImage;
+import com.chamapi.shelter.enums.AccessibilityFeature;
+import com.chamapi.shelter.enums.AccessibilityMatchStatus;
 import com.chamapi.shelter.enums.ShelterImageCategory;
 import com.chamapi.shelter.repository.ShelterRepository;
 import org.junit.jupiter.api.DisplayName;
@@ -29,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.tuple;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
@@ -214,6 +220,130 @@ class ShelterMapServiceTest {
         assertThat(r2.images()).isEmpty();
     }
 
+    @DisplayName("getNearest — features 없음: 좌표가 있는 후보 중 거리상 가장 가까운 대피소를 반환한다")
+    @Test
+    void getNearest_returnsClosestWhenNoFeatures() {
+        // 기준점 (경도 127.0, 위도 36.0)
+        Shelter near = shelterAt(31L, new BigDecimal("127.00100000"), new BigDecimal("36.00100000"));
+        Shelter far1 = shelterAt(32L, new BigDecimal("128.00000000"), new BigDecimal("36.00000000"));
+        Shelter far2 = shelterAt(33L, new BigDecimal("127.00000000"), new BigDecimal("37.00000000"));
+
+        when(shelterRepository.findAllWithPlaceAndRegion())
+                .thenReturn(List.of(far1, near, far2));
+
+        ShelterMapResponse response = shelterMapService.getNearest(
+                nearestCondition(new BigDecimal("127.00000000"), new BigDecimal("36.00000000")));
+
+        assertThat(response.shelterId()).isEqualTo(31L);
+        assertThat(response.x()).isEqualByComparingTo("127.00100000");
+        assertThat(response.y()).isEqualByComparingTo("36.00100000");
+    }
+
+    @DisplayName("getNearest — 위도·경도가 null인 대피소는 후보에서 제외되고, 좌표가 있는 대피소가 선택된다")
+    @Test
+    void getNearest_excludesShelterWithoutCoordinates() {
+        Shelter noCoords = shelterAt(41L, null, null);
+        Shelter valid = shelterAt(42L, new BigDecimal("127.00000000"), new BigDecimal("36.00000000"));
+
+        when(shelterRepository.findAllWithPlaceAndRegion())
+                .thenReturn(List.of(noCoords, valid));
+
+        ShelterMapResponse response = shelterMapService.getNearest(
+                nearestCondition(new BigDecimal("127.00000000"), new BigDecimal("36.00000000")));
+
+        assertThat(response.shelterId()).isEqualTo(42L);
+    }
+
+    @DisplayName("getNearest — 조건에 맞는 후보가 없으면 BadRequestException")
+    @Test
+    void getNearest_throwsWhenNoCandidate() {
+        Shelter noCoords = shelterAt(51L, null, null);
+
+        when(shelterRepository.findAllWithPlaceAndRegion())
+                .thenReturn(List.of(noCoords));
+
+        assertThatThrownBy(() -> shelterMapService.getNearest(
+                nearestCondition(new BigDecimal("127.00000000"), new BigDecimal("36.00000000"))))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessage("조건에 맞는 대피소를 찾을 수 없습니다");
+    }
+
+    @DisplayName("getNearest — features 지정 시 ACCESSIBLE 대피소만 후보가 된다: 더 가깝지만 일부만 충족(PARTIAL)인 대피소 대신 더 먼 ACCESSIBLE 대피소를 선택한다")
+    @Test
+    void getNearest_picksAccessibleOverCloserPartial() {
+        // 가깝지만 elevator 미충족 → PARTIAL (제외)
+        Shelter closerPartial = shelterAt(61L,
+                new BigDecimal("127.00000000"), new BigDecimal("36.00000000"),
+                accessibility(true, false));
+        // 더 멀지만 전부 충족 → ACCESSIBLE (선택)
+        Shelter fartherAccessible = shelterAt(62L,
+                new BigDecimal("127.50000000"), new BigDecimal("36.00000000"),
+                accessibility(true, true));
+
+        when(shelterRepository.findAllWithPlaceAndRegion())
+                .thenReturn(List.of(closerPartial, fartherAccessible));
+
+        ShelterMapResponse response = shelterMapService.getNearest(
+                nearestCondition(new BigDecimal("127.00000000"), new BigDecimal("36.00000000"),
+                        AccessibilityFeature.RAMP, AccessibilityFeature.ELEVATOR));
+
+        assertThat(response.shelterId()).isEqualTo(62L);
+        assertThat(response.accessibilityMatchStatus()).isEqualTo(AccessibilityMatchStatus.ACCESSIBLE);
+    }
+
+    @DisplayName("getNearest — features 지정 시 ACCESSIBLE 대피소가 하나도 없으면(PARTIAL/INACCESSIBLE만 존재) BadRequestException")
+    @Test
+    void getNearest_throwsWhenNoAccessibleShelter() {
+        Shelter partial = shelterAt(71L,
+                new BigDecimal("127.00000000"), new BigDecimal("36.00000000"),
+                accessibility(true, false));   // PARTIAL
+        Shelter inaccessible = shelterAt(72L,
+                new BigDecimal("127.10000000"), new BigDecimal("36.00000000"),
+                accessibility(false, false));  // INACCESSIBLE
+
+        when(shelterRepository.findAllWithPlaceAndRegion())
+                .thenReturn(List.of(partial, inaccessible));
+
+        assertThatThrownBy(() -> shelterMapService.getNearest(
+                nearestCondition(new BigDecimal("127.00000000"), new BigDecimal("36.00000000"),
+                        AccessibilityFeature.RAMP, AccessibilityFeature.ELEVATOR)))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessage("조건에 맞는 대피소를 찾을 수 없습니다");
+    }
+
+    @DisplayName("getNearest — 선택된 nearest의 이미지가 (category, presigned url)로 매핑되고 accessibilityMatchStatus가 features 기준으로 채워진다")
+    @Test
+    void getNearest_attachesImagesAndMatchStatus() {
+        Shelter nearest = shelterAt(81L,
+                new BigDecimal("127.00000000"), new BigDecimal("36.00000000"),
+                accessibility(true, null));
+
+        ShelterImage img1 = shelterImage(201L, 81L, 2001L, ShelterImageCategory.EXTERIOR);
+        ShelterImage img2 = shelterImage(202L, 81L, 2002L, ShelterImageCategory.RAMP);
+
+        when(shelterRepository.findAllWithPlaceAndRegion())
+                .thenReturn(List.of(nearest));
+        when(shelterRepository.findImagesByShelterId(81L))
+                .thenReturn(List.of(img1, img2));
+        when(fileService.getFileForView(2001L))
+                .thenReturn(fileView(2001L, "https://s3.example/exterior.jpg"));
+        when(fileService.getFileForView(2002L))
+                .thenReturn(fileView(2002L, "https://s3.example/ramp.jpg"));
+
+        ShelterMapResponse response = shelterMapService.getNearest(
+                nearestCondition(new BigDecimal("127.00000000"), new BigDecimal("36.00000000"),
+                        AccessibilityFeature.RAMP));
+
+        assertThat(response.shelterId()).isEqualTo(81L);
+        assertThat(response.accessibilityMatchStatus()).isEqualTo(AccessibilityMatchStatus.ACCESSIBLE);
+        assertThat(response.images())
+                .extracting(ShelterMapImageResponse::category, ShelterMapImageResponse::url)
+                .containsExactly(
+                        tuple(ShelterImageCategory.EXTERIOR, "https://s3.example/exterior.jpg"),
+                        tuple(ShelterImageCategory.RAMP, "https://s3.example/ramp.jpg")
+                );
+    }
+
     private Region region(Long id, Region parent, int depth, String fullName,
                           BigDecimal longitude, BigDecimal latitude) {
         Region region = new Region(parent, "name" + id, "type", depth, longitude, latitude);
@@ -253,6 +383,32 @@ class ShelterMapServiceTest {
                 .build();
         ReflectionTestUtils.setField(image, "id", id);
         return image;
+    }
+
+    private Shelter shelterAt(Long id, BigDecimal longitude, BigDecimal latitude) {
+        return shelterAt(id, longitude, latitude, null);
+    }
+
+    private Shelter shelterAt(Long id, BigDecimal longitude, BigDecimal latitude, ShelterAccessibility accessibility) {
+        Shelter shelter = Shelter.builder()
+                .name("shelter" + id)
+                .longitude(longitude)
+                .latitude(latitude)
+                .accessibility(accessibility)
+                .build();
+        ReflectionTestUtils.setField(shelter, "id", id);
+        return shelter;
+    }
+
+    private ShelterAccessibility accessibility(Boolean ramp, Boolean elevator) {
+        return ShelterAccessibility.builder()
+                .ramp(ramp)
+                .elevator(elevator)
+                .build();
+    }
+
+    private NearestShelterCondition nearestCondition(BigDecimal x, BigDecimal y, AccessibilityFeature... features) {
+        return new NearestShelterCondition(List.of(features), x, y);
     }
 
     private FileViewResponse fileView(Long fileId, String url) {

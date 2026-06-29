@@ -1,7 +1,9 @@
 package com.chamapi.shelter.service;
 
+import com.chamapi.common.exception.BadRequestException;
 import com.chamapi.file.dto.response.FileViewResponse;
 import com.chamapi.file.service.S3FileService;
+import com.chamapi.shelter.dto.query.NearestShelterCondition;
 import com.chamapi.shelter.dto.query.ShelterSearchCondition;
 import com.chamapi.shelter.dto.response.*;
 import com.chamapi.shelter.entity.Place;
@@ -9,12 +11,14 @@ import com.chamapi.shelter.entity.Region;
 import com.chamapi.shelter.entity.Shelter;
 import com.chamapi.shelter.entity.ShelterImage;
 import com.chamapi.shelter.enums.AccessibilityFeature;
+import com.chamapi.shelter.enums.AccessibilityMatchStatus;
 import com.chamapi.shelter.repository.ShelterQueryRepositoryImpl;
 import com.chamapi.shelter.repository.ShelterRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -22,6 +26,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.*;
+import static org.springframework.util.CollectionUtils.isEmpty;
 
 @Service
 @RequiredArgsConstructor
@@ -38,6 +43,26 @@ public class ShelterMapService {
         RegionLevelsResponse regionSummaries = toRegionLevelResponse(shelters);
 
         return new ShelterAggregateResponse(placeMap, regionSummaries);
+    }
+
+    public ShelterMapResponse getNearest(NearestShelterCondition condition) {
+        List<AccessibilityFeature> features = condition.accessibilityFeatures();
+
+        Shelter nearest = shelterRepository.findAllWithPlaceAndRegion().stream()
+                .filter(s -> Objects.nonNull(s.getLatitude()) && Objects.nonNull(s.getLongitude()))
+                .filter(s -> isEmpty(features) || s.evaluateAccessibility(features) == AccessibilityMatchStatus.ACCESSIBLE)
+                .min(Comparator.comparingDouble(s -> s.distanceTo(condition.y(), condition.x())))
+                .orElseThrow(() -> new BadRequestException("조건에 맞는 대피소를 찾을 수 없습니다"));
+
+        List<ShelterMapImageResponse> images = shelterRepository.findImagesByShelterId(nearest.getId())
+                .stream()
+                .map(shelterImage -> {
+                    FileViewResponse fileForView = fileService.getFileForView(shelterImage.getFileId());
+                    return new ShelterMapImageResponse(shelterImage.getCategory(), fileForView.getUrl());
+                })
+                .toList();
+
+        return ShelterMapResponse.fromDomain(nearest, condition.accessibilityFeatures(), images);
     }
 
     private Map<Long, PlaceMapResponse> toPlaceResponseMap(List<Shelter> shelters, List<AccessibilityFeature> accessibilityFeatures) {

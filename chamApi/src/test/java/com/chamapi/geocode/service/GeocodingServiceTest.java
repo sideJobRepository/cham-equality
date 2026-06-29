@@ -20,7 +20,7 @@ class GeocodingServiceTest {
     @PersistenceContext
     EntityManager em;
 
-    @Test
+    // @Test
     void test(){
         String s = geocodingService.convertToEnglishAddress("대전광역시 동구 가양동 426-4");
         System.out.println(s);

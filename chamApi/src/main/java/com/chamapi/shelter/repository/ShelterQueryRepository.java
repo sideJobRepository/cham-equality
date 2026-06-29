@@ -11,5 +11,9 @@ public interface ShelterQueryRepository {
 
     List<Shelter> searchByCondition(ShelterSearchCondition condition);
 
+    List<Shelter> findAllWithPlaceAndRegion();
+
+    List<ShelterImage> findImagesByShelterId(Long shelterId);
+
     Map<Long, List<ShelterImage>> findImagesGroupedByShelterId(List<Long> shelterIds);
 }

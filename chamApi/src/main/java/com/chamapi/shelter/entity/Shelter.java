@@ -107,6 +107,22 @@ public class Shelter extends DateSuperClass {
         this.safetyGrade = safetyGrade;
     }
 
+    private static final double EARTH_RADIUS_METERS = 6_371_000;
+
+    // 대권 거리 (Haversine)
+    public double distanceTo(BigDecimal y, BigDecimal x) {
+        double lat1 = Math.toRadians(this.latitude.doubleValue());
+        double lon1 = Math.toRadians(this.longitude.doubleValue());
+        double lat2 = Math.toRadians(y.doubleValue());
+        double lon2 = Math.toRadians(x.doubleValue());
+
+        double dLat = lat2 - lat1;
+        double dLon = lon2 - lon1;
+        double a = Math.sin(dLat / 2) * Math.sin(dLat / 2)
+                + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        return 2 * EARTH_RADIUS_METERS * Math.asin(Math.sqrt(a));
+    }
+
     public AccessibilityMatchStatus evaluateAccessibility(List<AccessibilityFeature> accessibilityFeatures) {
         if (isEmpty(accessibilityFeatures)) {
             return AccessibilityMatchStatus.NONE;
