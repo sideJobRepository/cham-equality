@@ -39,6 +39,11 @@ public class Place extends DateSuperClass {
     @Column(name = "PLACE_OLD_ADDRESS")
     private String oldAddress;
 
+    // 장소 영문주소
+    @Column(name = "PLACE_ENGLISH_ADDRESS")
+    @Setter
+    private String englishAddress;
+
     // 장소 상세 설명
     @Column(name = "PLACE_DESCRIPTION", columnDefinition = "TEXT")
     private String description;
@@ -55,6 +60,9 @@ public class Place extends DateSuperClass {
     @OneToMany(mappedBy = "place", fetch = FetchType.LAZY)
     private List<Shelter> shelters = new ArrayList<>();
 
+    /**
+     * 테스트에서 사용함
+     */
     @Builder
     private static Place create(Region region,
                                 String name,

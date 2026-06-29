@@ -48,6 +48,11 @@ data:
     page-size: 100
     timeout-millis: 5000
     sync-days: 2
+  geocoding:
+    api-key-id: ${NCP_API_KEY_ID}
+    api-key: ${NCP_API_KEY}
+    base-url: ${NCP_BASE_URL}
+    geocoding-path: ${NCP_GEOCODING_PATH}
 
 multilingual:
   # 어느 화면을 요청하든 디폴트로 함께 내려주는 하단 탭 라벨의 menu 이름
