@@ -4,6 +4,7 @@ import com.chamapi.common.exception.BadRequestException;
 import com.chamapi.file.dto.response.FileViewResponse;
 import com.chamapi.file.enums.FileType;
 import com.chamapi.file.service.S3FileService;
+import com.chamapi.multilingual.entity.Language;
 import com.chamapi.shelter.dto.query.NearestShelterCondition;
 import com.chamapi.shelter.dto.query.ShelterSearchCondition;
 import com.chamapi.shelter.dto.response.PlaceMapResponse;
@@ -86,7 +87,7 @@ class ShelterMapServiceTest {
         when(shelterRepository.findImagesGroupedByShelterId(any()))
                 .thenReturn(Map.of());
 
-        ShelterAggregateResponse response = shelterMapService.aggregate(emptyCondition(), List.of());
+        ShelterAggregateResponse response = shelterMapService.aggregate(emptyCondition(), List.of(), Language.KO);
 
         // details — place 4개로 묶이고, 같은 place 공유한 shelter들은 한 엔트리 안에
         Map<Long, PlaceMapResponse> details = response.getDetails();
@@ -148,7 +149,7 @@ class ShelterMapServiceTest {
         when(shelterRepository.findImagesGroupedByShelterId(any()))
                 .thenReturn(Map.of());
 
-        ShelterAggregateResponse response = shelterMapService.aggregate(emptyCondition(), List.of());
+        ShelterAggregateResponse response = shelterMapService.aggregate(emptyCondition(), List.of(), Language.KO);
 
         assertThat(response.getDetails()).isEmpty();
         assertThat(response.getSummaries().getDepth0()).isEmpty();
@@ -168,7 +169,7 @@ class ShelterMapServiceTest {
         when(shelterRepository.findImagesGroupedByShelterId(any()))
                 .thenReturn(Map.of());
 
-        ShelterAggregateResponse response = shelterMapService.aggregate(emptyCondition(), List.of());
+        ShelterAggregateResponse response = shelterMapService.aggregate(emptyCondition(), List.of(), Language.KO);
 
         assertThat(response.getDetails()).containsOnlyKeys(11L);
         assertThat(response.getDetails().get(11L).regionId()).isNull();
@@ -205,7 +206,7 @@ class ShelterMapServiceTest {
         when(fileService.getFileForView(1002L))
                 .thenReturn(fileView(1002L, "https://s3.example/ramp.jpg"));
 
-        ShelterAggregateResponse response = shelterMapService.aggregate(emptyCondition(), List.of());
+        ShelterAggregateResponse response = shelterMapService.aggregate(emptyCondition(), List.of(), Language.KO);
 
         List<ShelterMapResponse> shelters = response.getDetails().get(11L).shelters();
         ShelterMapResponse r1 = shelters.stream().filter(r -> r.shelterId().equals(21L)).findFirst().orElseThrow();
@@ -232,7 +233,7 @@ class ShelterMapServiceTest {
                 .thenReturn(List.of(far1, near, far2));
 
         ShelterMapResponse response = shelterMapService.getNearest(
-                nearestCondition(new BigDecimal("127.00000000"), new BigDecimal("36.00000000")));
+                nearestCondition(new BigDecimal("127.00000000"), new BigDecimal("36.00000000")), Language.KO);
 
         assertThat(response.shelterId()).isEqualTo(31L);
         assertThat(response.x()).isEqualByComparingTo("127.00100000");
@@ -249,7 +250,7 @@ class ShelterMapServiceTest {
                 .thenReturn(List.of(noCoords, valid));
 
         ShelterMapResponse response = shelterMapService.getNearest(
-                nearestCondition(new BigDecimal("127.00000000"), new BigDecimal("36.00000000")));
+                nearestCondition(new BigDecimal("127.00000000"), new BigDecimal("36.00000000")), Language.KO);
 
         assertThat(response.shelterId()).isEqualTo(42L);
     }
@@ -263,7 +264,7 @@ class ShelterMapServiceTest {
                 .thenReturn(List.of(noCoords));
 
         assertThatThrownBy(() -> shelterMapService.getNearest(
-                nearestCondition(new BigDecimal("127.00000000"), new BigDecimal("36.00000000"))))
+                nearestCondition(new BigDecimal("127.00000000"), new BigDecimal("36.00000000")), Language.KO))
                 .isInstanceOf(BadRequestException.class)
                 .hasMessage("조건에 맞는 대피소를 찾을 수 없습니다");
     }
@@ -285,7 +286,7 @@ class ShelterMapServiceTest {
 
         ShelterMapResponse response = shelterMapService.getNearest(
                 nearestCondition(new BigDecimal("127.00000000"), new BigDecimal("36.00000000"),
-                        AccessibilityFeature.RAMP, AccessibilityFeature.ELEVATOR));
+                        AccessibilityFeature.RAMP, AccessibilityFeature.ELEVATOR), Language.KO);
 
         assertThat(response.shelterId()).isEqualTo(62L);
         assertThat(response.accessibilityMatchStatus()).isEqualTo(AccessibilityMatchStatus.ACCESSIBLE);
@@ -306,7 +307,7 @@ class ShelterMapServiceTest {
 
         assertThatThrownBy(() -> shelterMapService.getNearest(
                 nearestCondition(new BigDecimal("127.00000000"), new BigDecimal("36.00000000"),
-                        AccessibilityFeature.RAMP, AccessibilityFeature.ELEVATOR)))
+                        AccessibilityFeature.RAMP, AccessibilityFeature.ELEVATOR), Language.KO))
                 .isInstanceOf(BadRequestException.class)
                 .hasMessage("조건에 맞는 대피소를 찾을 수 없습니다");
     }
@@ -332,7 +333,7 @@ class ShelterMapServiceTest {
 
         ShelterMapResponse response = shelterMapService.getNearest(
                 nearestCondition(new BigDecimal("127.00000000"), new BigDecimal("36.00000000"),
-                        AccessibilityFeature.RAMP));
+                        AccessibilityFeature.RAMP), Language.KO);
 
         assertThat(response.shelterId()).isEqualTo(81L);
         assertThat(response.accessibilityMatchStatus()).isEqualTo(AccessibilityMatchStatus.ACCESSIBLE);

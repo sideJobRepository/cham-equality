@@ -1,5 +1,6 @@
 package com.chamapi.shelter.entity;
 
+import com.chamapi.multilingual.entity.Language;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -32,6 +33,9 @@ public class Region {
 
     @Column(name = "REGION_FULL_NAME")
     private String regionFullName;
+
+    @Column(name = "REGION_FULL_ENGLISH_NAME")
+    private String regionFullEnglishName;
 
     @Column(name = "REGION_LONGITUDE")
     private BigDecimal regionLongitude;
@@ -66,4 +70,10 @@ public class Region {
         return null;
     }
 
+    public String getFullNameByLanguage(Language lang){
+        if(lang == Language.KO)
+            return regionFullName;
+
+        return regionFullEnglishName;
+    }
 }

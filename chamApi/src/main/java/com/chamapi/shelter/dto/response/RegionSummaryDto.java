@@ -1,5 +1,6 @@
 package com.chamapi.shelter.dto.response;
 
+import com.chamapi.multilingual.entity.Language;
 import com.chamapi.shelter.entity.Region;
 import lombok.*;
 
@@ -22,12 +23,12 @@ public class RegionSummaryDto {
     private BigDecimal y;          // 해당 레벨(region)의 Y
     private int count;      // 총 건수(해당 레벨에 귀속된 카드사용 수)
 
-    public static RegionSummaryDto fromDomain(Region region, int count){
+    public static RegionSummaryDto fromDomain(Region region, int count, Language lang){
         return RegionSummaryDto.builder()
                 .regionId(region.getRegionId())
                 .parentId(region.getParentId())
                 .depth(region.getRegionDepth())
-                .path(region.getRegionFullName())
+                .path(region.getFullNameByLanguage(lang))
                 .x(region.getRegionLongitude())
                 .y(region.getRegionLatitude())
                 .count(count)

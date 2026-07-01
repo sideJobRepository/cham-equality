@@ -1,6 +1,7 @@
 package com.chamapi.shelter.entity;
 
 import com.chamapi.common.entity.DateSuperClass;
+import com.chamapi.multilingual.entity.Language;
 import com.chamapi.shelter.enums.AccessibilityFeature;
 import com.chamapi.shelter.enums.AccessibilityMatchStatus;
 import com.chamapi.shelter.enums.ShelterSurveyStatus;
@@ -35,6 +36,10 @@ public class Shelter extends DateSuperClass {
     // 대피소 이름
     @Column(name = "SHELTER_NAME")
     private String name;
+
+    // 대피소 영문명
+    @Column(name = "SHELTER_ENGLISH_NAME")
+    private String englishName;
 
     // 대피소 위도
     @Column(name = "SHELTER_LATITUDE", precision = 10, scale = 8)
@@ -135,5 +140,12 @@ public class Shelter extends DateSuperClass {
         if (satisfied == accessibilityFeatures.size()) return AccessibilityMatchStatus.ACCESSIBLE;
         if (satisfied == 0) return AccessibilityMatchStatus.INACCESSIBLE;
         return AccessibilityMatchStatus.PARTIAL;
+    }
+
+    public String getNameByLanguage(Language lang){
+       if(lang == Language.KO)
+           return name;
+
+       return englishName;
     }
 }

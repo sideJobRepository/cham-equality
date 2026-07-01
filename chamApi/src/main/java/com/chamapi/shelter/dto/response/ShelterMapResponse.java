@@ -1,5 +1,6 @@
 package com.chamapi.shelter.dto.response;
 
+import com.chamapi.multilingual.entity.Language;
 import com.chamapi.shelter.entity.Place;
 import com.chamapi.shelter.entity.Shelter;
 import com.chamapi.shelter.entity.ShelterAccessibility;
@@ -7,9 +8,11 @@ import com.chamapi.shelter.enums.AccessibilityFeature;
 import com.chamapi.shelter.enums.AccessibilityMatchStatus;
 import com.chamapi.shelter.enums.ShelterSurveyStatus;
 import com.chamapi.shelter.enums.ShelterType;
+import org.springframework.cglib.core.Local;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Locale;
 
 import static com.chamapi.common.util.NullSafe.mapOrNull;
 
@@ -37,13 +40,14 @@ public record ShelterMapResponse(
         AccessibilityMatchStatus accessibilityMatchStatus,
         List<ShelterMapImageResponse> images
 ) {
-    public static ShelterMapResponse fromDomain(Shelter shelter, List<AccessibilityFeature> accessibilityFeatures, List<ShelterMapImageResponse> images) {
+
+    public static ShelterMapResponse fromDomain(Shelter shelter, List<AccessibilityFeature> accessibilityFeatures, List<ShelterMapImageResponse> images, Language lang) {
         Place p = shelter.getPlace();
         ShelterAccessibility a = shelter.getAccessibility();
         return new ShelterMapResponse(
                 shelter.getId(),
                 mapOrNull(p, Place::getId),
-                shelter.getName(),
+                shelter.getNameByLanguage(lang),
                 shelter.getLongitude(),
                 shelter.getLatitude(),
                 shelter.getArea(),

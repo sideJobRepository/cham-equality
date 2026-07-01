@@ -3,6 +3,7 @@ package com.chamapi.shelter.service;
 import com.chamapi.common.exception.BadRequestException;
 import com.chamapi.file.dto.response.FileViewResponse;
 import com.chamapi.file.service.S3FileService;
+import com.chamapi.multilingual.entity.Language;
 import com.chamapi.shelter.dto.query.NearestShelterCondition;
 import com.chamapi.shelter.dto.query.ShelterSearchCondition;
 import com.chamapi.shelter.dto.response.*;
@@ -15,13 +16,11 @@ import com.chamapi.shelter.enums.AccessibilityMatchStatus;
 import com.chamapi.shelter.repository.ShelterQueryRepositoryImpl;
 import com.chamapi.shelter.repository.ShelterRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cglib.core.Local;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -36,16 +35,16 @@ public class ShelterMapService {
     private final ShelterRepository shelterRepository;
     private final S3FileService fileService;
 
-    public ShelterAggregateResponse aggregate(ShelterSearchCondition cond, List<AccessibilityFeature> accessibilityFeatures) {
+    public ShelterAggregateResponse aggregate(ShelterSearchCondition cond, List<AccessibilityFeature> accessibilityFeatures, Language lang) {
         List<Shelter> shelters = shelterRepository.searchByCondition(cond);
 
-        Map<Long, PlaceMapResponse> placeMap = toPlaceResponseMap(shelters, accessibilityFeatures);
-        RegionLevelsResponse regionSummaries = toRegionLevelResponse(shelters);
+        Map<Long, PlaceMapResponse> placeMap = toPlaceResponseMap(shelters, accessibilityFeatures, lang);
+        RegionLevelsResponse regionSummaries = toRegionLevelResponse(shelters, lang);
 
         return new ShelterAggregateResponse(placeMap, regionSummaries);
     }
 
-    public ShelterMapResponse getNearest(NearestShelterCondition condition) {
+    public ShelterMapResponse getNearest(NearestShelterCondition condition, Language lang) {
         List<AccessibilityFeature> features = condition.accessibilityFeatures();
 
         Shelter nearest = shelterRepository.findAllWithPlaceAndRegion().stream()
@@ -62,10 +61,10 @@ public class ShelterMapService {
                 })
                 .toList();
 
-        return ShelterMapResponse.fromDomain(nearest, condition.accessibilityFeatures(), images);
+        return ShelterMapResponse.fromDomain(nearest, condition.accessibilityFeatures(), images, lang);
     }
 
-    private Map<Long, PlaceMapResponse> toPlaceResponseMap(List<Shelter> shelters, List<AccessibilityFeature> accessibilityFeatures) {
+    private Map<Long, PlaceMapResponse> toPlaceResponseMap(List<Shelter> shelters, List<AccessibilityFeature> accessibilityFeatures, Language lang) {
         List<Long> shelterIds = shelters.stream().map(Shelter::getId).toList();
         Map<Long, List<ShelterMapImageResponse>> shelterImagesByShelterId = shelterRepository.findImagesGroupedByShelterId(shelterIds)
                 .entrySet()
@@ -80,7 +79,7 @@ public class ShelterMapService {
 
         Map<Long, List<ShelterMapResponse>> sheltersByPlaceId = shelters.stream()
                 .filter(s -> Objects.nonNull(s.getPlace()))
-                .map(s -> ShelterMapResponse.fromDomain(s, accessibilityFeatures, shelterImagesByShelterId.getOrDefault(s.getId(),List.of())))
+                .map(s -> ShelterMapResponse.fromDomain(s, accessibilityFeatures, shelterImagesByShelterId.getOrDefault(s.getId(),List.of()), lang))
                 .collect(groupingBy(ShelterMapResponse::placeId));
 
         return shelters.stream()
@@ -88,20 +87,20 @@ public class ShelterMapService {
                 .filter(Objects::nonNull)
                 .collect(toMap(
                         Place::getId,
-                        p -> PlaceMapResponse.fromDomain(p, sheltersByPlaceId.getOrDefault(p.getId(), List.of())),
+                        p -> PlaceMapResponse.fromDomain(p, sheltersByPlaceId.getOrDefault(p.getId(), List.of()), lang),
                         (existing, duplicate) -> existing
                 ));
     }
 
-    private RegionLevelsResponse toRegionLevelResponse(List<Shelter> shelters) {
+    private RegionLevelsResponse toRegionLevelResponse(List<Shelter> shelters, Language lang) {
         return RegionLevelsResponse.builder()
-                .depth0(summarizeRegionsAtDepth(0, shelters))
-                .depth1(summarizeRegionsAtDepth(1, shelters))
-                .depth2(summarizeRegionsAtDepth(2, shelters))
+                .depth0(summarizeRegionsAtDepth(0, shelters, lang))
+                .depth1(summarizeRegionsAtDepth(1, shelters, lang))
+                .depth2(summarizeRegionsAtDepth(2, shelters, lang))
                 .build();
     }
 
-    private List<RegionSummaryDto> summarizeRegionsAtDepth(int depth, List<Shelter> shelters) {
+    private List<RegionSummaryDto> summarizeRegionsAtDepth(int depth, List<Shelter> shelters, Language lang) {
         Map<Region, Long> regionCount = shelters.stream()
                 .map(Shelter::getPlace)
                 .filter(Objects::nonNull)
@@ -114,7 +113,7 @@ public class ShelterMapService {
                 );
 
         return regionCount.keySet().stream()
-                .map(r -> RegionSummaryDto.fromDomain(r, regionCount.get(r).intValue()))
+                .map(r -> RegionSummaryDto.fromDomain(r, regionCount.get(r).intValue(), lang))
                 .toList();
     }
 

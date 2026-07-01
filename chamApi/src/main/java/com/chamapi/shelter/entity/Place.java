@@ -1,6 +1,7 @@
 package com.chamapi.shelter.entity;
 
 import com.chamapi.common.entity.DateSuperClass;
+import com.chamapi.multilingual.entity.Language;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -84,5 +85,26 @@ public class Place extends DateSuperClass {
         place.latitude = latitude;
         place.longitude = longitude;
         return place;
+    }
+
+    public String getNameByLanguage(Language lang){
+        if(lang == Language.KO)
+            return name;
+
+        return englishName;
+    }
+
+    public String getAddressByLanguage(Language lang){
+        if(lang == Language.KO)
+            return address;
+
+        return englishAddress;
+    }
+
+    public String getOldAddressByLanguage(Language lang){
+        if(lang == Language.KO)
+            return oldAddress;
+
+        return null;
     }
 }

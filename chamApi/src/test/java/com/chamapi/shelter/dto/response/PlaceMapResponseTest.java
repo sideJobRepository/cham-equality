@@ -3,6 +3,7 @@ package com.chamapi.shelter.dto.response;
 import static com.chamapi.shelter.enums.AccessibilityMatchStatus.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.chamapi.multilingual.entity.Language;
 import com.chamapi.shelter.entity.Place;
 import com.chamapi.shelter.enums.AccessibilityMatchStatus;
 import java.util.List;
@@ -21,7 +22,7 @@ class PlaceMapResponseTest {
                 shelterWithMatchStatus(PARTIAL)
         );
 
-        PlaceMapResponse response = PlaceMapResponse.fromDomain(place, shelters);
+        PlaceMapResponse response = PlaceMapResponse.fromDomain(place, shelters, Language.KO);
 
         assertThat(response.accessibilityMatchStatus()).isEqualTo(ACCESSIBLE);
     }
@@ -36,7 +37,7 @@ class PlaceMapResponseTest {
                 shelterWithMatchStatus(PARTIAL)
         );
 
-        PlaceMapResponse response = PlaceMapResponse.fromDomain(place, shelters);
+        PlaceMapResponse response = PlaceMapResponse.fromDomain(place, shelters, Language.KO);
 
         assertThat(response.accessibilityMatchStatus()).isEqualTo(PARTIAL);
     }
@@ -50,7 +51,7 @@ class PlaceMapResponseTest {
                 shelterWithMatchStatus(INACCESSIBLE)
         );
 
-        PlaceMapResponse response = PlaceMapResponse.fromDomain(place, shelters);
+        PlaceMapResponse response = PlaceMapResponse.fromDomain(place, shelters, Language.KO);
 
         assertThat(response.accessibilityMatchStatus()).isEqualTo(INACCESSIBLE);
     }
@@ -64,7 +65,7 @@ class PlaceMapResponseTest {
                 shelterWithMatchStatus(NONE)
         );
 
-        PlaceMapResponse response = PlaceMapResponse.fromDomain(place, shelters);
+        PlaceMapResponse response = PlaceMapResponse.fromDomain(place, shelters, Language.KO);
 
         assertThat(response.accessibilityMatchStatus()).isEqualTo(NONE);
     }
