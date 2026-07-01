@@ -32,7 +32,10 @@ public class Region {
 
     @Column(name = "REGION_FULL_NAME")
     private String regionFullName;
-
+    
+    @Column(name = "REGION_FULL_ENGLISH_NAME")
+    private String regionFullEnglishName;
+    
     @Column(name = "REGION_LONGITUDE")
     private BigDecimal regionLongitude;
 
