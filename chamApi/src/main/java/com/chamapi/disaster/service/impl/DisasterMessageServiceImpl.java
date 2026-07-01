@@ -2,18 +2,14 @@ package com.chamapi.disaster.service.impl;
 
 import com.chamapi.common.exception.BadRequestException;
 import com.chamapi.disaster.config.SafetyDataProperties;
-import com.chamapi.disaster.dto.response.ActiveDisasterResponse;
 import com.chamapi.disaster.dto.response.DisasterMessageResponse;
 import com.chamapi.disaster.entity.DisasterMessage;
-import com.chamapi.disaster.enums.EmergencyStep;
 import com.chamapi.disaster.repository.DisasterMessageRepository;
 import com.chamapi.disaster.service.DisasterMessageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.List;
 
 @Transactional(readOnly = true)
@@ -21,22 +17,17 @@ import java.util.List;
 @RequiredArgsConstructor
 public class DisasterMessageServiceImpl implements DisasterMessageService {
 
-    private static final ZoneId KST = ZoneId.of("Asia/Seoul");
-    private static final long ACTIVE_WINDOW_HOURS = 6L;
-    private static final List<EmergencyStep> ALERT_STEPS = List.of(EmergencyStep.CRITICAL, EmergencyStep.EMERGENCY, EmergencyStep.ADVISORY);
+    private static final int LATEST_LIMIT = 5;
 
     private final DisasterMessageRepository repository;
     private final SafetyDataProperties properties;
 
     @Override
-    public ActiveDisasterResponse findActive() {
-        LocalDateTime now = LocalDateTime.now(KST);
-        LocalDateTime since = now.minusHours(ACTIVE_WINDOW_HOURS);
-        List<DisasterMessage> active = repository.findActive(properties.getRegion(), ALERT_STEPS, since);
-        if (active.isEmpty()) {
-            return ActiveDisasterResponse.inactive(now);
-        }
-        return ActiveDisasterResponse.active(now, DisasterMessageResponse.from(active.get(0)));
+    public List<DisasterMessageResponse> findLatest() {
+        List<DisasterMessage> latest = repository.findLatest(properties.getRegion(), LATEST_LIMIT);
+        return latest.stream()
+                .map(DisasterMessageResponse::from)
+                .toList();
     }
 
     @Override

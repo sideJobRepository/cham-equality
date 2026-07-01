@@ -1,10 +1,12 @@
 package com.chamapi.disaster.service;
 
 import com.chamapi.RepositoryAndServiceTestSupport;
-import com.chamapi.disaster.dto.response.ActiveDisasterResponse;
+import com.chamapi.disaster.dto.response.DisasterMessageResponse;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+
+import java.util.List;
 
 class DisasterMessageSyncServiceTest extends RepositoryAndServiceTestSupport {
 
@@ -21,12 +23,12 @@ class DisasterMessageSyncServiceTest extends RepositoryAndServiceTestSupport {
         System.out.println("inserted = " + inserted);
     }
 
-    @DisplayName("동기화 후 활성 재난문자 조회")
+    @DisplayName("동기화 후 최신 재난문자 5건 조회")
     @Test
     void test2() {
         syncService.sync();
-        ActiveDisasterResponse response = disasterMessageService.findActive();
-        System.out.println("active = " + response.active());
-        System.out.println("message = " + response.message());
+        List<DisasterMessageResponse> latest = disasterMessageService.findLatest();
+        System.out.println("size = " + latest.size());
+        latest.forEach(m -> System.out.println("message = " + m));
     }
 }

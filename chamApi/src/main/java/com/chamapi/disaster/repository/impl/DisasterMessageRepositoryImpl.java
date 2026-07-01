@@ -1,12 +1,10 @@
 package com.chamapi.disaster.repository.impl;
 
 import com.chamapi.disaster.entity.DisasterMessage;
-import com.chamapi.disaster.enums.EmergencyStep;
 import com.chamapi.disaster.repository.query.DisasterMessageQueryRepository;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 
-import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -29,15 +27,12 @@ public class DisasterMessageRepositoryImpl implements DisasterMessageQueryReposi
     }
 
     @Override
-    public List<DisasterMessage> findActive(String region, List<EmergencyStep> steps, LocalDateTime since) {
+    public List<DisasterMessage> findLatest(String region, int limit) {
         return queryFactory
                 .selectFrom(disasterMessage)
-                .where(
-                        disasterMessage.regionName.contains(region),
-                        disasterMessage.emergencyStep.in(steps),
-                        disasterMessage.issuedAt.goe(since)
-                )
+                .where(disasterMessage.regionName.contains(region))
                 .orderBy(disasterMessage.issuedAt.desc())
+                .limit(limit)
                 .fetch();
     }
 }
