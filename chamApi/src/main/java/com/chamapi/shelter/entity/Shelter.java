@@ -41,10 +41,6 @@ public class Shelter extends DateSuperClass {
     @Column(name = "SHELTER_ENGLISH_NAME")
     private String englishName;
 
-    // 대피소 영문명
-    @Column(name = "SHELTER_ENGLISH_NAME")
-    private String englishName;
-
     // 대피소 위도
     @Column(name = "SHELTER_LATITUDE", precision = 10, scale = 8)
     private BigDecimal latitude;
