@@ -31,6 +31,10 @@ public class Place extends DateSuperClass {
     @Column(name = "PLACE_NAME", nullable = false)
     private String name;
 
+    // 장소 영문명
+    @Column(name = "PLACE_ENGLISH_NAME")
+    private String englishName;
+
     // 장소 도로명주소
     @Column(name = "PLACE_ADDRESS")
     private String address;

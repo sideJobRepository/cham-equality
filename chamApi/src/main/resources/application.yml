@@ -55,5 +55,4 @@ data:
     geocoding-path: ${NCP_GEOCODING_PATH}
 
 multilingual:
-  # 어느 화면을 요청하든 디폴트로 함께 내려주는 하단 탭 라벨의 menu 이름
   tab-menu: tab
