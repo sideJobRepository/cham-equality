@@ -10,6 +10,9 @@ const resources = {
         manual: '메뉴얼',
         more: '더보기',
       },
+      home: {
+        messageTitle2: '일일 재난안전관리 상황',
+      },
     },
   },
   EN: {
@@ -19,6 +22,9 @@ const resources = {
         map: 'Map',
         manual: 'Manual',
         more: 'More',
+      },
+      home: {
+        messageTitle2: 'Daily Disaster Safety Status',
       },
     },
   },

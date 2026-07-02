@@ -18,19 +18,18 @@ function formatDisasterDate(dateString?: string) {
 
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
-  const weekdays = ['일', '월', '화', '수', '목', '금', '토'];
-  const weekday = weekdays[date.getDay()];
 
-  return `${month}.${day}(${weekday})`;
+  return `${month}.${day}`;
 }
 
 export default function HomeScreen() {
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
   useFetchSMS();
   useFetchDisaster();
   const smsData = useSMSStore(state => state.sms);
   console.log('smsData', smsData);
   const disasterData = useDisasterStore(state => state.disaster);
+  console.log('disasterData', disasterData);
   const disasterSummary = disasterData?.summary?.slice(0, 3) ?? [];
   const disasterDate = formatDisasterDate(disasterData?.createDate);
   const [isSMSModalVisible, setIsSMSModalVisible] = useState(false);
@@ -79,7 +78,7 @@ export default function HomeScreen() {
           onPress={handlePressDisaster}
         >
           <TopBox>
-            <MessageTitle2>일일 재난안전관리 상황</MessageTitle2>
+            <MessageTitle2>{t('home.messageTitle2')}</MessageTitle2>
             <TimeText>{disasterDate}</TimeText>
           </TopBox>
           <CenterBox>
