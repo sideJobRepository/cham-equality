@@ -7,6 +7,7 @@ import {
   MoreHorizontal,
   type LucideIcon,
 } from 'lucide-react-native';
+import { useTranslation } from 'react-i18next';
 import HomeScreen from '../screens/HomeScreen';
 import MapScreen from '../screens/MapScreen';
 import ManualScreen from '../screens/ManualScreen';
@@ -29,6 +30,8 @@ const tabIcons: Record<keyof RootTabParamList, LucideIcon> = {
 };
 
 export default function AppNavigator() {
+  const { t } = useTranslation();
+
   return (
     <NavigationContainer>
       <Tab.Navigator
@@ -61,22 +64,22 @@ export default function AppNavigator() {
         <Tab.Screen
           name="Home"
           component={HomeScreen}
-          options={{ tabBarLabel: '홈' }}
+          options={{ tabBarLabel: t('tabs.home') }}
         />
         <Tab.Screen
           name="Map"
           component={MapScreen}
-          options={{ tabBarLabel: '지도' }}
+          options={{ tabBarLabel: t('tabs.map') }}
         />
         <Tab.Screen
           name="Manual"
           component={ManualScreen}
-          options={{ tabBarLabel: '메뉴얼' }}
+          options={{ tabBarLabel: t('tabs.manual') }}
         />
         <Tab.Screen
           name="More"
           component={MoreScreen}
-          options={{ tabBarLabel: '더보기' }}
+          options={{ tabBarLabel: t('tabs.more') }}
         />
       </Tab.Navigator>
     </NavigationContainer>

@@ -27,6 +27,7 @@ const accessibilityOptions = [
   '경사로',
   '엘리베이터',
   '점자블록',
+  '장애인 화장실',
 ];
 
 const SHELTER_ALL_LABEL = '전체';
@@ -60,6 +61,7 @@ const accessibilityValueMap: Record<string, string> = {
   경사로: 'RAMP',
   엘리베이터: 'ELEVATOR',
   점자블록: 'BRAILLE_BLOCK',
+  '장애인 화장실': 'ACCESSIBLE_TOILET',
 };
 
 const shelterTypeLabelMap: Record<string, string> = {

@@ -11,20 +11,14 @@ interface SMSMessage {
   sn: number;
 }
 
-interface SMS {
-  active: boolean;
-  message: SMSMessage | null;
-  referenceTime: string;
-}
-
 interface SMSStore {
-  sms: SMS | null;
-  setSMS: (sms: SMS) => void;
+  sms: SMSMessage[];
+  setSMS: (sms: SMSMessage[]) => void;
   clearSMS: () => void;
 }
 
 export const useSMSStore = create<SMSStore>(set => ({
-  sms: null,
+  sms: [],
   setSMS: sms => set({ sms }),
-  clearSMS: () => set({ sms: null }),
+  clearSMS: () => set({ sms: [] }),
 }));

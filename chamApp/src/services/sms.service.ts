@@ -10,7 +10,7 @@ export function useFetchSMS() {
 
   const fetchSMS = useCallback(() => {
     request(
-      () => api.get('/api/disaster-messages/active').then(res => res.data.data),
+      () => api.get('/api/disaster-messages/latest').then(res => res.data.data),
       setSms,
       {
         ignoreErrorRedirect: true,

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Linking, Modal } from 'react-native';
 import styled from 'styled-components/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { ChevronLeft, ChevronRight } from 'lucide-react-native';
 import SpeakerIcon from '../assets/icons/SpeakerIcon';
 import { useFetchSMS } from '../services/sms.service.ts';
 import { useDisasterStore, useSMSStore } from '../store';
@@ -26,10 +27,13 @@ export default function HomeScreen() {
   useFetchSMS();
   useFetchDisaster();
   const smsData = useSMSStore(state => state.sms);
+  console.log('smsData', smsData);
   const disasterData = useDisasterStore(state => state.disaster);
   const disasterSummary = disasterData?.summary?.slice(0, 3) ?? [];
   const disasterDate = formatDisasterDate(disasterData?.createDate);
   const [isSMSModalVisible, setIsSMSModalVisible] = useState(false);
+  const [selectedSMSIndex, setSelectedSMSIndex] = useState(0);
+  const selectedSMS = smsData[selectedSMSIndex];
   const handlePressDisaster = () => {
     if (!disasterData?.originUrl) return;
     Linking.openURL(disasterData.originUrl);
@@ -39,15 +43,16 @@ export default function HomeScreen() {
     <Screen>
       <TopSection>
         <MessageBox
-          disabled={!smsData?.message?.content}
+          disabled={!smsData[0]?.content}
           onPress={() => {
-            if (!smsData?.message?.content) return;
+            if (!smsData[0]?.content) return;
+            setSelectedSMSIndex(0);
             setIsSMSModalVisible(true);
           }}
         >
           <SpeakerIcon size={32} />
           <MessageTitle numberOfLines={1} ellipsizeMode="tail">
-            {smsData?.message?.content ?? '현재 발령된 재난이 없습니다.'}
+            {smsData[0]?.content ?? '현재 발령된 재난이 없습니다.'}
           </MessageTitle>
         </MessageBox>
         <MessageBox2
@@ -76,11 +81,39 @@ export default function HomeScreen() {
       >
         <ModalOverlay onPress={() => setIsSMSModalVisible(false)}>
           <ModalCard onPress={e => e.stopPropagation()}>
-            <ModalCategory>
-              {smsData?.message?.category ?? '재난문자'}
-            </ModalCategory>
+            <ModalHeader>
+              <IconButton
+                disabled={selectedSMSIndex === 0}
+                onPress={() => setSelectedSMSIndex(index => Math.max(index - 1, 0))}
+              >
+                <ChevronLeft
+                  color={selectedSMSIndex === 0 ? '#d1d5db' : '#111827'}
+                  size={24}
+                  strokeWidth={2.5}
+                />
+              </IconButton>
+              <ModalCategory>
+                {selectedSMS?.category ?? '재난문자'}
+              </ModalCategory>
+              <IconButton
+                disabled={selectedSMSIndex >= smsData.length - 1}
+                onPress={() =>
+                  setSelectedSMSIndex(index =>
+                    Math.min(index + 1, smsData.length - 1),
+                  )
+                }
+              >
+                <ChevronRight
+                  color={
+                    selectedSMSIndex >= smsData.length - 1 ? '#d1d5db' : '#111827'
+                  }
+                  size={24}
+                  strokeWidth={2.5}
+                />
+              </IconButton>
+            </ModalHeader>
             <ModalContent>
-              {smsData?.message?.content ?? '표시할 재난문자가 없습니다.'}
+              {selectedSMS?.content ?? '표시할 재난문자가 없습니다.'}
             </ModalContent>
             <ModalButton onPress={() => setIsSMSModalVisible(false)}>
               <ModalButtonText>닫기</ModalButtonText>
@@ -193,7 +226,24 @@ const ModalCard = styled.Pressable`
   background-color: #ffffff;
 `;
 
+const ModalHeader = styled.View`
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+`;
+
+const IconButton = styled.Pressable`
+  width: 36px;
+  height: 36px;
+  align-items: center;
+  justify-content: center;
+`;
+
 const ModalCategory = styled.Text`
+  flex: 1;
+  text-align: center;
   color: #dc2626;
   font-size: 18px;
   font-weight: 800;
