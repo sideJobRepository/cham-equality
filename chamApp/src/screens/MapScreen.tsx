@@ -53,6 +53,14 @@ const accessibilityFilterLabelKeys: Record<string, string> = {
   '장애인 화장실': 'map.filters.accessibleToilet',
 };
 
+const shelterTypeTranslationKeys: Record<string, string> = {
+  CIVIL_DEFENSE: 'map.filters.civilDefense',
+  EARTHQUAKE: 'map.filters.earthquake',
+  CHEMICAL_ACCIDENT: 'map.filters.chemicalAccident',
+  EARTHQUAKE_TEMPORARY_HOUSING: 'map.filters.earthquakeTemporaryHousing',
+  DISASTER_TEMPORARY_HOUSING: 'map.filters.disasterTemporaryHousing',
+};
+
 type LocationStatus = 'checking' | 'granted' | 'denied' | 'unavailable';
 type UserLocation = {
   lat: number;
@@ -93,6 +101,11 @@ const shelterTypeLabelMap: Record<string, string> = {
 function getShelterTypeLabel(type?: string) {
   if (!type) return '유형 정보 없음';
   return shelterTypeLabelMap[type] ?? type;
+}
+
+function getShelterTypeTranslationKey(type?: string) {
+  if (!type) return null;
+  return shelterTypeTranslationKeys[type] ?? null;
 }
 
 function isKoreaLocation(location: UserLocation) {
@@ -1075,7 +1088,10 @@ export default function MapScreen() {
                       <ShelterName>{shelter.name}</ShelterName>
                       <TypeChip>
                         <TypeChipText>
-                          {getShelterTypeLabel(shelter.shelterType)}
+                          {t(
+                            getShelterTypeTranslationKey(shelter.shelterType) ??
+                              getShelterTypeLabel(shelter.shelterType),
+                          )}
                         </TypeChipText>
                       </TypeChip>
                     </ShelterTitleRow>
@@ -1095,7 +1111,7 @@ export default function MapScreen() {
                           $active={chip.active}
                         >
                           <AccessChipText $active={chip.active}>
-                            {chip.label}
+                            {t(accessibilityFilterLabelKeys[chip.label] ?? chip.label)}
                           </AccessChipText>
                         </AccessChip>
                       ))}
@@ -1133,7 +1149,11 @@ export default function MapScreen() {
                       {getShelterTypeCounts(place.shelters).map(item => (
                         <TypeCountChip key={`${place.placeId}-${item.type}`}>
                           <TypeCountText>
-                            {item.label} {item.count}개
+                            {t(
+                              getShelterTypeTranslationKey(item.type) ??
+                                item.label,
+                            )}{' '}
+                            {item.count}
                           </TypeCountText>
                         </TypeCountChip>
                       ))}
