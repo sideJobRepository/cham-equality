@@ -263,8 +263,10 @@ function buildMapHtml(
 
       function summaryLabel(item) {
         const path = String(item.path || '');
-        const last = path.split(' ').filter(Boolean).slice(-1)[0] || path;
-        return last + ' ' + item.count;
+        const name = path.includes(',')
+          ? path.split(',')[0].trim()
+          : path.split(' ').filter(Boolean).slice(-1)[0] || path;
+        return name + ' ' + item.count;
       }
 
       function accessibilityMatchColor(status) {
@@ -767,6 +769,7 @@ export default function MapScreen() {
     refreshOnFocus: true,
   });
   const mapData = useMapStore(state => state.map);
+  console.log('mapData', mapData);
   const [selectedPlace, setSelectedPlace] = useState<SelectedPlace | null>(
     null,
   );
