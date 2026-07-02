@@ -1,4 +1,5 @@
 import { useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useRefreshOnFocus } from '../hooks/useRefreshOnFocus.ts';
 import { useRequest } from '../hooks/useRequest.ts';
 import api from '../lib/axiosInstance.ts';
@@ -14,18 +15,23 @@ interface UseFetchMapOptions {
 
 export function useFetchMap(options?: UseFetchMapOptions) {
   const { request } = useRequest();
+  const { i18n } = useTranslation();
   const setMap = useMapStore(state => state.setMap);
 
   const fetchMap = useCallback(() => {
     request(
       () =>
-        api.post(`/api/shelters/map`, options?.body ?? {}).then(res => res.data.data),
+        api
+          .post(`/api/shelters/map`, options?.body ?? {}, {
+            params: { lang: i18n.language },
+          })
+          .then(res => res.data.data),
       setMap,
       {
         ignoreErrorRedirect: true,
       },
     );
-  }, [options?.body, request, setMap]);
+  }, [i18n.language, options?.body, request, setMap]);
 
   useRefreshOnFocus(fetchMap, options?.refreshOnFocus ?? false);
 
