@@ -10,6 +10,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
 import { ChevronLeft } from 'lucide-react-native';
 import styled from 'styled-components/native';
+import { useTranslation } from 'react-i18next';
 import { useFetchMap } from '../services/map.service.ts';
 import { useMapStore } from '../store/map.ts';
 
@@ -34,6 +35,23 @@ const SHELTER_ALL_LABEL = '전체';
 const ACCESSIBILITY_ALL_LABEL = '접근성 전체';
 const SHELTER_SELECTED_COLOR = '#4aa199';
 const ACCESSIBILITY_SELECTED_COLOR = '#5088dc';
+
+const shelterTypeFilterLabelKeys: Record<string, string> = {
+  전체: 'map.filters.shelterAll',
+  민방위대피시설: 'map.filters.civilDefense',
+  지진대피장소: 'map.filters.earthquake',
+  화학사고대피장소: 'map.filters.chemicalAccident',
+  '지진겸용 임시주거시설': 'map.filters.earthquakeTemporaryHousing',
+  '이재민 임시주거시설': 'map.filters.disasterTemporaryHousing',
+};
+
+const accessibilityFilterLabelKeys: Record<string, string> = {
+  '접근성 전체': 'map.filters.accessibilityAll',
+  경사로: 'map.filters.ramp',
+  엘리베이터: 'map.filters.elevator',
+  점자블록: 'map.filters.brailleBlock',
+  '장애인 화장실': 'map.filters.accessibleToilet',
+};
 
 type LocationStatus = 'checking' | 'granted' | 'denied' | 'unavailable';
 type UserLocation = {
@@ -685,6 +703,7 @@ function buildMapHtml(
 }
 
 export default function MapScreen() {
+  const { t } = useTranslation();
   const [selectedShelterTypes, setSelectedShelterTypes] = useState<string[]>([
     SHELTER_ALL_LABEL,
   ]);
@@ -972,7 +991,7 @@ export default function MapScreen() {
                 onPress={() => handleShelterTypePress(item)}
               >
                 <FilterChipText $selected={selectedShelterTypes.includes(item)}>
-                  {item}
+                  {t(shelterTypeFilterLabelKeys[item] ?? item)}
                 </FilterChipText>
               </FilterChip>
             ))}
@@ -991,7 +1010,7 @@ export default function MapScreen() {
                 <FilterChipText
                   $selected={selectedAccessibility.includes(item)}
                 >
-                  {item}
+                  {t(accessibilityFilterLabelKeys[item] ?? item)}
                 </FilterChipText>
               </FilterChip>
             ))}
