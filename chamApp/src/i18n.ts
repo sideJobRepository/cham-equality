@@ -14,6 +14,11 @@ const resources = {
         messageTitle2: '일일 재난안전관리 상황',
       },
       map: {
+        labels: {
+          nearbyLocation: '내 위치 주변 보기',
+          shelter: '대피소',
+          totalShelters: '총 대피소',
+        },
         filters: {
           shelterAll: '전체',
           civilDefense: '민방위대피시설',
@@ -42,6 +47,11 @@ const resources = {
         messageTitle2: 'Daily Disaster Safety Status',
       },
       map: {
+        labels: {
+          nearbyLocation: 'Near My Location',
+          shelter: 'Shelters',
+          totalShelters: 'Total Shelters',
+        },
         filters: {
           shelterAll: 'All',
           civilDefense: 'Civil Defense',

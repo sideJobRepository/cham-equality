@@ -987,7 +987,9 @@ export default function MapScreen() {
           <Description numberOfLines={1}>{locationStatusText}</Description>
           {locationStatus === 'granted' && userLocation ? (
             <LocationButton onPress={handleMoveToUserLocation}>
-              <LocationButtonText>내 위치 주변 보기</LocationButtonText>
+              <LocationButtonText>
+                {t('map.labels.nearbyLocation')}
+              </LocationButtonText>
             </LocationButton>
           ) : null}
         </HeaderRow>
@@ -1078,7 +1080,9 @@ export default function MapScreen() {
                 {selectedPlace.description}
               </DetailDescription>
             ) : null}
-            <DetailMeta>대피소 {selectedPlace.shelterCount}개</DetailMeta>
+            <DetailMeta>
+              {t('map.labels.shelter')} {selectedPlace.shelterCount}
+            </DetailMeta>
 
             <PanelScroll showsVerticalScrollIndicator={false}>
               {selectedPlace.shelters.length ? (
@@ -1126,7 +1130,9 @@ export default function MapScreen() {
         ) : (
           <>
             <PanelHeader>
-              <PanelCount>총 대피소 {visiblePlaces.length}</PanelCount>
+              <PanelCount>
+                {t('map.labels.totalShelters')} {visiblePlaces.length}
+              </PanelCount>
             </PanelHeader>
 
             <PanelScroll showsVerticalScrollIndicator={false}>
