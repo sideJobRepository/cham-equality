@@ -3,6 +3,7 @@ import { Linking, Modal } from 'react-native';
 import styled from 'styled-components/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ChevronLeft, ChevronRight } from 'lucide-react-native';
+import { useTranslation } from 'react-i18next';
 import SpeakerIcon from '../assets/icons/SpeakerIcon';
 import { useFetchSMS } from '../services/sms.service.ts';
 import { useDisasterStore, useSMSStore } from '../store';
@@ -24,6 +25,7 @@ function formatDisasterDate(dateString?: string) {
 }
 
 export default function HomeScreen() {
+  const { i18n } = useTranslation();
   useFetchSMS();
   useFetchDisaster();
   const smsData = useSMSStore(state => state.sms);
@@ -42,6 +44,23 @@ export default function HomeScreen() {
   return (
     <Screen>
       <TopSection>
+        <LanguageRow>
+          <LanguageButton
+            $active={i18n.language === 'KO'}
+            onPress={() => i18n.changeLanguage('KO')}
+          >
+            <LanguageText $active={i18n.language === 'KO'}>한국어</LanguageText>
+          </LanguageButton>
+          <LanguageButton
+            $active={i18n.language === 'EN'}
+            onPress={() => i18n.changeLanguage('EN')}
+          >
+            <LanguageText $active={i18n.language === 'EN'}>
+              English
+            </LanguageText>
+          </LanguageButton>
+        </LanguageRow>
+
         <MessageBox
           disabled={!smsData[0]?.content}
           onPress={() => {
@@ -84,7 +103,9 @@ export default function HomeScreen() {
             <ModalHeader>
               <IconButton
                 disabled={selectedSMSIndex === 0}
-                onPress={() => setSelectedSMSIndex(index => Math.max(index - 1, 0))}
+                onPress={() =>
+                  setSelectedSMSIndex(index => Math.max(index - 1, 0))
+                }
               >
                 <ChevronLeft
                   color={selectedSMSIndex === 0 ? '#d1d5db' : '#111827'}
@@ -105,7 +126,9 @@ export default function HomeScreen() {
               >
                 <ChevronRight
                   color={
-                    selectedSMSIndex >= smsData.length - 1 ? '#d1d5db' : '#111827'
+                    selectedSMSIndex >= smsData.length - 1
+                      ? '#d1d5db'
+                      : '#111827'
                   }
                   size={24}
                   strokeWidth={2.5}
@@ -136,6 +159,26 @@ const Screen = styled(SafeAreaView)`
 const TopSection = styled.View`
   display: flex;
   width: 100%;
+`;
+
+const LanguageRow = styled.View`
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-top: 8px;
+`;
+
+const LanguageButton = styled.Pressable<{ $active: boolean }>`
+  padding: 6px 10px;
+  border-radius: 8px;
+  background-color: ${({ $active }) => ($active ? '#1d1d1f' : '#f3f4f6')};
+`;
+
+const LanguageText = styled.Text<{ $active: boolean }>`
+  color: ${({ $active }) => ($active ? '#ffffff' : '#6b7280')};
+  font-size: 13px;
+  font-weight: 700;
 `;
 
 const MessageBox = styled.Pressable`
