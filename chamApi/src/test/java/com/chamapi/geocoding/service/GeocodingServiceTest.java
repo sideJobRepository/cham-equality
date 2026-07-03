@@ -1,9 +1,8 @@
-package com.chamapi.geocode.service;
+package com.chamapi.geocoding.service;
 
 import com.chamapi.shelter.entity.Place;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
-import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.Rollback;

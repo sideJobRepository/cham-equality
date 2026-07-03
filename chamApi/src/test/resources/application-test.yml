@@ -39,3 +39,4 @@ data:
     api-key: ${NCP_API_KEY}
     base-url: ${NCP_BASE_URL}
     geocoding-path: ${NCP_GEOCODING_PATH}
+    reverse-geocoding-path: ${NCP_REVERSE_GEOCODING_PATH}

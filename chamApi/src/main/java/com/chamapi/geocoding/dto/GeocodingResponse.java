@@ -1,4 +1,4 @@
-package com.chamapi.geocode.dto;
+package com.chamapi.geocoding.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 

@@ -1,4 +1,4 @@
-package com.chamapi.geocode.config;
+package com.chamapi.geocoding.config;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -13,4 +13,5 @@ public class GeocodingProperties {
     private String apiKey;
     private String baseUrl;
     private String geocodingPath;
+    private String reverseGeocodingPath;
 }

@@ -1,7 +1,5 @@
-package com.chamapi.geocode.config;
+package com.chamapi.geocoding.config;
 
-import com.chamapi.disaster.config.SafetyDataProperties;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -16,7 +14,7 @@ import java.time.Duration;
 
 @Configuration
 @EnableConfigurationProperties(GeocodingProperties.class)
-public class GeocodeConfig {
+public class GeocodingConfig {
 
 
     @Bean(name = "geocodingRestClient")
