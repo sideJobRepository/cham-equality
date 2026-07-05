@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useRefreshOnFocus } from '../hooks/useRefreshOnFocus.ts';
 import { useRequest } from '../hooks/useRequest.ts';
@@ -39,6 +39,10 @@ export function useFetchMap(options?: UseFetchMapOptions) {
       },
     );
   }, [i18n.language, options?.body, request, setMap]);
+
+  useEffect(() => {
+    fetchMap();
+  }, [fetchMap]);
 
   useRefreshOnFocus(fetchMap, options?.refreshOnFocus ?? false);
 

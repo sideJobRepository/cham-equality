@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import {
   InteractionManager,
@@ -64,6 +64,8 @@ export function useCurrentLocation() {
 
   useFocusEffect(
     useCallback(() => {
+      if (currentLocation) return undefined;
+
       let cancelled = false;
 
       async function loadLocation() {
@@ -116,33 +118,37 @@ export function useCurrentLocation() {
         cancelled = true;
         interaction.cancel();
       };
-    }, [setChecking, setDenied, setLocation, setUnavailable]),
+    }, [
+      currentLocation,
+      setChecking,
+      setDenied,
+      setLocation,
+      setUnavailable,
+    ]),
   );
 
-  useFocusEffect(
-    useCallback(() => {
-      if (!currentLocation) return undefined;
+  useEffect(() => {
+    if (!currentLocation) return undefined;
 
-      const resolvedLocation = currentLocation;
-      let cancelled = false;
+    const resolvedLocation = currentLocation;
+    let cancelled = false;
 
-      async function loadAddress() {
-        try {
-          const address = await fetchReverseGeocoding(
-            resolvedLocation,
-            i18n.language,
-          );
-          if (!cancelled) setAddress(address);
-        } catch {
-          if (!cancelled) setAddress(resolvedLocation.address ?? '');
-        }
+    async function loadAddress() {
+      try {
+        const address = await fetchReverseGeocoding(
+          resolvedLocation,
+          i18n.language,
+        );
+        if (!cancelled) setAddress(address);
+      } catch {
+        if (!cancelled) setAddress(resolvedLocation.address ?? '');
       }
+    }
 
-      loadAddress();
+    loadAddress();
 
-      return () => {
-        cancelled = true;
-      };
-    }, [currentLocation, i18n.language, setAddress]),
-  );
+    return () => {
+      cancelled = true;
+    };
+  }, [currentLocation, i18n.language, setAddress]);
 }

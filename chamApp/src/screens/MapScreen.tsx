@@ -4,12 +4,11 @@ import Config from 'react-native-config';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRoute, type RouteProp } from '@react-navigation/native';
 import { WebView } from 'react-native-webview';
-import { ChevronLeft } from 'lucide-react-native';
+import { ChevronLeft, Square, Users } from 'lucide-react-native';
 import styled from 'styled-components/native';
 import { useTranslation } from 'react-i18next';
 import CurrentLocationBar from '../components/CurrentLocationBar.tsx';
 import MapSearchFilters from '../components/MapSearchFilters.tsx';
-import { useCurrentLocation } from '../hooks/useCurrentLocation.ts';
 import { useFetchMap } from '../services/map.service.ts';
 import { useMapStore } from '../store/map.ts';
 import { useLocationStore } from '../store/location.ts';
@@ -65,19 +64,6 @@ function getShelterTypeCounts(shelters: ShelterSummary[]) {
       const bIndex = order.indexOf(b.type);
       return (aIndex === -1 ? 999 : aIndex) - (bIndex === -1 ? 999 : bIndex);
     });
-}
-
-function getShelterMetaText(shelter: ShelterSummary) {
-  const parts = [
-    typeof shelter.capacity === 'number'
-      ? `수용 ${shelter.capacity.toLocaleString()}명`
-      : null,
-    typeof shelter.area === 'number'
-      ? `${shelter.area.toLocaleString()}㎡`
-      : null,
-  ].filter(Boolean);
-
-  return parts.join(' · ') || '규모 정보 없음';
 }
 
 interface MapMessageEvent {
@@ -164,6 +150,7 @@ function buildMapHtml(
   mapPayloadJson: string,
   initialViewJson: string,
   userLocationJson: string,
+  initialSelectedPlaceIdJson: string,
 ) {
   return `<!DOCTYPE html>
 <html lang="ko">
@@ -189,6 +176,7 @@ function buildMapHtml(
       window.__MAP_DATA__ = ${mapPayloadJson};
       window.__INITIAL_VIEW__ = ${initialViewJson};
       window.__USER_LOCATION__ = ${userLocationJson};
+      window.__INITIAL_SELECTED_PLACE_ID__ = ${initialSelectedPlaceIdJson};
       window.__notify = function(payload) {
         if (window.ReactNativeWebView) {
           window.ReactNativeWebView.postMessage(JSON.stringify(payload));
@@ -373,7 +361,7 @@ function buildMapHtml(
         );
 
         let overlays = [];
-        window.__selectedPlaceId = null;
+        window.__selectedPlaceId = window.__INITIAL_SELECTED_PLACE_ID__ || null;
 
         function getUserLocationCoords() {
           const userLocation = window.__USER_LOCATION__;
@@ -648,7 +636,6 @@ function buildMapHtml(
 export default function MapScreen() {
   const { t } = useTranslation();
   const route = useRoute<RouteProp<RootTabParamList, 'Map'>>();
-  useCurrentLocation();
   const selectedShelterTypes = useMapFilterStore(
     state => state.selectedShelterTypes,
   );
@@ -676,7 +663,6 @@ export default function MapScreen() {
 
   useFetchMap({
     body: mapRequestBody,
-    refreshOnFocus: true,
   });
   const mapData = useMapStore(state => state.map);
   const [selectedPlace, setSelectedPlace] = useState<SelectedPlace | null>(
@@ -689,14 +675,19 @@ export default function MapScreen() {
   const mapViewRef = useRef<MapViewState | null>(null);
   const webViewRef = useRef<WebView>(null);
   const pendingFocusPlaceIdRef = useRef<number | null>(null);
+  const selectedPlaceIdRef = useRef<number | null>(null);
 
   useEffect(() => {
+    selectedPlaceIdRef.current = null;
+    pendingFocusPlaceIdRef.current = null;
     setSelectedPlace(null);
     setVisiblePlaces([]);
     setPanelReady(false);
   }, [mapData]);
 
   useEffect(() => {
+    selectedPlaceIdRef.current = null;
+    pendingFocusPlaceIdRef.current = null;
     setSelectedPlace(null);
     setVisiblePlaces([]);
     setPanelReady(false);
@@ -717,6 +708,7 @@ export default function MapScreen() {
       JSON.stringify(payload),
       JSON.stringify(mapViewRef.current),
       JSON.stringify(userLocation),
+      JSON.stringify(selectedPlaceIdRef.current),
     );
   }, [mapData, userLocation]);
 
@@ -727,6 +719,8 @@ export default function MapScreen() {
       const parsed = JSON.parse(event.nativeEvent.data) as WebMessagePayload;
 
       if (parsed.type === 'marker' && parsed.payload) {
+        pendingFocusPlaceIdRef.current = null;
+        selectedPlaceIdRef.current = parsed.payload.placeId;
         setMapError('');
         setSelectedPlace(parsed.payload);
         return;
@@ -742,11 +736,11 @@ export default function MapScreen() {
         setVisiblePlaces(parsed.visiblePlaces ?? []);
         setPanelReady(true);
         if (pendingFocusPlaceIdRef.current) {
+          const pendingFocusPlaceId = pendingFocusPlaceIdRef.current;
+          pendingFocusPlaceIdRef.current = null;
           webViewRef.current?.injectJavaScript(`
             if (window.__selectPlaceMarker) {
-              window.__selectPlaceMarker(${JSON.stringify(
-                pendingFocusPlaceIdRef.current,
-              )});
+              window.__selectPlaceMarker(${JSON.stringify(pendingFocusPlaceId)});
             }
             true;
           `);
@@ -785,6 +779,8 @@ export default function MapScreen() {
   };
 
   const handlePlacePress = (place: SelectedPlace) => {
+    pendingFocusPlaceIdRef.current = null;
+    selectedPlaceIdRef.current = place.placeId;
     setSelectedPlace(place);
     webViewRef.current?.injectJavaScript(`
       if (window.__selectPlaceMarker) {
@@ -804,6 +800,7 @@ export default function MapScreen() {
     if (!detail) return;
 
     pendingFocusPlaceIdRef.current = focusPlaceId;
+    selectedPlaceIdRef.current = focusPlaceId;
     setSelectedPlace(normalizeSelectedPlace(detail));
     webViewRef.current?.injectJavaScript(`
       if (window.__selectPlaceMarker) {
@@ -814,6 +811,8 @@ export default function MapScreen() {
   }, [mapData, route.params?.focusNonce, route.params?.focusPlaceId]);
 
   const handleBackToPlaceList = () => {
+    selectedPlaceIdRef.current = null;
+    pendingFocusPlaceIdRef.current = null;
     setSelectedPlace(null);
     webViewRef.current?.injectJavaScript(`
       if (window.__clearSelectedPlaceMarker) {
@@ -900,7 +899,28 @@ export default function MapScreen() {
                         </TypeChipText>
                       </TypeChip>
                     </ShelterTitleRow>
-                    <ShelterMeta>{getShelterMetaText(shelter)}</ShelterMeta>
+                    <ShelterMetaRow>
+                      {typeof shelter.capacity === 'number' ? (
+                        <ShelterMetaIconText>
+                          <Users color="#4b5563" size={14} strokeWidth={2.4} />
+                          <ShelterMetaText>
+                            {shelter.capacity.toLocaleString()}
+                          </ShelterMetaText>
+                        </ShelterMetaIconText>
+                      ) : null}
+                      {typeof shelter.area === 'number' ? (
+                        <ShelterMetaIconText>
+                          <Square color="#4b5563" size={13} strokeWidth={2.4} />
+                          <ShelterMetaText>
+                            {shelter.area.toLocaleString()}㎡
+                          </ShelterMetaText>
+                        </ShelterMetaIconText>
+                      ) : null}
+                      {typeof shelter.capacity !== 'number' &&
+                      typeof shelter.area !== 'number' ? (
+                        <ShelterMetaText>규모 정보 없음</ShelterMetaText>
+                      ) : null}
+                    </ShelterMetaRow>
                     <ShelterMeta>
                       {[
                         shelter.managingAuthorityName,
@@ -1133,6 +1153,24 @@ const ShelterName = styled.Text`
   font-size: 14px;
   line-height: 19px;
   font-weight: 800;
+`;
+
+const ShelterMetaRow = styled.View`
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+`;
+
+const ShelterMetaIconText = styled.View`
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
+`;
+
+const ShelterMetaText = styled.Text`
+  color: #4b5563;
+  font-size: 12px;
+  line-height: 18px;
 `;
 
 const ShelterMeta = styled.Text`

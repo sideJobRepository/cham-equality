@@ -4,7 +4,7 @@ import styled from 'styled-components/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
-import { ChevronLeft, ChevronRight } from 'lucide-react-native';
+import { ChevronLeft, ChevronRight, Square, Users } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import CurrentLocationBar from '../components/CurrentLocationBar.tsx';
 import MapSearchFilters from '../components/MapSearchFilters.tsx';
@@ -41,19 +41,6 @@ function getAccessibilityChips(shelter: NearestShelter) {
     { label: '점자블록', active: shelter.brailleBlock === true },
     { label: '장애인 화장실', active: shelter.accessibleToilet === true },
   ];
-}
-
-function getShelterMetaText(shelter: NearestShelter) {
-  const parts = [
-    typeof shelter.capacity === 'number'
-      ? `수용 ${shelter.capacity.toLocaleString()}명`
-      : null,
-    typeof shelter.area === 'number'
-      ? `${shelter.area.toLocaleString()}㎡`
-      : null,
-  ].filter(Boolean);
-
-  return parts.join(' · ') || '규모 정보 없음';
 }
 
 function formatDisasterDate(dateString?: string) {
@@ -165,7 +152,28 @@ export default function HomeScreen() {
                 </TypeChipText>
               </TypeChip>
             </ShelterTitleRow>
-            <ShelterMeta>{getShelterMetaText(nearestShelter)}</ShelterMeta>
+            <ShelterMetaRow>
+              {typeof nearestShelter.capacity === 'number' ? (
+                <ShelterMetaIconText>
+                  <Users color="#4b5563" size={14} strokeWidth={2.4} />
+                  <ShelterMetaText>
+                    {nearestShelter.capacity.toLocaleString()}
+                  </ShelterMetaText>
+                </ShelterMetaIconText>
+              ) : null}
+              {typeof nearestShelter.area === 'number' ? (
+                <ShelterMetaIconText>
+                  <Square color="#4b5563" size={13} strokeWidth={2.4} />
+                  <ShelterMetaText>
+                    {nearestShelter.area.toLocaleString()}㎡
+                  </ShelterMetaText>
+                </ShelterMetaIconText>
+              ) : null}
+              {typeof nearestShelter.capacity !== 'number' &&
+              typeof nearestShelter.area !== 'number' ? (
+                <ShelterMetaText>규모 정보 없음</ShelterMetaText>
+              ) : null}
+            </ShelterMetaRow>
             <ShelterMeta>
               {[
                 nearestShelter.managingAuthorityName,
@@ -288,6 +296,24 @@ const ShelterName = styled.Text`
   font-size: 14px;
   line-height: 19px;
   font-weight: 800;
+`;
+
+const ShelterMetaRow = styled.View`
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+`;
+
+const ShelterMetaIconText = styled.View`
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
+`;
+
+const ShelterMetaText = styled.Text`
+  color: #4b5563;
+  font-size: 12px;
+  line-height: 18px;
 `;
 
 const ShelterMeta = styled.Text`
