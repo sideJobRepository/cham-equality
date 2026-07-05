@@ -19,6 +19,12 @@ const resources = {
           shelter: '대피소',
           totalShelters: '총 대피소',
         },
+        location: {
+          checking: '현재 위치 확인 중',
+          addressChecking: '현재 위치 주소 확인 중',
+          permissionRequired: '위치 권한이 필요합니다',
+          unavailable: '현재 위치를 확인할 수 없습니다',
+        },
         filters: {
           shelterAll: '전체',
           civilDefense: '민방위대피시설',
@@ -51,6 +57,12 @@ const resources = {
           nearbyLocation: 'Near My Location',
           shelter: 'Shelters',
           totalShelters: 'Total Shelters',
+        },
+        location: {
+          checking: 'Checking current location',
+          addressChecking: 'Checking current address',
+          permissionRequired: 'Location permission is required',
+          unavailable: 'Current location is unavailable',
         },
         filters: {
           shelterAll: 'All',

@@ -4,6 +4,9 @@ import styled from 'styled-components/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ChevronLeft, ChevronRight } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
+import CurrentLocationBar from '../components/CurrentLocationBar.tsx';
+import MapSearchFilters from '../components/MapSearchFilters.tsx';
+import { useCurrentLocation } from '../hooks/useCurrentLocation.ts';
 import SpeakerIcon from '../assets/icons/SpeakerIcon';
 import { useFetchSMS } from '../services/sms.service.ts';
 import { useDisasterStore, useSMSStore } from '../store';
@@ -24,6 +27,7 @@ function formatDisasterDate(dateString?: string) {
 
 export default function HomeScreen() {
   const { t, i18n } = useTranslation();
+  useCurrentLocation();
   useFetchSMS();
   useFetchDisaster();
   const smsData = useSMSStore(state => state.sms);
@@ -91,6 +95,10 @@ export default function HomeScreen() {
           </CenterBox>
         </MessageBox2>
       </TopSection>
+      <MiddleSection>
+        <CurrentLocationBar />
+        <MapSearchFilters horizontalPadding={0} />
+      </MiddleSection>
       <Modal
         animationType="fade"
         transparent
@@ -158,6 +166,13 @@ const Screen = styled(SafeAreaView)`
 const TopSection = styled.View`
   display: flex;
   width: 100%;
+`;
+
+const MiddleSection = styled.View`
+  display: flex;
+  width: 100%;
+  gap: 10px;
+  margin-top: 16px;
 `;
 
 const LanguageRow = styled.View`

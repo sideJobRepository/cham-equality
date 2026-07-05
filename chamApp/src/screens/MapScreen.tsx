@@ -1,102 +1,29 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import {
-  ActivityIndicator,
-  NativeModules,
-  PermissionsAndroid,
-  Platform,
-} from 'react-native';
+import { ActivityIndicator } from 'react-native';
 import Config from 'react-native-config';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
 import { ChevronLeft } from 'lucide-react-native';
 import styled from 'styled-components/native';
 import { useTranslation } from 'react-i18next';
+import CurrentLocationBar from '../components/CurrentLocationBar.tsx';
+import MapSearchFilters from '../components/MapSearchFilters.tsx';
+import { useCurrentLocation } from '../hooks/useCurrentLocation.ts';
 import { useFetchMap } from '../services/map.service.ts';
 import { useMapStore } from '../store/map.ts';
-
-const shelterTypeOptions = [
-  '전체',
-  '민방위대피시설',
-  '지진대피장소',
-  '화학사고대피장소',
-  '지진겸용 임시주거시설',
-  '이재민 임시주거시설',
-];
-
-const accessibilityOptions = [
-  '접근성 전체',
-  '경사로',
-  '엘리베이터',
-  '점자블록',
-  '장애인 화장실',
-];
-
-const SHELTER_ALL_LABEL = '전체';
-const ACCESSIBILITY_ALL_LABEL = '접근성 전체';
-const SHELTER_SELECTED_COLOR = '#4aa199';
-const ACCESSIBILITY_SELECTED_COLOR = '#5088dc';
-
-const shelterTypeFilterLabelKeys: Record<string, string> = {
-  전체: 'map.filters.shelterAll',
-  민방위대피시설: 'map.filters.civilDefense',
-  지진대피장소: 'map.filters.earthquake',
-  화학사고대피장소: 'map.filters.chemicalAccident',
-  '지진겸용 임시주거시설': 'map.filters.earthquakeTemporaryHousing',
-  '이재민 임시주거시설': 'map.filters.disasterTemporaryHousing',
-};
-
-const accessibilityFilterLabelKeys: Record<string, string> = {
-  '접근성 전체': 'map.filters.accessibilityAll',
-  경사로: 'map.filters.ramp',
-  엘리베이터: 'map.filters.elevator',
-  점자블록: 'map.filters.brailleBlock',
-  '장애인 화장실': 'map.filters.accessibleToilet',
-};
-
-const shelterTypeTranslationKeys: Record<string, string> = {
-  CIVIL_DEFENSE: 'map.filters.civilDefense',
-  EARTHQUAKE: 'map.filters.earthquake',
-  CHEMICAL_ACCIDENT: 'map.filters.chemicalAccident',
-  EARTHQUAKE_TEMPORARY_HOUSING: 'map.filters.earthquakeTemporaryHousing',
-  DISASTER_TEMPORARY_HOUSING: 'map.filters.disasterTemporaryHousing',
-};
-
-type LocationStatus = 'checking' | 'granted' | 'denied' | 'unavailable';
-type UserLocation = {
-  lat: number;
-  lng: number;
-  accuracy?: number;
-  address?: string;
-};
-
-const { ChamLocation } = NativeModules as {
-  ChamLocation?: {
-    getCurrentLocation: () => Promise<UserLocation>;
-  };
-};
-
-const shelterTypeValueMap: Record<string, string> = {
-  민방위대피시설: 'CIVIL_DEFENSE',
-  지진대피장소: 'EARTHQUAKE',
-  화학사고대피장소: 'CHEMICAL_ACCIDENT',
-  '지진겸용 임시주거시설': 'EARTHQUAKE_TEMPORARY_HOUSING',
-  '이재민 임시주거시설': 'DISASTER_TEMPORARY_HOUSING',
-};
-
-const accessibilityValueMap: Record<string, string> = {
-  경사로: 'RAMP',
-  엘리베이터: 'ELEVATOR',
-  점자블록: 'BRAILLE_BLOCK',
-  '장애인 화장실': 'ACCESSIBLE_TOILET',
-};
-
-const shelterTypeLabelMap: Record<string, string> = {
-  CIVIL_DEFENSE: '민방위대피시설',
-  EARTHQUAKE: '지진대피장소',
-  CHEMICAL_ACCIDENT: '화학사고대피장소',
-  EARTHQUAKE_TEMPORARY_HOUSING: '지진겸용 임시주거시설',
-  DISASTER_TEMPORARY_HOUSING: '이재민 임시주거시설',
-};
+import { useLocationStore } from '../store/location.ts';
+import {
+  ACCESSIBILITY_ALL_LABEL,
+  ACCESSIBILITY_SELECTED_COLOR,
+  SHELTER_ALL_LABEL,
+  SHELTER_SELECTED_COLOR,
+  accessibilityFilterLabelKeys,
+  accessibilityValueMap,
+  shelterTypeLabelMap,
+  shelterTypeTranslationKeys,
+  shelterTypeValueMap,
+  useMapFilterStore,
+} from '../store/mapFilters.ts';
 
 function getShelterTypeLabel(type?: string) {
   if (!type) return '유형 정보 없음';
@@ -106,15 +33,6 @@ function getShelterTypeLabel(type?: string) {
 function getShelterTypeTranslationKey(type?: string) {
   if (!type) return null;
   return shelterTypeTranslationKeys[type] ?? null;
-}
-
-function isKoreaLocation(location: UserLocation) {
-  return (
-    location.lat >= 32 &&
-    location.lat <= 39.5 &&
-    location.lng >= 124 &&
-    location.lng <= 132.5
-  );
 }
 
 function getAccessibilityChips(shelter: ShelterSummary) {
@@ -158,22 +76,6 @@ function getShelterMetaText(shelter: ShelterSummary) {
   ].filter(Boolean);
 
   return parts.join(' · ') || '규모 정보 없음';
-}
-
-async function requestLocationPermission() {
-  if (Platform.OS !== 'android') return true;
-
-  const result = await PermissionsAndroid.request(
-    PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
-    {
-      title: '위치 권한 필요',
-      message: '현재 위치 주변 대피소를 보여주기 위해 위치 권한이 필요합니다.',
-      buttonPositive: '허용',
-      buttonNegative: '거부',
-    },
-  );
-
-  return result === PermissionsAndroid.RESULTS.GRANTED;
 }
 
 interface MapMessageEvent {
@@ -717,67 +619,14 @@ function buildMapHtml(
 
 export default function MapScreen() {
   const { t } = useTranslation();
-  const [selectedShelterTypes, setSelectedShelterTypes] = useState<string[]>([
-    SHELTER_ALL_LABEL,
-  ]);
-  const [selectedAccessibility, setSelectedAccessibility] = useState<string[]>([
-    ACCESSIBILITY_ALL_LABEL,
-  ]);
-  const [locationStatus, setLocationStatus] =
-    useState<LocationStatus>('checking');
-  const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
-  const [locationErrorMessage, setLocationErrorMessage] = useState('');
-  const [locationAddress, setLocationAddress] = useState('');
-
-  useEffect(() => {
-    async function loadLocation() {
-      const granted = await requestLocationPermission();
-      if (!granted) {
-        setLocationStatus('denied');
-        return;
-      }
-
-      setLocationStatus('checking');
-      setLocationErrorMessage('');
-      setLocationAddress('');
-
-      if (!ChamLocation) {
-        setLocationStatus('unavailable');
-        setLocationErrorMessage('위치 모듈을 사용할 수 없습니다');
-        return;
-      }
-
-      try {
-        const location = await ChamLocation.getCurrentLocation();
-        if (!isKoreaLocation(location)) {
-          setUserLocation(null);
-          setLocationStatus('unavailable');
-          setLocationAddress('');
-          setLocationErrorMessage(
-            `현재 위치 좌표가 한국 범위 밖입니다 (${location.lat.toFixed(
-              4,
-            )}, ${location.lng.toFixed(4)})`,
-          );
-          return;
-        }
-
-        setUserLocation(location);
-        setLocationStatus('granted');
-        setLocationAddress(location.address ?? '');
-        setLocationErrorMessage('');
-      } catch (error) {
-        const message =
-          error instanceof Error
-            ? error.message
-            : '현재 위치를 확인할 수 없습니다';
-        setLocationStatus('unavailable');
-        setLocationAddress('');
-        setLocationErrorMessage(message);
-      }
-    }
-
-    loadLocation();
-  }, []);
+  useCurrentLocation();
+  const selectedShelterTypes = useMapFilterStore(
+    state => state.selectedShelterTypes,
+  );
+  const selectedAccessibility = useMapFilterStore(
+    state => state.selectedAccessibility,
+  );
+  const userLocation = useLocationStore(state => state.location);
 
   const mapRequestBody = useMemo(() => {
     const shelterTypes = selectedShelterTypes
@@ -819,16 +668,10 @@ export default function MapScreen() {
   }, [mapData]);
 
   useEffect(() => {
-    if (locationStatus !== 'granted' || !userLocation || locationAddress) {
-      return;
-    }
-
-    const timeoutId = setTimeout(() => {
-      setLocationAddress('주소 확인 실패: Kakao Geocoder 콜백 없음');
-    }, 5000);
-
-    return () => clearTimeout(timeoutId);
-  }, [locationAddress, locationStatus, userLocation]);
+    setSelectedPlace(null);
+    setVisiblePlaces([]);
+    setPanelReady(false);
+  }, [selectedAccessibility, selectedShelterTypes]);
 
   const mapHtml = useMemo(() => {
     const mapKey =
@@ -865,14 +708,6 @@ export default function MapScreen() {
         return;
       }
 
-      if (parsed.type === 'locationAddress' && parsed.address) {
-        if (locationAddress && parsed.address.startsWith('주소 확인 실패')) {
-          return;
-        }
-        setLocationAddress(parsed.address);
-        return;
-      }
-
       if (parsed.type === 'ready') {
         setMapError('');
         setVisiblePlaces(parsed.visiblePlaces ?? []);
@@ -887,59 +722,18 @@ export default function MapScreen() {
         Number.isFinite(parsed.center.lng) &&
         Number.isFinite(parsed.level)
       ) {
+        const level = parsed.level;
+        if (typeof level !== 'number') return;
+
         mapViewRef.current = {
           center: parsed.center,
-          level: parsed.level,
+          level,
         };
         return;
       }
     } catch {
       // no-op
     }
-  };
-
-  const handleShelterTypePress = (item: string) => {
-    setSelectedPlace(null);
-    setVisiblePlaces([]);
-    setPanelReady(false);
-
-    if (item === SHELTER_ALL_LABEL) {
-      setSelectedShelterTypes([SHELTER_ALL_LABEL]);
-      return;
-    }
-
-    setSelectedShelterTypes(prev => {
-      const next = prev.filter(value => value !== SHELTER_ALL_LABEL);
-
-      if (next.includes(item)) {
-        const filtered = next.filter(value => value !== item);
-        return filtered.length ? filtered : [SHELTER_ALL_LABEL];
-      }
-
-      return [...next, item];
-    });
-  };
-
-  const handleAccessibilityPress = (item: string) => {
-    setSelectedPlace(null);
-    setVisiblePlaces([]);
-    setPanelReady(false);
-
-    if (item === ACCESSIBILITY_ALL_LABEL) {
-      setSelectedAccessibility([ACCESSIBILITY_ALL_LABEL]);
-      return;
-    }
-
-    setSelectedAccessibility(prev => {
-      const next = prev.filter(value => value !== ACCESSIBILITY_ALL_LABEL);
-
-      if (next.includes(item)) {
-        const filtered = next.filter(value => value !== item);
-        return filtered.length ? filtered : [ACCESSIBILITY_ALL_LABEL];
-      }
-
-      return [...next, item];
-    });
   };
 
   const handleMoveToUserLocation = () => {
@@ -971,67 +765,16 @@ export default function MapScreen() {
     `);
   };
 
-  const locationStatusText =
-    locationStatus === 'checking'
-      ? '현재 위치 확인 중'
-      : locationStatus === 'granted'
-      ? locationAddress || '현재 위치 주소 확인 중'
-      : locationStatus === 'denied'
-      ? '위치 권한이 필요합니다'
-      : locationErrorMessage || '현재 위치를 확인할 수 없습니다';
-
   return (
     <Screen edges={['top', 'left', 'right']}>
       <Header>
-        <HeaderRow>
-          <Description numberOfLines={1}>{locationStatusText}</Description>
-          {locationStatus === 'granted' && userLocation ? (
-            <LocationButton onPress={handleMoveToUserLocation}>
-              <LocationButtonText>
-                {t('map.labels.nearbyLocation')}
-              </LocationButtonText>
-            </LocationButton>
-          ) : null}
-        </HeaderRow>
+        <CurrentLocationBar
+          actionLabel={t('map.labels.nearbyLocation')}
+          onAction={handleMoveToUserLocation}
+        />
       </Header>
 
-      <FilterSection>
-        <FilterGroup>
-          <FilterRow horizontal showsHorizontalScrollIndicator={false}>
-            {shelterTypeOptions.map(item => (
-              <FilterChip
-                key={item}
-                $selected={selectedShelterTypes.includes(item)}
-                $selectedColor={SHELTER_SELECTED_COLOR}
-                onPress={() => handleShelterTypePress(item)}
-              >
-                <FilterChipText $selected={selectedShelterTypes.includes(item)}>
-                  {t(shelterTypeFilterLabelKeys[item] ?? item)}
-                </FilterChipText>
-              </FilterChip>
-            ))}
-          </FilterRow>
-        </FilterGroup>
-
-        <FilterGroup>
-          <FilterRow horizontal showsHorizontalScrollIndicator={false}>
-            {accessibilityOptions.map(item => (
-              <FilterChip
-                key={item}
-                $selected={selectedAccessibility.includes(item)}
-                $selectedColor={ACCESSIBILITY_SELECTED_COLOR}
-                onPress={() => handleAccessibilityPress(item)}
-              >
-                <FilterChipText
-                  $selected={selectedAccessibility.includes(item)}
-                >
-                  {t(accessibilityFilterLabelKeys[item] ?? item)}
-                </FilterChipText>
-              </FilterChip>
-            ))}
-          </FilterRow>
-        </FilterGroup>
-      </FilterSection>
+      <MapSearchFilters />
 
       <MapFrame>
         {mapHtml ? (
@@ -1186,63 +929,6 @@ const Screen = styled(SafeAreaView)`
 
 const Header = styled.View`
   padding: 20px 20px 12px;
-`;
-
-const HeaderRow = styled.View`
-  min-height: 34px;
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-`;
-
-const Description = styled.Text`
-  flex: 1;
-  color: #6b7280;
-  font-size: 12px;
-`;
-
-const LocationButton = styled.Pressable`
-  flex-shrink: 0;
-  padding: 8px 10px;
-  border-radius: 999px;
-  background-color: #ef4444;
-`;
-
-const LocationButtonText = styled.Text`
-  color: #ffffff;
-  font-size: 12px;
-  font-weight: 800;
-`;
-
-const FilterSection = styled.View`
-  gap: 10px;
-  padding: 0 20px;
-`;
-
-const FilterGroup = styled.View`
-  gap: 8px;
-`;
-
-const FilterRow = styled.ScrollView`
-  max-height: 46px;
-`;
-
-const FilterChip = styled.Pressable<{
-  $selected: boolean;
-  $selectedColor: string;
-}>`
-  margin-right: 8px;
-  padding: 10px 14px;
-  border-radius: 999px;
-  background-color: ${({ $selected, $selectedColor }) =>
-    $selected ? $selectedColor : '#ffffff'};
-`;
-
-const FilterChipText = styled.Text<{ $selected: boolean }>`
-  color: ${({ $selected }) => ($selected ? '#ffffff' : '#374151')};
-  font-size: 13px;
-  font-weight: 600;
 `;
 
 const MapFrame = styled.View`
