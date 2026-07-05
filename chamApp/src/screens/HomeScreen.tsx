@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { Linking, Modal } from 'react-native';
 import styled from 'styled-components/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
+import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { ChevronLeft, ChevronRight } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import CurrentLocationBar from '../components/CurrentLocationBar.tsx';
@@ -20,6 +22,7 @@ import {
   shelterTypeTranslationKeys,
 } from '../store/mapFilters.ts';
 import { useFetchDisaster } from '../services/disaster.service.ts';
+import type { RootTabParamList } from '../navigation/AppNavigator.tsx';
 
 function getShelterTypeLabel(type?: string) {
   if (!type) return '유형 정보 없음';
@@ -68,16 +71,14 @@ function formatDisasterDate(dateString?: string) {
 
 export default function HomeScreen() {
   const { t, i18n } = useTranslation();
+  const navigation = useNavigation<BottomTabNavigationProp<RootTabParamList>>();
   useCurrentLocation();
   useFetchSMS();
   useFetchDisaster();
   useFetchNearestShelter();
   const smsData = useSMSStore(state => state.sms);
-  console.log('smsData', smsData);
   const disasterData = useDisasterStore(state => state.disaster);
-  console.log('disasterData', disasterData);
   const nearestShelter = useNearestShelterStore(state => state.nearestShelter);
-  console.log('nearestShelter', nearestShelter);
   const disasterSummary = disasterData?.summary?.slice(0, 3) ?? [];
   const disasterDate = formatDisasterDate(disasterData?.createDate);
   const [isSMSModalVisible, setIsSMSModalVisible] = useState(false);
@@ -86,6 +87,15 @@ export default function HomeScreen() {
   const handlePressDisaster = () => {
     if (!disasterData?.originUrl) return;
     Linking.openURL(disasterData.originUrl);
+  };
+  const handlePressNearestShelter = () => {
+    if (!nearestShelter) return;
+
+    navigation.navigate('Map', {
+      focusPlaceId: nearestShelter.placeId ?? undefined,
+      focusShelterId: nearestShelter.shelterId,
+      focusNonce: Date.now(),
+    });
   };
 
   return (
@@ -143,7 +153,7 @@ export default function HomeScreen() {
         <CurrentLocationBar />
         <MapSearchFilters horizontalPadding={0} showShelterTypes={false} />
         {nearestShelter ? (
-          <ShelterItem>
+          <ShelterItem onPress={handlePressNearestShelter}>
             <ShelterTitleRow>
               <ShelterName>{nearestShelter.name}</ShelterName>
               <TypeChip>
@@ -255,7 +265,7 @@ const MiddleSection = styled.View`
   margin-top: 16px;
 `;
 
-const ShelterItem = styled.View`
+const ShelterItem = styled.Pressable`
   gap: 5px;
   margin-top: 2px;
   padding: 10px;

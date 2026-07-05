@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator } from 'react-native';
 import Config from 'react-native-config';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRoute, type RouteProp } from '@react-navigation/native';
 import { WebView } from 'react-native-webview';
 import { ChevronLeft } from 'lucide-react-native';
 import styled from 'styled-components/native';
@@ -24,6 +25,7 @@ import {
   shelterTypeValueMap,
   useMapFilterStore,
 } from '../store/mapFilters.ts';
+import type { RootTabParamList } from '../navigation/AppNavigator.tsx';
 
 function getShelterTypeLabel(type?: string) {
   if (!type) return '유형 정보 없음';
@@ -121,6 +123,32 @@ interface WebMessagePayload {
     lng: number;
   };
   level?: number;
+}
+
+function normalizeSelectedPlace(item: any): SelectedPlace {
+  const shelters = Array.isArray(item?.shelters) ? item.shelters : [];
+
+  return {
+    placeId: item?.placeId,
+    name: item?.name || '대피소',
+    address: item?.address || item?.oldAddress || '',
+    description: item?.description || '',
+    shelterCount: shelters.length,
+    accessibilityMatchStatus: item?.accessibilityMatchStatus,
+    shelters: shelters.map((shelter: any) => ({
+      shelterId: shelter.shelterId,
+      name: shelter.name || item?.name || '대피소',
+      shelterType: shelter.shelterType,
+      capacity: shelter.capacity,
+      area: shelter.area,
+      managingAuthorityName: shelter.managingAuthorityName,
+      managingAuthorityTelNo: shelter.managingAuthorityTelNo,
+      accessibleToilet: shelter.accessibleToilet,
+      ramp: shelter.ramp,
+      elevator: shelter.elevator,
+      brailleBlock: shelter.brailleBlock,
+    })),
+  };
 }
 
 interface MapViewState {
@@ -619,6 +647,7 @@ function buildMapHtml(
 
 export default function MapScreen() {
   const { t } = useTranslation();
+  const route = useRoute<RouteProp<RootTabParamList, 'Map'>>();
   useCurrentLocation();
   const selectedShelterTypes = useMapFilterStore(
     state => state.selectedShelterTypes,
@@ -650,7 +679,6 @@ export default function MapScreen() {
     refreshOnFocus: true,
   });
   const mapData = useMapStore(state => state.map);
-  console.log('mapData', mapData);
   const [selectedPlace, setSelectedPlace] = useState<SelectedPlace | null>(
     null,
   );
@@ -660,6 +688,7 @@ export default function MapScreen() {
   const [panelReady, setPanelReady] = useState(false);
   const mapViewRef = useRef<MapViewState | null>(null);
   const webViewRef = useRef<WebView>(null);
+  const pendingFocusPlaceIdRef = useRef<number | null>(null);
 
   useEffect(() => {
     setSelectedPlace(null);
@@ -712,6 +741,16 @@ export default function MapScreen() {
         setMapError('');
         setVisiblePlaces(parsed.visiblePlaces ?? []);
         setPanelReady(true);
+        if (pendingFocusPlaceIdRef.current) {
+          webViewRef.current?.injectJavaScript(`
+            if (window.__selectPlaceMarker) {
+              window.__selectPlaceMarker(${JSON.stringify(
+                pendingFocusPlaceIdRef.current,
+              )});
+            }
+            true;
+          `);
+        }
         return;
       }
 
@@ -754,6 +793,25 @@ export default function MapScreen() {
       true;
     `);
   };
+
+  useEffect(() => {
+    const focusPlaceId = route.params?.focusPlaceId;
+    if (!focusPlaceId || !mapData?.details) return;
+
+    const detail = Object.values(mapData.details).find(
+      (item: any) => Number(item?.placeId) === Number(focusPlaceId),
+    );
+    if (!detail) return;
+
+    pendingFocusPlaceIdRef.current = focusPlaceId;
+    setSelectedPlace(normalizeSelectedPlace(detail));
+    webViewRef.current?.injectJavaScript(`
+      if (window.__selectPlaceMarker) {
+        window.__selectPlaceMarker(${JSON.stringify(focusPlaceId)});
+      }
+      true;
+    `);
+  }, [mapData, route.params?.focusNonce, route.params?.focusPlaceId]);
 
   const handleBackToPlaceList = () => {
     setSelectedPlace(null);

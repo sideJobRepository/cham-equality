@@ -15,7 +15,13 @@ import MoreScreen from '../screens/MoreScreen';
 
 export type RootTabParamList = {
   Home: undefined;
-  Map: undefined;
+  Map:
+    | {
+        focusPlaceId?: number;
+        focusShelterId?: number;
+        focusNonce?: number;
+      }
+    | undefined;
   Manual: undefined;
   More: undefined;
 };

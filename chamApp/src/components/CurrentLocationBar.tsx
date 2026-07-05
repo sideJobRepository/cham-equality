@@ -17,7 +17,6 @@ export default function CurrentLocationBar({
 
   const address = useLocationStore(state => state.address);
   const errorMessage = useLocationStore(state => state.errorMessage);
-  console.log('address', address);
   const locationStatusText =
     status === 'checking'
       ? t('map.location.checking')
