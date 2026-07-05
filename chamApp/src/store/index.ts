@@ -6,3 +6,4 @@ export * from './user';
 export * from './language';
 export * from './mapFilters';
 export * from './location';
+export * from './nearestShelter';

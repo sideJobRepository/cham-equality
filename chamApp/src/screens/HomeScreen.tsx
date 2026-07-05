@@ -9,8 +9,49 @@ import MapSearchFilters from '../components/MapSearchFilters.tsx';
 import { useCurrentLocation } from '../hooks/useCurrentLocation.ts';
 import SpeakerIcon from '../assets/icons/SpeakerIcon';
 import { useFetchSMS } from '../services/sms.service.ts';
-import { useDisasterStore, useSMSStore } from '../store';
+import { useFetchNearestShelter } from '../services/map.service.ts';
+import { useDisasterStore, useNearestShelterStore, useSMSStore } from '../store';
+import type { NearestShelter } from '../store/nearestShelter.ts';
+import {
+  ACCESSIBILITY_SELECTED_COLOR,
+  SHELTER_SELECTED_COLOR,
+  accessibilityFilterLabelKeys,
+  shelterTypeLabelMap,
+  shelterTypeTranslationKeys,
+} from '../store/mapFilters.ts';
 import { useFetchDisaster } from '../services/disaster.service.ts';
+
+function getShelterTypeLabel(type?: string) {
+  if (!type) return '유형 정보 없음';
+  return shelterTypeLabelMap[type] ?? type;
+}
+
+function getShelterTypeTranslationKey(type?: string) {
+  if (!type) return null;
+  return shelterTypeTranslationKeys[type] ?? null;
+}
+
+function getAccessibilityChips(shelter: NearestShelter) {
+  return [
+    { label: '경사로', active: shelter.ramp === true },
+    { label: '엘리베이터', active: shelter.elevator === true },
+    { label: '점자블록', active: shelter.brailleBlock === true },
+    { label: '장애인 화장실', active: shelter.accessibleToilet === true },
+  ];
+}
+
+function getShelterMetaText(shelter: NearestShelter) {
+  const parts = [
+    typeof shelter.capacity === 'number'
+      ? `수용 ${shelter.capacity.toLocaleString()}명`
+      : null,
+    typeof shelter.area === 'number'
+      ? `${shelter.area.toLocaleString()}㎡`
+      : null,
+  ].filter(Boolean);
+
+  return parts.join(' · ') || '규모 정보 없음';
+}
 
 function formatDisasterDate(dateString?: string) {
   if (!dateString) return '';
@@ -30,10 +71,13 @@ export default function HomeScreen() {
   useCurrentLocation();
   useFetchSMS();
   useFetchDisaster();
+  useFetchNearestShelter();
   const smsData = useSMSStore(state => state.sms);
   console.log('smsData', smsData);
   const disasterData = useDisasterStore(state => state.disaster);
   console.log('disasterData', disasterData);
+  const nearestShelter = useNearestShelterStore(state => state.nearestShelter);
+  console.log('nearestShelter', nearestShelter);
   const disasterSummary = disasterData?.summary?.slice(0, 3) ?? [];
   const disasterDate = formatDisasterDate(disasterData?.createDate);
   const [isSMSModalVisible, setIsSMSModalVisible] = useState(false);
@@ -97,7 +141,43 @@ export default function HomeScreen() {
       </TopSection>
       <MiddleSection>
         <CurrentLocationBar />
-        <MapSearchFilters horizontalPadding={0} />
+        <MapSearchFilters horizontalPadding={0} showShelterTypes={false} />
+        {nearestShelter ? (
+          <ShelterItem>
+            <ShelterTitleRow>
+              <ShelterName>{nearestShelter.name}</ShelterName>
+              <TypeChip>
+                <TypeChipText>
+                  {t(
+                    getShelterTypeTranslationKey(nearestShelter.shelterType) ??
+                      getShelterTypeLabel(nearestShelter.shelterType),
+                  )}
+                </TypeChipText>
+              </TypeChip>
+            </ShelterTitleRow>
+            <ShelterMeta>{getShelterMetaText(nearestShelter)}</ShelterMeta>
+            <ShelterMeta>
+              {[
+                nearestShelter.managingAuthorityName,
+                nearestShelter.managingAuthorityTelNo,
+              ]
+                .filter(Boolean)
+                .join(' · ') || '관리기관 정보 없음'}
+            </ShelterMeta>
+            <ChipRow>
+              {getAccessibilityChips(nearestShelter).map(chip => (
+                <AccessChip
+                  key={`${nearestShelter.shelterId}-${chip.label}`}
+                  $active={chip.active}
+                >
+                  <AccessChipText $active={chip.active}>
+                    {t(accessibilityFilterLabelKeys[chip.label] ?? chip.label)}
+                  </AccessChipText>
+                </AccessChip>
+              ))}
+            </ChipRow>
+          </ShelterItem>
+        ) : null}
       </MiddleSection>
       <Modal
         animationType="fade"
@@ -173,6 +253,72 @@ const MiddleSection = styled.View`
   width: 100%;
   gap: 10px;
   margin-top: 16px;
+`;
+
+const ShelterItem = styled.View`
+  gap: 5px;
+  margin-top: 2px;
+  padding: 10px;
+  border-radius: 12px;
+  background-color: #f8fafc;
+  border-width: 1px;
+  border-color: #e5e7eb;
+`;
+
+const ShelterTitleRow = styled.View`
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+`;
+
+const ShelterName = styled.Text`
+  width: 100%;
+  color: #111827;
+  font-size: 14px;
+  line-height: 19px;
+  font-weight: 800;
+`;
+
+const ShelterMeta = styled.Text`
+  color: #4b5563;
+  font-size: 12px;
+  line-height: 18px;
+`;
+
+const ChipRow = styled.View`
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 2px;
+`;
+
+const TypeChip = styled.View`
+  padding: 4px 7px;
+  border-radius: 999px;
+  background-color: ${SHELTER_SELECTED_COLOR};
+`;
+
+const TypeChipText = styled.Text`
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 800;
+`;
+
+const AccessChip = styled.View<{ $active: boolean }>`
+  padding: 5px 7px;
+  border-radius: 999px;
+  background-color: ${({ $active }) =>
+    $active ? ACCESSIBILITY_SELECTED_COLOR : '#f3f4f6'};
+  border-width: 1px;
+  border-color: ${({ $active }) =>
+    $active ? ACCESSIBILITY_SELECTED_COLOR : '#e5e7eb'};
+`;
+
+const AccessChipText = styled.Text<{ $active: boolean }>`
+  color: ${({ $active }) => ($active ? '#ffffff' : '#9ca3af')};
+  font-size: 10px;
+  font-weight: 800;
 `;
 
 const LanguageRow = styled.View`

@@ -12,10 +12,12 @@ import {
 
 interface MapSearchFiltersProps {
   horizontalPadding?: number;
+  showShelterTypes?: boolean;
 }
 
 export default function MapSearchFilters({
   horizontalPadding = 20,
+  showShelterTypes = true,
 }: MapSearchFiltersProps) {
   const { t } = useTranslation();
   const selectedShelterTypes = useMapFilterStore(
@@ -31,22 +33,24 @@ export default function MapSearchFilters({
 
   return (
     <FilterSection $horizontalPadding={horizontalPadding}>
-      <FilterGroup>
-        <FilterRow horizontal showsHorizontalScrollIndicator={false}>
-          {shelterTypeOptions.map(item => (
-            <FilterChip
-              key={item}
-              $selected={selectedShelterTypes.includes(item)}
-              $selectedColor={SHELTER_SELECTED_COLOR}
-              onPress={() => toggleShelterType(item)}
-            >
-              <FilterChipText $selected={selectedShelterTypes.includes(item)}>
-                {t(shelterTypeFilterLabelKeys[item] ?? item)}
-              </FilterChipText>
-            </FilterChip>
-          ))}
-        </FilterRow>
-      </FilterGroup>
+      {showShelterTypes ? (
+        <FilterGroup>
+          <FilterRow horizontal showsHorizontalScrollIndicator={false}>
+            {shelterTypeOptions.map(item => (
+              <FilterChip
+                key={item}
+                $selected={selectedShelterTypes.includes(item)}
+                $selectedColor={SHELTER_SELECTED_COLOR}
+                onPress={() => toggleShelterType(item)}
+              >
+                <FilterChipText $selected={selectedShelterTypes.includes(item)}>
+                  {t(shelterTypeFilterLabelKeys[item] ?? item)}
+                </FilterChipText>
+              </FilterChip>
+            ))}
+          </FilterRow>
+        </FilterGroup>
+      ) : null}
 
       <FilterGroup>
         <FilterRow horizontal showsHorizontalScrollIndicator={false}>
