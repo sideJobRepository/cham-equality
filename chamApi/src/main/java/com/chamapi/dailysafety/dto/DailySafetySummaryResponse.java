@@ -12,10 +12,15 @@ public record DailySafetySummaryResponse(
         LocalDateTime createDate
 ) {
     public static DailySafetySummaryResponse from(DailySafetySummary summary) {
+        return from(summary, summary.getOriginTitle(), summary.getSummary());
+    }
+
+    /** 제목·summary 를 요청 언어 번역본으로 대체해 반환. */
+    public static DailySafetySummaryResponse from(DailySafetySummary summary, String title, List<String> summaryList) {
         return new DailySafetySummaryResponse(
-                summary.getOriginTitle(),
+                title,
                 summary.getOriginUrl(),
-                summary.getSummary(),
+                summaryList,
                 summary.getCreateDate()
         );
     }

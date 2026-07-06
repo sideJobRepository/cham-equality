@@ -8,10 +8,15 @@ import java.time.LocalDateTime;
 public record DisasterMessageResponse(Long id, Long sn, String content, String regionName, EmergencyStep emergencyStep, String emergencyStepLabel, String category, LocalDateTime issuedAt
 ) {
     public static DisasterMessageResponse from(DisasterMessage m) {
+        return from(m, m.getContent());
+    }
+
+    /** content 를 요청 언어 번역문으로 대체해 반환 (배너 다국어용). */
+    public static DisasterMessageResponse from(DisasterMessage m, String content) {
         return new DisasterMessageResponse(
                 m.getId(),
                 m.getSn(),
-                m.getContent(),
+                content,
                 m.getRegionName(),
                 m.getEmergencyStep(),
                 m.getEmergencyStep().getLabel(),

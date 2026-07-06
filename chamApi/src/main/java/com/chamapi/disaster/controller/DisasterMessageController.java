@@ -5,8 +5,8 @@ import com.chamapi.disaster.dto.response.DisasterMessageResponse;
 import com.chamapi.disaster.service.DisasterMessageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -22,9 +22,9 @@ public class DisasterMessageController {
 
     private final DisasterMessageService disasterMessageService;
 
-    /** 대전 지역 재난문자 최신 5건 (발령시각 내림차순). 메인 홈 배너용. */
+    /** 대전 지역 재난문자 최신 5건 (발령시각 내림차순). 메인 홈 배너용. lang 으로 번역문 반환(기본 ko). */
     @GetMapping("/disaster-messages/latest")
-    public ApiResponse<List<DisasterMessageResponse>> latest() {
-        return new ApiResponse<>(200, true, disasterMessageService.findLatest());
+    public ApiResponse<List<DisasterMessageResponse>> latest(@RequestParam(defaultValue = "ko") String lang) {
+        return new ApiResponse<>(200, true, disasterMessageService.findLatest(lang));
     }
 }

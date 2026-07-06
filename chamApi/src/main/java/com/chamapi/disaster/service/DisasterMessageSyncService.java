@@ -6,6 +6,9 @@ import com.chamapi.disaster.dto.external.SafetyDataItem;
 import com.chamapi.disaster.entity.DisasterMessage;
 import com.chamapi.disaster.enums.EmergencyStep;
 import com.chamapi.disaster.repository.DisasterMessageRepository;
+import com.chamapi.multilingual.entity.Language;
+import com.chamapi.multilingual.service.MultilingualContentService;
+import com.chamapi.translation.client.TranslationClient;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -17,8 +20,10 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -35,8 +40,15 @@ public class DisasterMessageSyncService {
     private static final DateTimeFormatter ISSUED_AT_FORMAT = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
     private static final int MAX_PAGES = 50;
 
+    // KO 를 제외한 번역 대상 언어 전체 (EN/ZH/JA/VI).
+    private static final List<Language> TARGET_LANGUAGES = Arrays.stream(Language.values())
+            .filter(language -> language != Language.KO)
+            .toList();
+
     private final SafetyDataClient client;
     private final DisasterMessageRepository repository;
+    private final MultilingualContentService multilingualContentService;
+    private final TranslationClient translationClient;
     private final SafetyDataProperties properties;
 
     @Transactional
@@ -79,8 +91,49 @@ public class DisasterMessageSyncService {
         if (toInsert.isEmpty()) return 0;
 
         repository.saveAll(toInsert);
+        saveTranslations(toInsert);
         log.info("disaster message sync inserted={} date={} region={}", toInsert.size(), date, region);
         return toInsert.size();
+    }
+
+    /**
+     * 아직 번역되지 않은 재난문자를 재시도 번역 (스케줄러가 sync 뒤 호출).
+     * 저장 시점 번역이 실패(전부 실패)로 남겨둔 것들을 채운다.
+     */
+    @Transactional
+    public void translateUntranslated() {
+        for (DisasterMessage message : repository.findByTranslationWhetherFalse()) {
+            translateOne(message);
+        }
+    }
+
+    private void saveTranslations(List<DisasterMessage> messages) {
+        for (DisasterMessage message : messages) {
+            translateOne(message);
+        }
+    }
+
+    /**
+     * 재난문자 하나를 번역해 MULTILINGUAL 에 저장하고 번역 완료로 마킹.
+     * 번역이 전부 실패하면 아무것도 저장/마킹하지 않아 다음 스케줄러 주기에 재시도한다
+     * (KO 도 저장하지 않음 — 재시도 시 중복을 막고, 읽기는 원문으로 폴백된다).
+     */
+    private void translateOne(DisasterMessage message) {
+        Map<Language, String> translated = translationClient.translate(message.getContent(), TARGET_LANGUAGES);
+        if (translated.isEmpty()) {
+            log.warn("disaster message translation empty, will retry. messageId={}", message.getId());
+            return;
+        }
+
+        // 재난문자는 제목이 없으므로 title=null, 내용만 저장.
+        Map<Language, MultilingualContentService.Translated> byLanguage = new LinkedHashMap<>();
+        byLanguage.put(Language.KO, new MultilingualContentService.Translated(null, message.getContent()));
+        translated.forEach((language, content) ->
+                byLanguage.put(language, new MultilingualContentService.Translated(null, content)));
+
+        multilingualContentService.save(
+                MultilingualContentService.TYPE_DISASTER_MESSAGE, message.getId(), byLanguage);
+        message.markTranslated();
     }
 
     private DisasterMessage toEntity(SafetyDataItem item) {

@@ -15,13 +15,18 @@ public class DisasterMessageSchedule {
 
     private final DisasterMessageSyncService syncService;
 
-    /** 매 5분 정각(00, 05, 10, ...)에 safetydata.go.kr 동기화. */
+//    /** [테스트용] 10초마다 safetydata.go.kr 동기화 후 미번역분 재시도 번역. 운영 복귀 시 "0 */5 * * * *" 로 원복. */
     @Scheduled(cron = "0 */5 * * * *", zone = "Asia/Seoul")
     public void run() {
         try {
             syncService.sync();
         } catch (Exception e) {
             log.warn("disaster message sync failed: {}", e.getMessage());
+        }
+        try {
+            syncService.translateUntranslated();
+        } catch (Exception e) {
+            log.warn("disaster message translation retry failed: {}", e.getMessage());
         }
     }
 }

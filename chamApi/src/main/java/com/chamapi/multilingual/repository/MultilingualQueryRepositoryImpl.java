@@ -2,14 +2,12 @@ package com.chamapi.multilingual.repository;
 
 import com.chamapi.multilingual.entity.Language;
 import com.chamapi.multilingual.entity.Multilingual;
-import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 
 import java.util.List;
 
 import static com.chamapi.multilingual.entity.QMultilingual.*;
-import static java.util.Objects.*;
 
 @RequiredArgsConstructor
 public class MultilingualQueryRepositoryImpl implements MultilingualQueryRepository {
@@ -17,26 +15,17 @@ public class MultilingualQueryRepositoryImpl implements MultilingualQueryReposit
     private final JPAQueryFactory queryFactory;
 
     @Override
-    public List<Multilingual> search(String menu, Language language) {
+    public List<Multilingual> findByTranslationTypeAndTargetIdsAndLanguages(String translationType, List<Long> targetIds, List<Language> languages) {
+        if (targetIds.isEmpty() || languages.isEmpty()) {
+            return List.of();
+        }
         return queryFactory
                 .selectFrom(multilingual)
                 .where(
-                        menuEq(menu),
-                        languageEq(language)
+                        multilingual.translationType.eq(translationType),
+                        multilingual.targetId.in(targetIds),
+                        multilingual.language.in(languages)
                 )
                 .fetch();
     }
-
-    private BooleanExpression menuEq(String menu) {
-        if (isNull(menu) || menu.isBlank())
-            return null;
-        return multilingual.menu.eq(menu);
-    }
-
-    private BooleanExpression languageEq(Language language) {
-        if (isNull(language))
-            return null;
-        return multilingual.language.eq(language);
-    }
-
 }

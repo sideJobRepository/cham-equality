@@ -18,7 +18,6 @@ import static jakarta.persistence.GenerationType.IDENTITY;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Builder
 public class DailySafetySummary extends DateSuperClass {
 
     @Id
@@ -39,11 +38,21 @@ public class DailySafetySummary extends DateSuperClass {
     @Column(name = "SUMMARY", columnDefinition = "TEXT", nullable = false)
     private List<String> summary;
 
+    // 번역 완료 여부. 크롤러 적재 시 0(미번역)으로 시작, 번역 스케줄러가 채운 뒤 true 로 마킹.
+    @Column(name = "TRANSLATION_WHETHER", nullable = false)
+    private boolean translationWhether;
+
+    @Builder
     public DailySafetySummary(Long id, String originTitle, String originUrl, String refinedHtml, List<String> summary) {
         this.id = id;
         this.originTitle = originTitle;
         this.originUrl = originUrl;
         this.refinedHtml = refinedHtml;
         this.summary = summary;
+    }
+
+    /** 번역 저장을 마친 뒤 호출 — 다음 주기에 다시 잡히지 않게 한다. */
+    public void markTranslated() {
+        this.translationWhether = true;
     }
 }

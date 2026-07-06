@@ -16,7 +16,6 @@ import static jakarta.persistence.GenerationType.IDENTITY;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Builder
 public class DisasterMessage extends DateSuperClass {
 
     @Id
@@ -45,6 +44,11 @@ public class DisasterMessage extends DateSuperClass {
     @Column(name = "DISASTER_MESSAGE_ISSUE_DATE")
     private LocalDateTime issuedAt;
 
+    // 번역 완료 여부. 적재 시 0(미번역)으로 시작, 저장 시점 번역 성공 또는 스케줄러 재시도로 채운 뒤 true 로 마킹.
+    @Column(name = "TRANSLATION_WHETHER", nullable = false)
+    private boolean translationWhether;
+
+    @Builder
     public DisasterMessage(Long id, Long sn, String content, String regionName, EmergencyStep emergencyStep, String category, LocalDateTime issuedAt) {
         this.id = id;
         this.sn = sn;
@@ -53,5 +57,10 @@ public class DisasterMessage extends DateSuperClass {
         this.emergencyStep = emergencyStep;
         this.category = category;
         this.issuedAt = issuedAt;
+    }
+
+    /** 번역 저장을 마친 뒤 호출 — 다음 재시도 대상에서 빠진다. */
+    public void markTranslated() {
+        this.translationWhether = true;
     }
 }

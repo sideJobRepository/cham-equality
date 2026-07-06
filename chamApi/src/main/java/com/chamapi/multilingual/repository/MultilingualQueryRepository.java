@@ -7,6 +7,7 @@ import java.util.List;
 
 public interface MultilingualQueryRepository {
 
-    List<Multilingual> search(String menu, Language language);
+    /** 특정 번역 타입에서 지정 타겟 ID·언어 행 일괄 조회. */
+    List<Multilingual> findByTranslationTypeAndTargetIdsAndLanguages(String translationType, List<Long> targetIds, List<Language> languages);
 
 }
