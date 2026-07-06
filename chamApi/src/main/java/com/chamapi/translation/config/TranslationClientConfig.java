@@ -1,39 +1,34 @@
 package com.chamapi.translation.config;
 
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.client.ClientHttpRequestFactory;
-import org.springframework.http.client.JdkClientHttpRequestFactory;
-import org.springframework.http.client.SimpleClientHttpRequestFactory;
-import org.springframework.web.client.RestClient;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.translate.TranslateClient;
 
-import java.net.http.HttpClient;
-import java.time.Duration;
-
+/**
+ * Amazon Translate 클라이언트. S3 와 동일한 AWS 자격증명(spring.cloud.aws.*)을 재사용한다.
+ */
 @Configuration
-@EnableConfigurationProperties(TranslationProperties.class)
 public class TranslationClientConfig {
 
-    @Bean(name = "translationRestClient")
-    public RestClient translationRestClient(TranslationProperties properties) {
-        HttpClient httpClient = HttpClient.newBuilder()
-                .connectTimeout(Duration.ofSeconds(3))
-                .build();
+    @Value("${spring.cloud.aws.credentials.access-key}")
+    private String accessKey;
 
-        ClientHttpRequestFactory factory = new JdkClientHttpRequestFactory(httpClient);
-        if (factory instanceof JdkClientHttpRequestFactory jdkFactory) {
-            jdkFactory.setReadTimeout(Duration.ofMillis(properties.getTimeoutMillis()));
-        } else if (factory instanceof SimpleClientHttpRequestFactory simple) {
-            simple.setReadTimeout(Duration.ofMillis(properties.getTimeoutMillis()));
-        }
+    @Value("${spring.cloud.aws.credentials.secret-key}")
+    private String secretKey;
 
-        return RestClient.builder()
-                .baseUrl(properties.getBaseUrl())
-                .defaultHeader(HttpHeaders.ACCEPT, "application/json")
-                .defaultHeader(HttpHeaders.AUTHORIZATION, "DeepL-Auth-Key " + properties.getApiKey())
-                .requestFactory(factory)
+    @Value("${spring.cloud.aws.region.static}")
+    private String region;
+
+    @Bean
+    public TranslateClient translateClient() {
+        return TranslateClient.builder()
+                .region(Region.of(region))
+                .credentialsProvider(StaticCredentialsProvider.create(
+                        AwsBasicCredentials.create(accessKey, secretKey)))
                 .build();
     }
 }

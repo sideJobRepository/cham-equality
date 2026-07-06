@@ -46,6 +46,9 @@ dependencies {
     implementation 'io.awspring.cloud:spring-cloud-aws-starter-s3'
     implementation platform("io.awspring.cloud:spring-cloud-aws-dependencies:4.0.0")
 
+    //Amazon Translate (번역)
+    implementation 'software.amazon.awssdk:translate'
+
     //log4 jdbc2
     implementation 'org.bgee.log4jdbc-log4j2:log4jdbc-log4j2-jdbc4.1:1.16'
     //mysql
