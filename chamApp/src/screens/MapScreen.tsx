@@ -1,10 +1,20 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator } from 'react-native';
+import {
+  ActivityIndicator,
+  Modal,
+  type ImageSourcePropType,
+} from 'react-native';
 import Config from 'react-native-config';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRoute, type RouteProp } from '@react-navigation/native';
 import { WebView } from 'react-native-webview';
-import { ChevronLeft, Square, Users } from 'lucide-react-native';
+import {
+  ChevronLeft,
+  ChevronRight,
+  Square,
+  Users,
+  X,
+} from 'lucide-react-native';
 import styled from 'styled-components/native';
 import { useTranslation } from 'react-i18next';
 import CurrentLocationBar from '../components/CurrentLocationBar.tsx';
@@ -25,6 +35,8 @@ import {
   useMapFilterStore,
 } from '../store/mapFilters.ts';
 import type { RootTabParamList } from '../navigation/AppNavigator.tsx';
+
+const defaultShelterImage = require('../assets/images/shelter.png') as ImageSourcePropType;
 
 function getShelterTypeLabel(type?: string) {
   if (!type) return '유형 정보 없음';
@@ -84,6 +96,12 @@ interface ShelterSummary {
   ramp?: boolean;
   elevator?: boolean;
   brailleBlock?: boolean;
+  images?: ShelterImage[];
+}
+
+interface ShelterImage {
+  category?: string;
+  url?: string;
 }
 
 interface SelectedPlace {
@@ -133,8 +151,19 @@ function normalizeSelectedPlace(item: any): SelectedPlace {
       ramp: shelter.ramp,
       elevator: shelter.elevator,
       brailleBlock: shelter.brailleBlock,
+      images: Array.isArray(shelter.images) ? shelter.images : [],
     })),
   };
+}
+
+function getShelterImageSources(shelter: ShelterSummary): ImageSourcePropType[] {
+  const sources =
+    shelter.images
+      ?.map(image => image.url)
+      .filter((url): url is string => typeof url === 'string' && !!url.trim())
+      .map(url => ({ uri: url })) ?? [];
+
+  return sources.length ? sources : [defaultShelterImage];
 }
 
 interface MapViewState {
@@ -252,6 +281,7 @@ function buildMapHtml(
               ramp: shelter.ramp,
               elevator: shelter.elevator,
               brailleBlock: shelter.brailleBlock,
+              images: Array.isArray(shelter.images) ? shelter.images : [],
             };
           }),
         };
@@ -665,11 +695,30 @@ export default function MapScreen() {
     body: mapRequestBody,
   });
   const mapData = useMapStore(state => state.map);
+  useEffect(() => {
+    const sheltersWithImages = Object.values(mapData?.details ?? {})
+      .flatMap((place: any) => place?.shelters ?? [])
+      .filter(
+        (shelter: any) =>
+          Array.isArray(shelter?.images) && shelter.images.length > 0,
+      );
+
+    if (sheltersWithImages.length) {
+      console.log('sheltersWithImages', sheltersWithImages);
+    }
+  }, [mapData]);
   const [selectedPlace, setSelectedPlace] = useState<SelectedPlace | null>(
     null,
   );
 
   const [visiblePlaces, setVisiblePlaces] = useState<SelectedPlace[]>([]);
+  const [shelterImageIndexes, setShelterImageIndexes] = useState<
+    Record<number, number>
+  >({});
+  const [imageModal, setImageModal] = useState<{
+    images: ImageSourcePropType[];
+    index: number;
+  } | null>(null);
   const [mapError, setMapError] = useState('');
   const [panelReady, setPanelReady] = useState(false);
   const mapViewRef = useRef<MapViewState | null>(null);
@@ -740,7 +789,9 @@ export default function MapScreen() {
           pendingFocusPlaceIdRef.current = null;
           webViewRef.current?.injectJavaScript(`
             if (window.__selectPlaceMarker) {
-              window.__selectPlaceMarker(${JSON.stringify(pendingFocusPlaceId)});
+              window.__selectPlaceMarker(${JSON.stringify(
+                pendingFocusPlaceId,
+              )});
             }
             true;
           `);
@@ -822,6 +873,18 @@ export default function MapScreen() {
     `);
   };
 
+  const handleChangeShelterImage = (
+    shelterId: number,
+    imageCount: number,
+    direction: 1 | -1,
+  ) => {
+    setShelterImageIndexes(prev => {
+      const current = prev[shelterId] ?? 0;
+      const next = (current + direction + imageCount) % imageCount;
+      return { ...prev, [shelterId]: next };
+    });
+  };
+
   return (
     <Screen edges={['top', 'left', 'right']}>
       <Header>
@@ -886,8 +949,69 @@ export default function MapScreen() {
 
             <PanelScroll showsVerticalScrollIndicator={false}>
               {selectedPlace.shelters.length ? (
-                selectedPlace.shelters.map(shelter => (
-                  <ShelterItem key={String(shelter.shelterId)}>
+                selectedPlace.shelters.map(shelter => {
+                  const shelterImages = getShelterImageSources(shelter);
+                  const imageIndex = Math.min(
+                    shelterImageIndexes[shelter.shelterId] ?? 0,
+                    shelterImages.length - 1,
+                  );
+
+                  return (
+                    <ShelterItem key={String(shelter.shelterId)}>
+                      <ShelterImageFrame
+                        onPress={() =>
+                          setImageModal({
+                            images: shelterImages,
+                            index: imageIndex,
+                          })
+                        }
+                      >
+                        <ShelterImage
+                          source={shelterImages[imageIndex]}
+                          resizeMode="cover"
+                        />
+                        {shelterImages.length > 1 ? (
+                          <>
+                            <ImageNavButton
+                              $position="left"
+                              onPress={() =>
+                                handleChangeShelterImage(
+                                  shelter.shelterId,
+                                  shelterImages.length,
+                                  -1,
+                                )
+                              }
+                            >
+                              <ChevronLeft
+                                color="#ffffff"
+                                size={18}
+                                strokeWidth={2.8}
+                              />
+                            </ImageNavButton>
+                            <ImageNavButton
+                              $position="right"
+                              onPress={() =>
+                                handleChangeShelterImage(
+                                  shelter.shelterId,
+                                  shelterImages.length,
+                                  1,
+                                )
+                              }
+                            >
+                              <ChevronRight
+                                color="#ffffff"
+                                size={18}
+                                strokeWidth={2.8}
+                              />
+                            </ImageNavButton>
+                            <ImageCounter>
+                              <ImageCounterText>
+                                {imageIndex + 1}/{shelterImages.length}
+                              </ImageCounterText>
+                            </ImageCounter>
+                          </>
+                        ) : null}
+                      </ShelterImageFrame>
                     <ShelterTitleRow>
                       <ShelterName>{shelter.name}</ShelterName>
                       <TypeChip>
@@ -936,13 +1060,17 @@ export default function MapScreen() {
                           $active={chip.active}
                         >
                           <AccessChipText $active={chip.active}>
-                            {t(accessibilityFilterLabelKeys[chip.label] ?? chip.label)}
+                            {t(
+                              accessibilityFilterLabelKeys[chip.label] ??
+                                chip.label,
+                            )}
                           </AccessChipText>
                         </AccessChip>
                       ))}
                     </ChipRow>
                   </ShelterItem>
-                ))
+                  );
+                })
               ) : (
                 <EmptyPanelText>연결된 대피소가 없습니다.</EmptyPanelText>
               )}
@@ -996,6 +1124,78 @@ export default function MapScreen() {
           </>
         )}
       </BottomPanel>
+
+      <Modal
+        animationType="fade"
+        transparent
+        visible={!!imageModal}
+        onRequestClose={() => setImageModal(null)}
+      >
+        <ImageModalOverlay onPress={() => setImageModal(null)}>
+          <ImageModalContent pointerEvents="box-none">
+            {imageModal ? (
+              <>
+                <ImageModalImage
+                  source={imageModal.images[imageModal.index]}
+                  resizeMode="contain"
+                />
+                <ImageCloseButton onPress={() => setImageModal(null)}>
+                  <X color="#ffffff" size={24} strokeWidth={2.8} />
+                </ImageCloseButton>
+                {imageModal.images.length > 1 ? (
+                  <>
+                    <ModalImageNavButton
+                      $position="left"
+                      onPress={() =>
+                        setImageModal(current =>
+                          current
+                            ? {
+                                ...current,
+                                index:
+                                  (current.index - 1 + current.images.length) %
+                                  current.images.length,
+                              }
+                            : current,
+                        )
+                      }
+                    >
+                      <ChevronLeft
+                        color="#ffffff"
+                        size={26}
+                        strokeWidth={2.8}
+                      />
+                    </ModalImageNavButton>
+                    <ModalImageNavButton
+                      $position="right"
+                      onPress={() =>
+                        setImageModal(current =>
+                          current
+                            ? {
+                                ...current,
+                                index: (current.index + 1) % current.images.length,
+                              }
+                            : current,
+                        )
+                      }
+                    >
+                      <ChevronRight
+                        color="#ffffff"
+                        size={26}
+                        strokeWidth={2.8}
+                      />
+                    </ModalImageNavButton>
+                    <ModalImageCounter>
+                      <ImageCounterText>
+                        {imageModal.index + 1}/{imageModal.images.length}
+                      </ImageCounterText>
+                    </ModalImageCounter>
+                  </>
+                ) : null}
+              </>
+            ) : null}
+          </ImageModalContent>
+        </ImageModalOverlay>
+      </Modal>
     </Screen>
   );
 }
@@ -1138,6 +1338,101 @@ const ShelterItem = styled.View`
   background-color: #f8fafc;
   border-width: 1px;
   border-color: #e5e7eb;
+`;
+
+const ShelterImageFrame = styled.Pressable`
+  position: relative;
+  width: 100%;
+  height: 132px;
+  overflow: hidden;
+  border-radius: 10px;
+  background-color: #e5e7eb;
+`;
+
+const ShelterImage = styled.Image`
+  width: 100%;
+  height: 100%;
+`;
+
+const ImageNavButton = styled.Pressable<{ $position: 'left' | 'right' }>`
+  position: absolute;
+  top: 50%;
+  ${({ $position }) => `${$position}: 8px;`}
+  width: 30px;
+  height: 30px;
+  margin-top: -15px;
+  border-radius: 999px;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(17, 24, 39, 0.62);
+`;
+
+const ImageCounter = styled.View`
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  padding: 3px 7px;
+  border-radius: 999px;
+  background-color: rgba(17, 24, 39, 0.68);
+`;
+
+const ImageCounterText = styled.Text`
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 800;
+`;
+
+const ImageModalOverlay = styled.Pressable`
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(0, 0, 0, 0.86);
+`;
+
+const ImageModalContent = styled.Pressable`
+  width: 100%;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+`;
+
+const ImageModalImage = styled.Image`
+  width: 100%;
+  height: 100%;
+`;
+
+const ImageCloseButton = styled.Pressable`
+  position: absolute;
+  top: 46px;
+  right: 16px;
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(17, 24, 39, 0.68);
+`;
+
+const ModalImageNavButton = styled.Pressable<{ $position: 'left' | 'right' }>`
+  position: absolute;
+  top: 50%;
+  ${({ $position }) => `${$position}: 16px;`}
+  width: 44px;
+  height: 44px;
+  margin-top: -22px;
+  border-radius: 999px;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(17, 24, 39, 0.62);
+`;
+
+const ModalImageCounter = styled.View`
+  position: absolute;
+  right: 16px;
+  bottom: 32px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background-color: rgba(17, 24, 39, 0.72);
 `;
 
 const ShelterTitleRow = styled.View`

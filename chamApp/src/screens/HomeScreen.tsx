@@ -1,10 +1,16 @@
 import { useState } from 'react';
-import { Linking, Modal } from 'react-native';
+import { Linking, Modal, type ImageSourcePropType } from 'react-native';
 import styled from 'styled-components/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
-import { ChevronLeft, ChevronRight, Square, Users } from 'lucide-react-native';
+import {
+  ChevronLeft,
+  ChevronRight,
+  Square,
+  Users,
+  X,
+} from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import CurrentLocationBar from '../components/CurrentLocationBar.tsx';
 import MapSearchFilters from '../components/MapSearchFilters.tsx';
@@ -23,6 +29,8 @@ import {
 } from '../store/mapFilters.ts';
 import { useFetchDisaster } from '../services/disaster.service.ts';
 import type { RootTabParamList } from '../navigation/AppNavigator.tsx';
+
+const defaultShelterImage = require('../assets/images/shelter.png') as ImageSourcePropType;
 
 const languageOptions = [
   { code: 'KO', label: '한국어' },
@@ -49,6 +57,18 @@ function getAccessibilityChips(shelter: NearestShelter) {
     { label: '점자블록', active: shelter.brailleBlock === true },
     { label: '장애인 화장실', active: shelter.accessibleToilet === true },
   ];
+}
+
+function getNearestShelterImageSources(
+  shelter: NearestShelter,
+): ImageSourcePropType[] {
+  const sources =
+    shelter.images
+      ?.map(image => image.url)
+      .filter((url): url is string => typeof url === 'string' && !!url.trim())
+      .map(url => ({ uri: url })) ?? [];
+
+  return sources.length ? sources : [defaultShelterImage];
 }
 
 function formatDisasterDate(dateString?: string) {
@@ -78,7 +98,18 @@ export default function HomeScreen() {
   const disasterDate = formatDisasterDate(disasterData?.createDate);
   const [isSMSModalVisible, setIsSMSModalVisible] = useState(false);
   const [selectedSMSIndex, setSelectedSMSIndex] = useState(0);
+  const [shelterImageIndex, setShelterImageIndex] = useState(0);
+  const [imageModal, setImageModal] = useState<{
+    images: ImageSourcePropType[];
+    index: number;
+  } | null>(null);
   const selectedSMS = smsData[selectedSMSIndex];
+  const nearestShelterImages = nearestShelter
+    ? getNearestShelterImageSources(nearestShelter)
+    : [];
+  const nearestShelterImageIndex = nearestShelterImages.length
+    ? Math.min(shelterImageIndex, nearestShelterImages.length - 1)
+    : 0;
   const handlePressDisaster = () => {
     if (!disasterData?.originUrl) return;
     Linking.openURL(disasterData.originUrl);
@@ -146,6 +177,53 @@ export default function HomeScreen() {
         <MapSearchFilters horizontalPadding={0} showShelterTypes={false} />
         {nearestShelter ? (
           <ShelterItem onPress={handlePressNearestShelter}>
+            <ShelterImageFrame
+              onPress={event => {
+                event.stopPropagation();
+                setImageModal({
+                  images: nearestShelterImages,
+                  index: nearestShelterImageIndex,
+                });
+              }}
+            >
+              <ShelterImage
+                source={nearestShelterImages[nearestShelterImageIndex]}
+                resizeMode="cover"
+              />
+              {nearestShelterImages.length > 1 ? (
+                <>
+                  <ImageNavButton
+                    $position="left"
+                    onPress={event => {
+                      event.stopPropagation();
+                      setShelterImageIndex(
+                        index =>
+                          (index - 1 + nearestShelterImages.length) %
+                          nearestShelterImages.length,
+                      );
+                    }}
+                  >
+                    <ChevronLeft color="#ffffff" size={18} strokeWidth={2.8} />
+                  </ImageNavButton>
+                  <ImageNavButton
+                    $position="right"
+                    onPress={event => {
+                      event.stopPropagation();
+                      setShelterImageIndex(
+                        index => (index + 1) % nearestShelterImages.length,
+                      );
+                    }}
+                  >
+                    <ChevronRight color="#ffffff" size={18} strokeWidth={2.8} />
+                  </ImageNavButton>
+                  <ImageCounter>
+                    <ImageCounterText>
+                      {nearestShelterImageIndex + 1}/{nearestShelterImages.length}
+                    </ImageCounterText>
+                  </ImageCounter>
+                </>
+              ) : null}
+            </ShelterImageFrame>
             <ShelterTitleRow>
               <ShelterName>{nearestShelter.name}</ShelterName>
               <TypeChip>
@@ -254,6 +332,77 @@ export default function HomeScreen() {
           </ModalCard>
         </ModalOverlay>
       </Modal>
+      <Modal
+        animationType="fade"
+        transparent
+        visible={!!imageModal}
+        onRequestClose={() => setImageModal(null)}
+      >
+        <ImageModalOverlay onPress={() => setImageModal(null)}>
+          <ImageModalContent pointerEvents="box-none">
+            {imageModal ? (
+              <>
+                <ImageModalImage
+                  source={imageModal.images[imageModal.index]}
+                  resizeMode="contain"
+                />
+                <ImageCloseButton onPress={() => setImageModal(null)}>
+                  <X color="#ffffff" size={24} strokeWidth={2.8} />
+                </ImageCloseButton>
+                {imageModal.images.length > 1 ? (
+                  <>
+                    <ModalImageNavButton
+                      $position="left"
+                      onPress={() =>
+                        setImageModal(current =>
+                          current
+                            ? {
+                                ...current,
+                                index:
+                                  (current.index - 1 + current.images.length) %
+                                  current.images.length,
+                              }
+                            : current,
+                        )
+                      }
+                    >
+                      <ChevronLeft
+                        color="#ffffff"
+                        size={26}
+                        strokeWidth={2.8}
+                      />
+                    </ModalImageNavButton>
+                    <ModalImageNavButton
+                      $position="right"
+                      onPress={() =>
+                        setImageModal(current =>
+                          current
+                            ? {
+                                ...current,
+                                index: (current.index + 1) % current.images.length,
+                              }
+                            : current,
+                        )
+                      }
+                    >
+                      <ChevronRight
+                        color="#ffffff"
+                        size={26}
+                        strokeWidth={2.8}
+                      />
+                    </ModalImageNavButton>
+                    <ModalImageCounter>
+                      <ImageCounterText>
+                        {imageModal.index + 1}/{imageModal.images.length}
+                      </ImageCounterText>
+                    </ModalImageCounter>
+                  </>
+                ) : null}
+              </>
+            ) : null}
+          </ImageModalContent>
+        </ImageModalOverlay>
+      </Modal>
     </Screen>
   );
 }
@@ -286,6 +435,101 @@ const ShelterItem = styled.Pressable`
   background-color: #f8fafc;
   border-width: 1px;
   border-color: #e5e7eb;
+`;
+
+const ShelterImageFrame = styled.Pressable`
+  position: relative;
+  width: 100%;
+  height: 132px;
+  overflow: hidden;
+  border-radius: 10px;
+  background-color: #e5e7eb;
+`;
+
+const ShelterImage = styled.Image`
+  width: 100%;
+  height: 100%;
+`;
+
+const ImageNavButton = styled.Pressable<{ $position: 'left' | 'right' }>`
+  position: absolute;
+  top: 50%;
+  ${({ $position }) => `${$position}: 8px;`}
+  width: 30px;
+  height: 30px;
+  margin-top: -15px;
+  border-radius: 999px;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(17, 24, 39, 0.62);
+`;
+
+const ImageCounter = styled.View`
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  padding: 3px 7px;
+  border-radius: 999px;
+  background-color: rgba(17, 24, 39, 0.68);
+`;
+
+const ImageCounterText = styled.Text`
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 800;
+`;
+
+const ImageModalOverlay = styled.Pressable`
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(0, 0, 0, 0.86);
+`;
+
+const ImageModalContent = styled.Pressable`
+  width: 100%;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+`;
+
+const ImageModalImage = styled.Image`
+  width: 100%;
+  height: 100%;
+`;
+
+const ImageCloseButton = styled.Pressable`
+  position: absolute;
+  top: 46px;
+  right: 16px;
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(17, 24, 39, 0.68);
+`;
+
+const ModalImageNavButton = styled.Pressable<{ $position: 'left' | 'right' }>`
+  position: absolute;
+  top: 50%;
+  ${({ $position }) => `${$position}: 16px;`}
+  width: 44px;
+  height: 44px;
+  margin-top: -22px;
+  border-radius: 999px;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(17, 24, 39, 0.62);
+`;
+
+const ModalImageCounter = styled.View`
+  position: absolute;
+  right: 16px;
+  bottom: 32px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background-color: rgba(17, 24, 39, 0.72);
 `;
 
 const ShelterTitleRow = styled.View`
