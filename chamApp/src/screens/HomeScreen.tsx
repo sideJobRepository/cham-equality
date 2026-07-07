@@ -24,6 +24,14 @@ import {
 import { useFetchDisaster } from '../services/disaster.service.ts';
 import type { RootTabParamList } from '../navigation/AppNavigator.tsx';
 
+const languageOptions = [
+  { code: 'KO', label: '한국어' },
+  { code: 'EN', label: 'English' },
+  { code: 'ZH', label: '中文' },
+  { code: 'JA', label: '日本語' },
+  { code: 'VI', label: 'Tiếng Việt' },
+];
+
 function getShelterTypeLabel(type?: string) {
   if (!type) return '유형 정보 없음';
   return shelterTypeLabelMap[type] ?? type;
@@ -89,20 +97,17 @@ export default function HomeScreen() {
     <Screen>
       <TopSection>
         <LanguageRow>
-          <LanguageButton
-            $active={i18n.language === 'KO'}
-            onPress={() => i18n.changeLanguage('KO')}
-          >
-            <LanguageText $active={i18n.language === 'KO'}>한국어</LanguageText>
-          </LanguageButton>
-          <LanguageButton
-            $active={i18n.language === 'EN'}
-            onPress={() => i18n.changeLanguage('EN')}
-          >
-            <LanguageText $active={i18n.language === 'EN'}>
-              English
-            </LanguageText>
-          </LanguageButton>
+          {languageOptions.map(item => (
+            <LanguageButton
+              key={item.code}
+              $active={i18n.language === item.code}
+              onPress={() => i18n.changeLanguage(item.code)}
+            >
+              <LanguageText $active={i18n.language === item.code}>
+                {item.label}
+              </LanguageText>
+            </LanguageButton>
+          ))}
         </LanguageRow>
 
         <MessageBox
