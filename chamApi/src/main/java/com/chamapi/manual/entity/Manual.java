@@ -31,6 +31,13 @@ public class Manual extends DateSuperClass {
     @Column(name = "MANUAL_CONTENT", columnDefinition = "TEXT")
     private String content;
 
+    @Builder
+    public Manual(Language language, String title, String content) {
+        this.language = language;
+        this.title = title;
+        this.content = content;
+    }
+
     public void update(Language language, String title, String content) {
         this.language = language;
         this.title = title;
