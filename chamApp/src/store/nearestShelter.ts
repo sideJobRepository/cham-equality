@@ -1,5 +1,10 @@
 import { create } from 'zustand';
 
+export interface NearestShelterImage {
+  category?: string;
+  url?: string;
+}
+
 export interface NearestShelter {
   shelterId: number;
   placeId: number | null;
@@ -22,7 +27,7 @@ export interface NearestShelter {
   etcFacilities: string | null;
   surveyStatus: string | null;
   accessibilityMatchStatus: string | null;
-  images: unknown[];
+  images: NearestShelterImage[];
 }
 
 interface NearestShelterStore {

@@ -80,6 +80,123 @@ const resources = {
       },
     },
   },
+  ZH: {
+    translation: {
+      tabs: {
+        home: '首页',
+        map: '地图',
+        manual: '指南',
+        more: '更多',
+      },
+      home: {
+        messageTitle2: '每日灾害安全管理情况',
+      },
+      map: {
+        labels: {
+          nearbyLocation: '查看我的位置附近',
+          shelter: '避难所',
+          totalShelters: '避难所总数',
+        },
+        location: {
+          checking: '正在确认当前位置',
+          addressChecking: '正在确认当前位置地址',
+          permissionRequired: '需要位置权限',
+          unavailable: '无法确认当前位置',
+        },
+        filters: {
+          shelterAll: '全部',
+          civilDefense: '民防避难设施',
+          earthquake: '地震避难场所',
+          chemicalAccident: '化学事故避难场所',
+          earthquakeTemporaryHousing: '地震临时居住设施',
+          disasterTemporaryHousing: '灾民临时居住设施',
+          accessibilityAll: '无障碍全部',
+          ramp: '坡道',
+          elevator: '电梯',
+          brailleBlock: '盲道',
+          accessibleToilet: '无障碍卫生间',
+        },
+      },
+    },
+  },
+  JA: {
+    translation: {
+      tabs: {
+        home: 'ホーム',
+        map: '地図',
+        manual: 'マニュアル',
+        more: 'その他',
+      },
+      home: {
+        messageTitle2: '日次災害安全管理状況',
+      },
+      map: {
+        labels: {
+          nearbyLocation: '現在地周辺を見る',
+          shelter: '避難所',
+          totalShelters: '避難所合計',
+        },
+        location: {
+          checking: '現在地を確認中',
+          addressChecking: '現在地の住所を確認中',
+          permissionRequired: '位置情報の許可が必要です',
+          unavailable: '現在地を確認できません',
+        },
+        filters: {
+          shelterAll: 'すべて',
+          civilDefense: '民防避難施設',
+          earthquake: '地震避難場所',
+          chemicalAccident: '化学事故避難場所',
+          earthquakeTemporaryHousing: '地震対応臨時住宅',
+          disasterTemporaryHousing: '被災者臨時住宅',
+          accessibilityAll: 'アクセシビリティすべて',
+          ramp: 'スロープ',
+          elevator: 'エレベーター',
+          brailleBlock: '点字ブロック',
+          accessibleToilet: 'バリアフリートイレ',
+        },
+      },
+    },
+  },
+  VI: {
+    translation: {
+      tabs: {
+        home: 'Trang chủ',
+        map: 'Bản đồ',
+        manual: 'Hướng dẫn',
+        more: 'Thêm',
+      },
+      home: {
+        messageTitle2: 'Tình hình quản lý an toàn thiên tai hằng ngày',
+      },
+      map: {
+        labels: {
+          nearbyLocation: 'Xem gần vị trí của tôi',
+          shelter: 'Nơi trú ẩn',
+          totalShelters: 'Tổng nơi trú ẩn',
+        },
+        location: {
+          checking: 'Đang kiểm tra vị trí hiện tại',
+          addressChecking: 'Đang kiểm tra địa chỉ hiện tại',
+          permissionRequired: 'Cần quyền truy cập vị trí',
+          unavailable: 'Không thể xác định vị trí hiện tại',
+        },
+        filters: {
+          shelterAll: 'Tất cả',
+          civilDefense: 'Cơ sở trú ẩn dân phòng',
+          earthquake: 'Nơi trú ẩn động đất',
+          chemicalAccident: 'Nơi trú ẩn sự cố hóa chất',
+          earthquakeTemporaryHousing: 'Nhà tạm dùng khi động đất',
+          disasterTemporaryHousing: 'Nhà tạm cho nạn nhân thiên tai',
+          accessibilityAll: 'Tất cả hỗ trợ tiếp cận',
+          ramp: 'Đường dốc',
+          elevator: 'Thang máy',
+          brailleBlock: 'Gạch chỉ dẫn nổi',
+          accessibleToilet: 'Nhà vệ sinh cho người khuyết tật',
+        },
+      },
+    },
+  },
 };
 
 i18n.use(initReactI18next).init({

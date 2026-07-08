@@ -45,4 +45,8 @@ public class Multilingual extends DateSuperClass {
     // 번역 내용
     @Column(name = "CONT", columnDefinition = "TEXT")
     private String cont;
+
+    // 번역된 카테고리 (재난문자의 산불/화재 등, 없으면 null)
+    @Column(name = "CATEGORY")
+    private String category;
 }

@@ -1,39 +1,34 @@
 package com.chamapi.translation.config;
 
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import com.azure.ai.translation.text.TextTranslationClient;
+import com.azure.ai.translation.text.TextTranslationClientBuilder;
+import com.azure.core.credential.AzureKeyCredential;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.client.ClientHttpRequestFactory;
-import org.springframework.http.client.JdkClientHttpRequestFactory;
-import org.springframework.http.client.SimpleClientHttpRequestFactory;
-import org.springframework.web.client.RestClient;
 
-import java.net.http.HttpClient;
-import java.time.Duration;
-
+/**
+ * Azure AI Translator 클라이언트. Cognitive Services(Translator) 리소스의 키·지역·엔드포인트로 생성한다.
+ * S3 와 달리 AWS 자격증명이 아닌 azure.translator.* 설정을 사용한다.
+ */
 @Configuration
-@EnableConfigurationProperties(TranslationProperties.class)
 public class TranslationClientConfig {
 
-    @Bean(name = "translationRestClient")
-    public RestClient translationRestClient(TranslationProperties properties) {
-        HttpClient httpClient = HttpClient.newBuilder()
-                .connectTimeout(Duration.ofSeconds(3))
-                .build();
+    @Value("${azure.translator.key}")
+    private String key;
 
-        ClientHttpRequestFactory factory = new JdkClientHttpRequestFactory(httpClient);
-        if (factory instanceof JdkClientHttpRequestFactory jdkFactory) {
-            jdkFactory.setReadTimeout(Duration.ofMillis(properties.getTimeoutMillis()));
-        } else if (factory instanceof SimpleClientHttpRequestFactory simple) {
-            simple.setReadTimeout(Duration.ofMillis(properties.getTimeoutMillis()));
-        }
+    @Value("${azure.translator.region}")
+    private String region;
 
-        return RestClient.builder()
-                .baseUrl(properties.getBaseUrl())
-                .defaultHeader(HttpHeaders.ACCEPT, "application/json")
-                .defaultHeader(HttpHeaders.AUTHORIZATION, "DeepL-Auth-Key " + properties.getApiKey())
-                .requestFactory(factory)
-                .build();
+    @Value("${azure.translator.endpoint}")
+    private String endpoint;
+
+    @Bean
+    public TextTranslationClient textTranslationClient() {
+        return new TextTranslationClientBuilder()
+                .credential(new AzureKeyCredential(key))
+                .region(region)
+                .endpoint(endpoint)
+                .buildClient();
     }
 }

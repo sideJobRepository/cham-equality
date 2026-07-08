@@ -11,8 +11,13 @@ public record DisasterMessageResponse(Long id, Long sn, String content, String r
         return from(m, m.getContent());
     }
 
-    /** content 를 요청 언어 번역문으로 대체해 반환 (배너 다국어용). */
+    /** content 를 요청 언어 번역문으로 대체해 반환 (배너 다국어용). 카테고리는 원문 유지. */
     public static DisasterMessageResponse from(DisasterMessage m, String content) {
+        return from(m, content, m.getCategory());
+    }
+
+    /** content·category 를 요청 언어 번역문으로 대체해 반환 (배너 다국어용). */
+    public static DisasterMessageResponse from(DisasterMessage m, String content, String category) {
         return new DisasterMessageResponse(
                 m.getId(),
                 m.getSn(),
@@ -20,7 +25,7 @@ public record DisasterMessageResponse(Long id, Long sn, String content, String r
                 m.getRegionName(),
                 m.getEmergencyStep(),
                 m.getEmergencyStep().getLabel(),
-                m.getCategory(),
+                category,
                 m.getIssuedAt()
         );
     }

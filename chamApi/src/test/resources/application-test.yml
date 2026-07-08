@@ -25,6 +25,12 @@ spring:
       s3:
         bucket: ${AWS_BUCKET}
 
+azure:
+  translator:
+    key: ${AZURE_TRANSLATOR_KEY:test-key}
+    region: ${AZURE_TRANSLATOR_REGION:koreacentral}
+    endpoint: ${AZURE_TRANSLATOR_ENDPOINT:https://api.cognitive.microsofttranslator.com}
+
 data:
   api:
     key: ${DATA_API_KEY}

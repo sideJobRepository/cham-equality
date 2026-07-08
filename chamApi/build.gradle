@@ -46,6 +46,9 @@ dependencies {
     implementation 'io.awspring.cloud:spring-cloud-aws-starter-s3'
     implementation platform("io.awspring.cloud:spring-cloud-aws-dependencies:4.0.0")
 
+    //Azure AI Translator (번역)
+    implementation 'com.azure:azure-ai-translation-text:2.0.1'
+
     //log4 jdbc2
     implementation 'org.bgee.log4jdbc-log4j2:log4jdbc-log4j2-jdbc4.1:1.16'
     //mysql

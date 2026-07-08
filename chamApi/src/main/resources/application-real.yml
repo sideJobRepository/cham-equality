@@ -23,6 +23,12 @@ spring:
       s3:
         bucket: ${AWS_BUCKET}
 
+azure:
+  translator:
+    key: ${AZURE_TRANSLATOR_KEY}
+    region: ${AZURE_TRANSLATOR_REGION}
+    endpoint: ${AZURE_TRANSLATOR_ENDPOINT:https://api.cognitive.microsofttranslator.com}
+
 auth:
   cookie:
     name: refreshToken

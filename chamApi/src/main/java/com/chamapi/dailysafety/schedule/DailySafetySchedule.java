@@ -16,6 +16,7 @@ public class DailySafetySchedule {
     private final DailySafetyTranslationService translationService;
 
     /** [테스트용] 10초마다 미번역 일일 재난안전 요약을 번역. 운영 복귀 시 "0 0 * * * *" 로 원복. */
+  //  @Scheduled(cron = "*/10 * * * * *", zone = "Asia/Seoul")
     @Scheduled(cron = "0 0 * * * *", zone = "Asia/Seoul")
     public void run() {
         try {

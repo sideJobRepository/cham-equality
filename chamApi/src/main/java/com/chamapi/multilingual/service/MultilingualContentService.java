@@ -24,8 +24,13 @@ public class MultilingualContentService {
     public static final String TYPE_DISASTER_MESSAGE = "재난문자";
     public static final String TYPE_DAILY_SAFETY_SUMMARY = "일일재난안전";
 
-    /** 한 언어의 번역 단위. 제목이 없는 콘텐츠(재난문자 등)는 title=null. */
-    public record Translated(String title, String cont) {}
+    /** 한 언어의 번역 단위. 제목이 없는 콘텐츠(재난문자 등)는 title=null, 카테고리가 없으면 category=null. */
+    public record Translated(String title, String cont, String category) {
+        /** 카테고리가 없는 콘텐츠(일일요약 등)용 편의 생성자. */
+        public Translated(String title, String cont) {
+            this(title, cont, null);
+        }
+    }
 
     private final MultilingualRepository multilingualRepository;
 
@@ -39,6 +44,7 @@ public class MultilingualContentService {
                         .language(entry.getKey())
                         .translationTitle(entry.getValue().title())
                         .cont(entry.getValue().cont())
+                        .category(entry.getValue().category())
                         .build())
                 .toList();
         multilingualRepository.saveAll(rows);
@@ -54,7 +60,7 @@ public class MultilingualContentService {
                         Multilingual::getTargetId,
                         Collectors.toMap(
                                 Multilingual::getLanguage,
-                                row -> new Translated(row.getTranslationTitle(), row.getCont()),
+                                row -> new Translated(row.getTranslationTitle(), row.getCont(), row.getCategory()),
                                 (a, b) -> a)));
     }
 }
