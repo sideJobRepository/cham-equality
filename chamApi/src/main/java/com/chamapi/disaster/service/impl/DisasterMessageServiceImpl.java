@@ -37,7 +37,13 @@ public class DisasterMessageServiceImpl implements DisasterMessageService {
         Map<Long, Map<Language, MultilingualContentService.Translated>> contentByMessage = loadTranslations(latest, language);
 
         return latest.stream()
-                .map(m -> DisasterMessageResponse.from(m, resolveContent(contentByMessage.get(m.getId()), language, m.getContent())))
+                .map(m -> {
+                    Map<Language, MultilingualContentService.Translated> byLanguage = contentByMessage.get(m.getId());
+                    return DisasterMessageResponse.from(
+                            m,
+                            resolveContent(byLanguage, language, m.getContent()),
+                            resolveCategory(byLanguage, language, m.getCategory()));
+                })
                 .toList();
     }
 
@@ -75,5 +81,18 @@ public class DisasterMessageServiceImpl implements DisasterMessageService {
         }
         MultilingualContentService.Translated ko = byLanguage.get(Language.KO);
         return ko != null && ko.cont() != null ? ko.cont() : origin;
+    }
+
+    /** 카테고리도 요청 언어 → KO 행 → 원문 순으로 폴백. 번역 저장 전 데이터는 원문(KO)으로 내려간다. */
+    private String resolveCategory(Map<Language, MultilingualContentService.Translated> byLanguage, Language language, String origin) {
+        if (byLanguage == null) {
+            return origin;
+        }
+        MultilingualContentService.Translated requested = byLanguage.get(language);
+        if (requested != null && requested.category() != null) {
+            return requested.category();
+        }
+        MultilingualContentService.Translated ko = byLanguage.get(Language.KO);
+        return ko != null && ko.category() != null ? ko.category() : origin;
     }
 }

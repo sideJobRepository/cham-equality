@@ -1,34 +1,34 @@
 package com.chamapi.translation.config;
 
+import com.azure.ai.translation.text.TextTranslationClient;
+import com.azure.ai.translation.text.TextTranslationClientBuilder;
+import com.azure.core.credential.AzureKeyCredential;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
-import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
-import software.amazon.awssdk.regions.Region;
-import software.amazon.awssdk.services.translate.TranslateClient;
 
 /**
- * Amazon Translate 클라이언트. S3 와 동일한 AWS 자격증명(spring.cloud.aws.*)을 재사용한다.
+ * Azure AI Translator 클라이언트. Cognitive Services(Translator) 리소스의 키·지역·엔드포인트로 생성한다.
+ * S3 와 달리 AWS 자격증명이 아닌 azure.translator.* 설정을 사용한다.
  */
 @Configuration
 public class TranslationClientConfig {
 
-    @Value("${spring.cloud.aws.credentials.access-key}")
-    private String accessKey;
+    @Value("${azure.translator.key}")
+    private String key;
 
-    @Value("${spring.cloud.aws.credentials.secret-key}")
-    private String secretKey;
-
-    @Value("${spring.cloud.aws.region.static}")
+    @Value("${azure.translator.region}")
     private String region;
 
+    @Value("${azure.translator.endpoint}")
+    private String endpoint;
+
     @Bean
-    public TranslateClient translateClient() {
-        return TranslateClient.builder()
-                .region(Region.of(region))
-                .credentialsProvider(StaticCredentialsProvider.create(
-                        AwsBasicCredentials.create(accessKey, secretKey)))
-                .build();
+    public TextTranslationClient textTranslationClient() {
+        return new TextTranslationClientBuilder()
+                .credential(new AzureKeyCredential(key))
+                .region(region)
+                .endpoint(endpoint)
+                .buildClient();
     }
 }

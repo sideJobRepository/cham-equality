@@ -119,17 +119,25 @@ public class DisasterMessageSyncService {
      * (KO 도 저장하지 않음 — 재시도 시 중복을 막고, 읽기는 원문으로 폴백된다).
      */
     private void translateOne(DisasterMessage message) {
-        Map<Language, String> translated = translationClient.translate(message.getContent(), TARGET_LANGUAGES);
+        String category = message.getCategory();
+        boolean hasCategory = category != null && !category.isBlank();
+
+        // 내용과 카테고리(있으면)를 한 번의 배치 호출로 함께 번역 — 언어별 결과는 [내용, 카테고리] 순.
+        List<String> texts = hasCategory
+                ? List.of(message.getContent(), category)
+                : List.of(message.getContent());
+        Map<Language, List<String>> translated = translationClient.translateList(texts, TARGET_LANGUAGES);
         if (translated.isEmpty()) {
             log.warn("disaster message translation empty, will retry. messageId={}", message.getId());
             return;
         }
 
-        // 재난문자는 제목이 없으므로 title=null, 내용만 저장.
+        // 재난문자는 제목이 없으므로 title=null. KO 는 원문 내용/카테고리, 나머지는 번역 결과 저장.
         Map<Language, MultilingualContentService.Translated> byLanguage = new LinkedHashMap<>();
-        byLanguage.put(Language.KO, new MultilingualContentService.Translated(null, message.getContent()));
-        translated.forEach((language, content) ->
-                byLanguage.put(language, new MultilingualContentService.Translated(null, content)));
+        byLanguage.put(Language.KO, new MultilingualContentService.Translated(null, message.getContent(), category));
+        translated.forEach((language, list) ->
+                byLanguage.put(language, new MultilingualContentService.Translated(
+                        null, list.get(0), hasCategory ? list.get(1) : null)));
 
         multilingualContentService.save(
                 MultilingualContentService.TYPE_DISASTER_MESSAGE, message.getId(), byLanguage);
