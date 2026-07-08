@@ -1,0 +1,174 @@
+/* ──────────────────────────────────────────────────────────────────────
+   매뉴얼 모바일 미리보기 — 편집 모달 위에 뜨는 기기 프레임 오버레이.
+   ────────────────────────────────────────────────────────────────────── */
+.manual-preview-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.62);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 210; /* 편집 모달(200)보다 위 */
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+.manual-preview-stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  max-height: 100%;
+}
+
+.manual-preview-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #fff;
+  font-family: var(--ab-font);
+}
+
+.manual-preview-caption {
+  font-size: 13px;
+  font-weight: 500;
+  opacity: 0.9;
+}
+
+.manual-preview-close {
+  background: rgba(255, 255, 255, 0.16);
+  border: none;
+  border-radius: var(--ab-radius-full);
+  width: 28px;
+  height: 28px;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  transition: background 0.12s ease;
+}
+
+.manual-preview-close:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* ── 기기 프레임 ── */
+.manual-phone {
+  position: relative;
+  width: 390px;
+  max-width: calc(100vw - 32px);
+  height: min(760px, calc(100vh - 100px));
+  background: #111317;
+  border-radius: 44px;
+  padding: 12px;
+  box-sizing: border-box;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+  flex-shrink: 1;
+}
+
+.manual-phone-notch {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 128px;
+  height: 24px;
+  background: #111317;
+  border-bottom-left-radius: 14px;
+  border-bottom-right-radius: 14px;
+  z-index: 2;
+}
+
+.manual-phone-screen {
+  width: 100%;
+  height: 100%;
+  background: #fff;
+  border-radius: 32px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  font-family: var(--ab-font);
+}
+
+/* 앱 상단바 (제목) */
+.manual-phone-appbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 40px 16px 12px;
+  border-bottom: 1px solid var(--ab-hairline-soft);
+  flex-shrink: 0;
+}
+
+.manual-phone-back,
+.manual-phone-back-spacer {
+  width: 20px;
+  font-size: 24px;
+  line-height: 1;
+  color: var(--ab-ink);
+  flex-shrink: 0;
+  text-align: center;
+}
+
+.manual-phone-title {
+  flex: 1;
+  min-width: 0;
+  text-align: center;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ab-ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.manual-phone-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.manual-phone-empty {
+  padding: 48px 0;
+  text-align: center;
+  font-size: 14px;
+  color: var(--ab-muted);
+}
+
+/* .ck-content 내부: 모바일 폭에 맞춰 이미지/표가 넘치지 않게 */
+.manual-phone-content .ck-content {
+  color: var(--ab-ink);
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.manual-phone-content .ck-content img {
+  max-width: 100%;
+  height: auto;
+}
+
+.manual-phone-content .ck-content table {
+  max-width: 100%;
+}
+
+.manual-phone-content .ck-content :first-child {
+  margin-top: 0;
+}
+
+@media (max-width: 640px) {
+  .manual-phone {
+    border-radius: 36px;
+    padding: 10px;
+    height: min(760px, calc(100vh - 88px));
+  }
+
+  .manual-phone-screen {
+    border-radius: 26px;
+  }
+}

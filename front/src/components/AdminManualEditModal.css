@@ -1,0 +1,239 @@
+/* ──────────────────────────────────────────────────────────────────────
+   매뉴얼 편집 모달 — CKEditor 를 담기 위해 컨텐츠 모달보다 넓게 잡는다.
+   토큰(--ab-*)은 `.admin-layout` 에서 내려온다.
+   ────────────────────────────────────────────────────────────────────── */
+.manual-edit-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+.manual-edit-modal {
+  background: var(--ab-canvas);
+  border: none;
+  border-radius: var(--ab-radius-md);
+  width: min(880px, 94vw);
+  max-height: calc(100vh - 32px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  color: var(--ab-ink);
+  font-family: var(--ab-font);
+  box-shadow: var(--ab-shadow-card);
+}
+
+.manual-edit-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 18px;
+  background: var(--ab-canvas);
+  color: var(--ab-ink);
+  border-bottom: 1px solid var(--ab-hairline-soft);
+}
+
+.manual-edit-header h2 {
+  margin: 0;
+  font-family: inherit;
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.18px;
+  color: var(--ab-ink);
+}
+
+.manual-edit-close {
+  background: var(--ab-surface-strong);
+  border: none;
+  border-radius: var(--ab-radius-full);
+  width: 28px;
+  height: 28px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--ab-ink);
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.12s ease;
+}
+
+.manual-edit-close:hover {
+  background: var(--ab-hairline-soft);
+}
+
+.manual-edit-body {
+  padding: 14px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  overflow-y: auto;
+  background: var(--ab-canvas);
+}
+
+.manual-edit-body .field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.manual-edit-body label {
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ab-ink);
+  line-height: 1.29;
+}
+
+.manual-edit-body input,
+.manual-edit-body select {
+  padding: 9px 10px;
+  background: var(--ab-canvas);
+  border: 1px solid var(--ab-hairline);
+  border-radius: var(--ab-radius-sm);
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--ab-ink);
+  box-sizing: border-box;
+  min-height: 38px;
+  transition: border-color 0.12s ease;
+}
+
+.manual-edit-body input:focus,
+.manual-edit-body select:focus {
+  outline: none;
+  border: 2px solid var(--ab-ink);
+  padding: 8px 9px;
+}
+
+/* 언어(고정폭) + 제목(가변) 한 줄 배치 */
+.manual-edit-meta {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+}
+
+.manual-edit-meta .field-language {
+  width: 160px;
+  flex-shrink: 0;
+}
+
+.manual-edit-meta .field-title {
+  flex: 1;
+  min-width: 0;
+}
+
+.manual-editor-loading {
+  padding: 48px 16px;
+  text-align: center;
+  background: var(--ab-surface-soft);
+  border: 1px solid var(--ab-hairline-soft);
+  border-radius: var(--ab-radius-sm);
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--ab-muted);
+}
+
+.manual-edit-error {
+  padding: 9px 12px;
+  background: var(--ab-error-soft);
+  color: var(--ab-error);
+  border: 1px solid var(--ab-error);
+  border-radius: var(--ab-radius-sm);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.manual-edit-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  padding: 12px 0 0;
+  border-top: 1px solid var(--ab-hairline-soft);
+  margin-top: 2px;
+}
+
+.manual-edit-footer button {
+  padding: 8px 16px;
+  background: var(--ab-canvas);
+  color: var(--ab-ink);
+  border: 1px solid var(--ab-ink);
+  border-radius: var(--ab-radius-sm);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.25;
+  min-height: 38px;
+  transition: background 0.12s ease;
+}
+
+.manual-edit-footer button:hover {
+  background: var(--ab-surface-soft);
+}
+
+/* 미리보기 — 좌측으로 밀어 취소/저장과 분리 */
+.manual-edit-footer button.preview {
+  margin-right: auto;
+}
+
+.manual-edit-footer button:disabled,
+.manual-edit-close:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.manual-edit-footer button.primary {
+  background: var(--ab-primary);
+  color: var(--ab-on-primary);
+  border: none;
+  padding: 9px 17px;
+}
+
+.manual-edit-footer button.primary:hover {
+  background: var(--ab-primary-active);
+}
+
+@media (max-width: 720px) {
+  .manual-edit-backdrop {
+    padding: 0;
+    align-items: stretch;
+  }
+
+  .manual-edit-modal {
+    width: 100%;
+    height: 100dvh;
+    max-height: 100dvh;
+    border-radius: 0;
+  }
+
+  .manual-edit-meta {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+  }
+
+  .manual-edit-meta .field-language {
+    width: 100%;
+  }
+
+  .manual-edit-body input,
+  .manual-edit-body select {
+    font-size: 16px; /* iOS 자동 확대 방지 */
+    min-height: 42px;
+  }
+
+  .manual-edit-footer button {
+    min-height: 44px;
+    flex: 1;
+  }
+}

@@ -7,6 +7,7 @@ const MENU = [
   { to: '/admin/reports', label: '리포트 검토' },
   { to: '/admin/shelters', label: '대피소 편집' },
   { to: '/admin/contents', label: '컨텐츠 관리' },
+  { to: '/admin/manuals', label: '매뉴얼 관리' },
 ]
 
 type Props = {
