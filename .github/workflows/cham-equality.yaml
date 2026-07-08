@@ -83,6 +83,14 @@ jobs:
             ADMIN_PASSWORD='${{ secrets.ADMIN_PASSWORD }}' \
             USER_PASSWORD='${{ secrets.USER_PASSWORD }}' \
             DATA_API_KEY='${{ secrets.DATA_API_KEY }}' \
+            AZURE_TRANSLATOR_KEY='${{ secrets.AZURE_TRANSLATOR_KEY }}' \
+            AZURE_TRANSLATOR_REGION='${{ secrets.AZURE_TRANSLATOR_REGION }}' \
+            AZURE_TRANSLATOR_ENDPOINT='${{ secrets.AZURE_TRANSLATOR_ENDPOINT }}' \
+            NCP_API_KEY_ID='${{ secrets.NCP_API_KEY_ID }}' \
+            NCP_API_KEY='${{ secrets.NCP_API_KEY }}' \
+            NCP_BASE_URL='${{ secrets.NCP_BASE_URL }}' \
+            NCP_GEOCODING_PATH='${{ secrets.NCP_GEOCODING_PATH }}' \
+            NCP_REVERSE_GEOCODING_PATH='${{ secrets.NCP_REVERSE_GEOCODING_PATH }}' \
             nohup java \
             -Dspring.profiles.active=real \
             -Dserver.port=8081 \

@@ -19,6 +19,6 @@ public class DailySafetyController {
     /** 최신 일일 재난안전 요약. lang 으로 번역본 반환(기본 ko). */
     @GetMapping("/latest")
     public ApiResponse<DailySafetySummaryResponse> getLatest(@RequestParam(defaultValue = "ko") String lang) {
-        return new ApiResponse<>(200, true, dailySafetyService.findLatest(lang));
+         return new ApiResponse<>(200, true, dailySafetyService.findLatest(lang));
     }
 }
