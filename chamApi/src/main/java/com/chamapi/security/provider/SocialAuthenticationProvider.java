@@ -20,6 +20,7 @@ public class SocialAuthenticationProvider implements AuthenticationProvider {
 
     private final SocialService kakaoService;
     private final SocialService naverService;
+    private final SocialService appleService;
     private final MemberDetailServiceImpl bgmAgitMemberDetailService;
 
 
@@ -45,6 +46,18 @@ public class SocialAuthenticationProvider implements AuthenticationProvider {
 
         SocialProfile profile = socialService.getProfile(accessToken);
 
+        // 애플은 identityToken에 이름이 없어 프로필 name이 null이다.
+        // 앱이 최초 로그인 시 body로 함께 보낸 이름이 있으면 보완한다(신규 가입 시에만 저장됨).
+        if (profile.name() == null && token.getProvidedName() != null && !token.getProvidedName().isBlank()) {
+            profile = new SocialProfile(
+                    profile.provider(),
+                    profile.sub(),
+                    profile.email(),
+                    token.getProvidedName(),
+                    profile.phone()
+            );
+        }
+
         MemberContext memberContext = (MemberContext) bgmAgitMemberDetailService.loadUserByUsername(profile);
 
         return new SocialAuthenticationToken(
@@ -65,6 +78,7 @@ public class SocialAuthenticationProvider implements AuthenticationProvider {
         return switch (socialType) {
             case KAKAO, APP_KAKAO -> kakaoService;
             case NAVER, APP_NAVER -> naverService;
+            case APP_APPLE -> appleService;
         };
     }
 }

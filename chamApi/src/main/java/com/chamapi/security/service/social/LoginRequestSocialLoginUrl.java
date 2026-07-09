@@ -12,7 +12,8 @@ public enum LoginRequestSocialLoginUrl {
     KAKAO("/api/kakao-login"),
     NAVER("/api/naver-login"),
     APP_KAKAO("/api/app/kakao-login"),
-    APP_NAVER("/api/app/naver-login");
+    APP_NAVER("/api/app/naver-login"),
+    APP_APPLE("/api/app/apple-login");
 
     private final String path;
 
@@ -22,6 +23,6 @@ public enum LoginRequestSocialLoginUrl {
     }
 
     public boolean isApp() {
-        return this == APP_KAKAO || this == APP_NAVER;
+        return this == APP_KAKAO || this == APP_NAVER || this == APP_APPLE;
     }
 }

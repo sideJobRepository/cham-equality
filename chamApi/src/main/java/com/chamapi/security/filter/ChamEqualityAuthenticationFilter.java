@@ -26,7 +26,8 @@ public class ChamEqualityAuthenticationFilter extends AbstractAuthenticationProc
                 PathPatternRequestMatcher.withDefaults().matcher(HttpMethod.POST, "/api/kakao-login"),
                 PathPatternRequestMatcher.withDefaults().matcher(HttpMethod.POST, "/api/naver-login"),
                 PathPatternRequestMatcher.withDefaults().matcher(HttpMethod.POST, "/api/app/kakao-login"),
-                PathPatternRequestMatcher.withDefaults().matcher(HttpMethod.POST, "/api/app/naver-login")
+                PathPatternRequestMatcher.withDefaults().matcher(HttpMethod.POST, "/api/app/naver-login"),
+                PathPatternRequestMatcher.withDefaults().matcher(HttpMethod.POST, "/api/app/apple-login")
         ));
     }
 
@@ -53,7 +54,7 @@ public class ChamEqualityAuthenticationFilter extends AbstractAuthenticationProc
             credential = loginRequest.getCode();
         }
 
-        SocialAuthenticationToken authRequest = new SocialAuthenticationToken(credential, socialType);
+        SocialAuthenticationToken authRequest = new SocialAuthenticationToken(credential, socialType, loginRequest.getName());
 
         return this.getAuthenticationManager().authenticate(authRequest);
     }

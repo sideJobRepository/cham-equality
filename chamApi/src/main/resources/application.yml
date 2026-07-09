@@ -31,6 +31,11 @@ azure:
     region: ${AZURE_TRANSLATOR_REGION}
     endpoint: ${AZURE_TRANSLATOR_ENDPOINT:https://api.cognitive.microsofttranslator.com}
 
+apple:
+  client-id: ${APPLE_CLIENT_ID:}          # identityToken aud 검증값 (iOS Bundle ID) — .env에 설정
+  issuer: https://appleid.apple.com
+  jwks-uri: https://appleid.apple.com/auth/keys
+
 auth:
   cookie:
     name: refreshToken

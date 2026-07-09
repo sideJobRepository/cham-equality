@@ -47,7 +47,7 @@ public class Member extends DateSuperClass {
     public Member(SocialProfile socialProfile) {
         this.email = socialProfile.email();
         this.memberName = socialProfile.name();
-        this.socialType = SocialType.valueOf( socialProfile.provider().getValue());
+        this.socialType = SocialType.valueOf(socialProfile.provider().name());
         this.socialId = String.valueOf(socialProfile.sub());
         this.phoneNo = socialProfile.phone();
     }

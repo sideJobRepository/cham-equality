@@ -24,7 +24,8 @@ public class SecurityDsl<H extends HttpSecurityBuilder<H>> extends AbstractAuthe
             PathPatternRequestMatcher.withDefaults().matcher(HttpMethod.POST, "/api/kakao-login"),
             PathPatternRequestMatcher.withDefaults().matcher(HttpMethod.POST, "/api/naver-login"),
             PathPatternRequestMatcher.withDefaults().matcher(HttpMethod.POST, "/api/app/kakao-login"),
-            PathPatternRequestMatcher.withDefaults().matcher(HttpMethod.POST, "/api/app/naver-login")
+            PathPatternRequestMatcher.withDefaults().matcher(HttpMethod.POST, "/api/app/naver-login"),
+            PathPatternRequestMatcher.withDefaults().matcher(HttpMethod.POST, "/api/app/apple-login")
     );
     
     
