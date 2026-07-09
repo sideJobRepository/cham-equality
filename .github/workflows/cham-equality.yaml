@@ -176,7 +176,7 @@ jobs:
           KAKAO_MAP_APP_KEY=${{ secrets.KAKAO_MAP_APP_KEY }}
           EOF
 
-      - name: 업로드 keystore 복원 (base64 → jks)
+      - name: 업로드 keystore 복원
         run: echo "${{ secrets.UPLOAD_KEYSTORE_BASE64 }}" | base64 -d > chamApp/android/app/upload-keystore.jks
 
       - name: keystore.properties 생성
