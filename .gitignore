@@ -28,6 +28,10 @@ chamApp/android/app/build
 chamApp/android/app/.cxx
 chamApp/.env
 
+# 릴리스 서명(업로드 키) — 절대 커밋 금지
+chamApp/android/app/upload-keystore.jks
+chamApp/android/keystore.properties
+
 # Claude Code 개인 메모 (커밋 금지)
 CLAUDE.local.md
 **/CLAUDE.local.md

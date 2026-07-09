@@ -10,7 +10,7 @@ export interface AppleLoginResult {
 export async function loginWithApple(): Promise<AppleLoginResult> {
   const res = await appleAuth.performRequest({
     requestedOperation: appleAuth.Operation.LOGIN,
-    requestedScopes: [appleAuth.Scope.FULL_NAME, appleAuth.Scope.EMAIL],
+     requestedScopes: [appleAuth.Scope.FULL_NAME, appleAuth.Scope.EMAIL],
   });
 
   const family = res.fullName?.familyName ?? '';

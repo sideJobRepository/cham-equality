@@ -75,6 +75,14 @@ def enableProguardInReleaseBuilds = false
  */
 def jscFlavor = 'io.github.react-native-community:jsc-android:2026004.+'
 
+// 릴리스 서명 설정: android/keystore.properties(커밋 금지)에서 로드.
+// 파일이 없으면(팀원/CI) release도 debug 키로 서명해 빌드가 깨지지 않게 한다.
+def keystorePropertiesFile = rootProject.file("keystore.properties")
+def keystoreProperties = new Properties()
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+}
+
 android {
     ndkVersion rootProject.ext.ndkVersion
     buildToolsVersion rootProject.ext.buildToolsVersion
@@ -99,15 +107,22 @@ android {
             keyAlias 'androiddebugkey'
             keyPassword 'android'
         }
+        release {
+            if (keystorePropertiesFile.exists()) {
+                storeFile file(keystoreProperties['CHAM_UPLOAD_STORE_FILE'])
+                storePassword keystoreProperties['CHAM_UPLOAD_STORE_PASSWORD']
+                keyAlias keystoreProperties['CHAM_UPLOAD_KEY_ALIAS']
+                keyPassword keystoreProperties['CHAM_UPLOAD_KEY_PASSWORD']
+            }
+        }
     }
     buildTypes {
         debug {
             signingConfig signingConfigs.debug
         }
         release {
-            // Caution! In production, you need to generate your own keystore file.
-            // see https://reactnative.dev/docs/signed-apk-android.
-            signingConfig signingConfigs.debug
+            // keystore.properties가 있으면 릴리스 키로, 없으면 debug 키로 서명(빌드 유지).
+            signingConfig keystorePropertiesFile.exists() ? signingConfigs.release : signingConfigs.debug
             minifyEnabled enableProguardInReleaseBuilds
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
         }

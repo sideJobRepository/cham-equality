@@ -19,10 +19,13 @@ jobs:
               - 'chamApi/**'
             frontend:
               - 'front/**'
+            app:
+              - 'chamApp/**'
 
     outputs:
       backend: ${{ steps.changes.outputs.backend }}
       frontend: ${{ steps.changes.outputs.frontend }}
+      app: ${{ steps.changes.outputs.app }}
 
   build-backend:
     needs: detect-changes
@@ -137,3 +140,61 @@ jobs:
             sudo mkdir -p /usr/share/nginx/cham-front-research
             sudo mv /home/cham/deploy/front-dist-temp-research/* /usr/share/nginx/cham-front-research/
             sudo systemctl reload nginx
+
+  build-app:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.app == 'true'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: chamApp/package-lock.json
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'corretto'
+          java-version: '17'
+
+      - name: npm 인스톨
+        working-directory: chamApp
+        run: npm ci
+
+      - name: .env 생성 (react-native-config 빌드 타임 주입)
+        working-directory: chamApp
+        run: |
+          cat > .env <<EOF
+          API_BASE_URL=${{ secrets.APP_API_BASE_URL }}
+          KAKAO_NATIVE_APP_KEY=${{ secrets.KAKAO_NATIVE_APP_KEY }}
+          KAKAO_MAP_APP_KEY=${{ secrets.KAKAO_MAP_APP_KEY }}
+          EOF
+
+      - name: 업로드 keystore 복원 (base64 → jks)
+        run: echo "${{ secrets.UPLOAD_KEYSTORE_BASE64 }}" | base64 -d > chamApp/android/app/upload-keystore.jks
+
+      - name: keystore.properties 생성
+        run: |
+          cat > chamApp/android/keystore.properties <<EOF
+          CHAM_UPLOAD_STORE_FILE=upload-keystore.jks
+          CHAM_UPLOAD_KEY_ALIAS=upload
+          CHAM_UPLOAD_STORE_PASSWORD=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          CHAM_UPLOAD_KEY_PASSWORD=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          EOF
+
+      - name: AAB 빌드
+        working-directory: chamApp/android
+        run: chmod +x ./gradlew && ./gradlew bundleRelease --no-daemon
+
+      - name: AAB 아티팩트 업로드
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release-aab
+          path: chamApp/android/app/build/outputs/bundle/release/app-release.aab
+          if-no-files-found: error
