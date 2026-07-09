@@ -48,9 +48,14 @@ public class ChamEqualityAuthenticationSuccessHandler implements AuthenticationS
             refreshTokenService.refreshTokenSaveOrUpdate(member, tokenPair.getRefreshToken());
 
             MemberResponseDto memberResponseDto = MemberResponseDto.create(member, authorities);
-            TokenResponse result = new TokenResponse(tokenPair.getAccessToken(), memberResponseDto);
 
-            // Refresh Token은 HttpOnly 쿠키로 설정
+            // 앱(/api/app/*)은 쿠키를 못 쓰므로 refresh를 body에도 담아 준다. 웹은 쿠키만.
+            boolean isApp = request.getRequestURI().startsWith("/api/app/");
+            TokenResponse result = isApp
+                    ? new TokenResponse(tokenPair.getAccessToken(), memberResponseDto, tokenPair.getRefreshToken())
+                    : new TokenResponse(tokenPair.getAccessToken(), memberResponseDto);
+
+            // Refresh Token은 HttpOnly 쿠키로 설정(웹·앱 공통 유지)
             response.addHeader("Set-Cookie", refreshCookieFactory.create(tokenPair.getRefreshToken()).toString());
             response.setContentType("application/json; charset=UTF-8");
             response.getWriter().write(jsonMapper.writeValueAsString(result));

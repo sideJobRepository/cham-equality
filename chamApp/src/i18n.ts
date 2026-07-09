@@ -13,6 +13,13 @@ const resources = {
       home: {
         messageTitle2: '일일 재난안전관리 상황',
       },
+      auth: {
+        loginTitle: '로그인하고 제보를 시작하세요',
+        kakao: '카카오로 로그인',
+        apple: 'Apple로 로그인',
+        logout: '로그아웃',
+        greeting: '{{name}}님 환영합니다',
+      },
       map: {
         labels: {
           nearbyLocation: '내 위치 주변 보기',
@@ -51,6 +58,13 @@ const resources = {
       },
       home: {
         messageTitle2: 'Daily Disaster Safety Status',
+      },
+      auth: {
+        loginTitle: 'Log in to start reporting',
+        kakao: 'Log in with Kakao',
+        apple: 'Sign in with Apple',
+        logout: 'Log out',
+        greeting: 'Welcome, {{name}}',
       },
       map: {
         labels: {
@@ -91,6 +105,13 @@ const resources = {
       home: {
         messageTitle2: '每日灾害安全管理情况',
       },
+      auth: {
+        loginTitle: '登录后开始举报',
+        kakao: '使用 Kakao 登录',
+        apple: '使用 Apple 登录',
+        logout: '退出登录',
+        greeting: '欢迎，{{name}}',
+      },
       map: {
         labels: {
           nearbyLocation: '查看我的位置附近',
@@ -130,6 +151,13 @@ const resources = {
       home: {
         messageTitle2: '日次災害安全管理状況',
       },
+      auth: {
+        loginTitle: 'ログインして提報を始める',
+        kakao: 'カカオでログイン',
+        apple: 'Appleでログイン',
+        logout: 'ログアウト',
+        greeting: '{{name}}さん、ようこそ',
+      },
       map: {
         labels: {
           nearbyLocation: '現在地周辺を見る',
@@ -168,6 +196,13 @@ const resources = {
       },
       home: {
         messageTitle2: 'Tình hình quản lý an toàn thiên tai hằng ngày',
+      },
+      auth: {
+        loginTitle: 'Đăng nhập để bắt đầu báo cáo',
+        kakao: 'Đăng nhập bằng Kakao',
+        apple: 'Đăng nhập bằng Apple',
+        logout: 'Đăng xuất',
+        greeting: 'Xin chào, {{name}}',
       },
       map: {
         labels: {

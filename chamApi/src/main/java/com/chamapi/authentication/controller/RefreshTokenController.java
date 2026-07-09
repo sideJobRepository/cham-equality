@@ -28,10 +28,17 @@ public class RefreshTokenController {
      * 새 refresh는 Set-Cookie로 덮어 쓴다(회전). access는 응답 본문으로 돌려준다.
      */
     @PostMapping("/refresh")
-    public TokenResponse refreshToken(@CookieValue(value = "${auth.cookie.name:refreshToken}", required = false) String refreshToken, HttpServletResponse response) {
+    public TokenResponse refreshToken(@CookieValue(value = "${auth.cookie.name:refreshToken}", required = false) String cookieRefreshToken,
+                                      @RequestHeader(value = "X-Refresh-Token", required = false) String headerRefreshToken,
+                                      HttpServletResponse response) {
+        // 앱은 쿠키 대신 X-Refresh-Token 헤더로 보낸다. 웹은 쿠키.
+        String refreshToken = headerRefreshToken != null ? headerRefreshToken : cookieRefreshToken;
         TokenAndUser tokenPair = refreshTokenService.reissueTokenWithUser(refreshToken);
         response.addHeader("Set-Cookie", refreshCookieFactory.create(tokenPair.token().getRefreshToken()).toString());
-        return new TokenResponse(tokenPair.token().getAccessToken(), tokenPair.user());
+        // 헤더로 온 요청(=앱)은 회전된 새 refresh를 body로도 돌려준다.
+        return headerRefreshToken != null
+                ? new TokenResponse(tokenPair.token().getAccessToken(), tokenPair.user(), tokenPair.token().getRefreshToken())
+                : new TokenResponse(tokenPair.token().getAccessToken(), tokenPair.user());
     }
 
     /**
@@ -39,7 +46,10 @@ public class RefreshTokenController {
      * 쿠키가 이미 없던 요청도 200을 돌려준다(클라 정리만 수행).
      */
     @DeleteMapping("/refresh")
-    public ApiResponse<Void> deleteRefreshToken(@CookieValue(value = "${auth.cookie.name:refreshToken}", required = false) String refreshToken, HttpServletResponse response) {
+    public ApiResponse<Void> deleteRefreshToken(@CookieValue(value = "${auth.cookie.name:refreshToken}", required = false) String cookieRefreshToken,
+                                                @RequestHeader(value = "X-Refresh-Token", required = false) String headerRefreshToken,
+                                                HttpServletResponse response) {
+        String refreshToken = headerRefreshToken != null ? headerRefreshToken : cookieRefreshToken;
         ApiResponse<Void> apiResponse = refreshToken == null
                 ? ApiResponse.of(200, true, "정상 삭제")
                 : refreshTokenService.deleteRefresh(refreshToken);

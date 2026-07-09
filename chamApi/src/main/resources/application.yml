@@ -65,3 +65,6 @@ data:
     base-url: ${NCP_BASE_URL}
     geocoding-path: ${NCP_GEOCODING_PATH}
     reverse-geocoding-path: ${NCP_REVERSE_GEOCODING_PATH}
+
+kakao:
+  appId: ${KAKAO_APP_ID:0}

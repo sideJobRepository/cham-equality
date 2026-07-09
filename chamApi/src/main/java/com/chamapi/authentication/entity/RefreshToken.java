@@ -33,11 +33,7 @@ public class RefreshToken extends DateSuperClass {
     // BGM 아지트 리프레쉬 만료 일시
     @Column(name = "REFRESH_EXPIRES_DATE")
     private LocalDateTime refreshExpiresDate;
-    
-    // BGM 아지트 리프레쉬 플랫폼 ID
-    @Column(name = "REFRESH_PLATFORM_ID")
-    private String refreshPlatformId;
-    
+
     public void updateToken(String refreshTokenValue, LocalDateTime expiresAt) {
         this.refreshTokenValue = refreshTokenValue;
         this.refreshExpiresDate = expiresAt;
