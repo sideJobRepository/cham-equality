@@ -440,7 +440,7 @@ const ShelterItem = styled.Pressable`
 const ShelterImageFrame = styled.Pressable`
   position: relative;
   width: 100%;
-  height: 132px;
+  aspect-ratio: 4 / 3;
   overflow: hidden;
   border-radius: 10px;
   background-color: #e5e7eb;
