@@ -1,10 +1,14 @@
 import { useMemo, useState } from 'react';
-import type { ImageSourcePropType } from 'react-native';
+import { Modal, StyleSheet, type ImageSourcePropType } from 'react-native';
 import styled from 'styled-components/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ChevronLeft, ChevronRight } from 'lucide-react-native';
+import { ChevronLeft, ChevronRight, X } from 'lucide-react-native';
+import { WebView } from 'react-native-webview';
 import { useTranslation } from 'react-i18next';
-import { useFetchManuals } from '../services/manual.service.ts';
+import {
+  useFetchManualDetail,
+  useFetchManuals,
+} from '../services/manual.service.ts';
 import { useManualStore } from '../store/manual.ts';
 
 const PAGE_SIZE = 10;
@@ -24,10 +28,43 @@ function formatManualDate(dateString?: string) {
   return `${year}.${month}.${day}`;
 }
 
+function buildManualHtml(content?: string) {
+  return `<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        color: #1d1d1f;
+        font-size: 15px;
+        line-height: 1.65;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        word-break: break-word;
+      }
+      img, video, iframe {
+        max-width: 100%;
+        height: auto;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+    </style>
+  </head>
+  <body>${content ?? ''}</body>
+</html>`;
+}
+
 export default function ManualScreen() {
   const { t } = useTranslation();
   useFetchManuals();
+  const fetchManualDetail = useFetchManualDetail();
   const manuals = useManualStore(state => state.manuals);
+  const manualDetail = useManualStore(state => state.manualDetail);
+  const clearManualDetail = useManualStore(state => state.clearManualDetail);
   const [page, setPage] = useState(1);
 
   const totalPages = Math.max(1, Math.ceil(manuals.length / PAGE_SIZE));
@@ -43,6 +80,10 @@ export default function ManualScreen() {
 
   const handleNextPage = () => {
     setPage(value => Math.min(value + 1, totalPages));
+  };
+
+  const handlePressManual = (id: number) => {
+    fetchManualDetail(id);
   };
 
   return (
@@ -63,7 +104,10 @@ export default function ManualScreen() {
 
         {pagedManuals.length ? (
           pagedManuals.map(manual => (
-            <ManualRow key={manual.id}>
+            <ManualRow
+              key={manual.id}
+              onPress={() => handlePressManual(manual.id)}
+            >
               <ManualTitle numberOfLines={1} ellipsizeMode="tail">
                 {manual.title}
               </ManualTitle>
@@ -99,13 +143,48 @@ export default function ManualScreen() {
           />
         </PageButton>
       </Pagination>
+
+      <Modal
+        animationType="fade"
+        transparent
+        visible={!!manualDetail}
+        onRequestClose={clearManualDetail}
+      >
+        <ModalOverlay onPress={clearManualDetail}>
+          <ModalCard onPress={event => event.stopPropagation()}>
+            <ModalHeader>
+              <ModalTitle numberOfLines={2}>{manualDetail?.title}</ModalTitle>
+              <CloseButton onPress={clearManualDetail}>
+                <X color="#111827" size={20} strokeWidth={2.7} />
+              </CloseButton>
+            </ModalHeader>
+            <ModalDate>{formatManualDate(manualDetail?.createDate)}</ModalDate>
+            <ManualWebViewFrame>
+              <WebView
+                originWhitelist={['*']}
+                source={{ html: buildManualHtml(manualDetail?.content) }}
+                javaScriptEnabled
+                domStorageEnabled
+                nestedScrollEnabled
+                style={styles.manualWebView}
+              />
+            </ManualWebViewFrame>
+          </ModalCard>
+        </ModalOverlay>
+      </Modal>
     </Screen>
   );
 }
 
+const styles = StyleSheet.create({
+  manualWebView: {
+    flex: 1,
+    backgroundColor: '#ffffff',
+  },
+});
+
 const Screen = styled(SafeAreaView)`
   flex: 1;
-  padding: 18px 16px;
   background-color: #ffffff;
 `;
 
@@ -114,6 +193,7 @@ const Header = styled.View`
   align-items: flex-end;
   justify-content: space-between;
   margin-bottom: 14px;
+  padding: 0 12px;
 `;
 
 const BannerFrame = styled.View`
@@ -129,16 +209,15 @@ const BannerImage = styled.Image`
 
 const Title = styled.Text`
   color: #2776e0;
-  font-size: 22px;
+  font-size: 18px;
   font-weight: 800;
 `;
 
 const Board = styled.View`
   overflow: hidden;
   border-radius: 8px;
-  border-width: 1px;
   border-color: #e5e7eb;
-  background-color: #ffffff;
+  padding: 0 12px;
 `;
 
 const BoardHeader = styled.View`
@@ -230,4 +309,55 @@ const PageText = styled.Text`
   color: #111827;
   font-size: 14px;
   font-weight: 800;
+`;
+
+const ModalOverlay = styled.Pressable`
+  flex: 1;
+  justify-content: center;
+  padding: 20px;
+  background-color: rgba(15, 23, 42, 0.45);
+`;
+
+const ModalCard = styled.Pressable`
+  height: 78%;
+  padding: 18px;
+  border-radius: 14px;
+  background-color: #ffffff;
+`;
+
+const ModalHeader = styled.View`
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 12px;
+`;
+
+const ModalTitle = styled.Text`
+  flex: 1;
+  color: #111827;
+  font-size: 18px;
+  line-height: 24px;
+  font-weight: 800;
+`;
+
+const CloseButton = styled.Pressable`
+  width: 12px;
+  height: 12px;
+  align-items: center;
+  justify-content: center;
+`;
+
+const ModalDate = styled.Text`
+  margin-top: 6px;
+  color: #6b7280;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: right;
+`;
+
+const ManualWebViewFrame = styled.View`
+  flex: 1;
+  width: 100%;
+  margin-top: 14px;
+  overflow: hidden;
+  background-color: #ffffff;
 `;

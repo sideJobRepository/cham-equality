@@ -29,3 +29,22 @@ export function useFetchManuals() {
 
   return fetchManuals;
 }
+
+export function useFetchManualDetail() {
+  const { request } = useRequest();
+  const setManualDetail = useManualStore(state => state.setManualDetail);
+
+  const fetchManualDetail = useCallback(
+    (id: number) =>
+      request(
+        () => api.get(`/api/manuals/${id}`).then(res => res.data.data),
+        setManualDetail,
+        {
+          ignoreErrorRedirect: true,
+        },
+      ),
+    [request, setManualDetail],
+  );
+
+  return fetchManualDetail;
+}
