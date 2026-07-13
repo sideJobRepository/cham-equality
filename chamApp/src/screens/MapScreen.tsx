@@ -1,7 +1,11 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Animated,
+  Easing,
   Modal,
+  PanResponder,
+  useWindowDimensions,
   type ImageSourcePropType,
 } from 'react-native';
 import Config from 'react-native-config';
@@ -665,7 +669,11 @@ function buildMapHtml(
 
 export default function MapScreen() {
   const { t } = useTranslation();
+  const { height: screenHeight } = useWindowDimensions();
   const route = useRoute<RouteProp<RootTabParamList, 'Map'>>();
+  const [isPanelExpanded, setIsPanelExpanded] = useState(true);
+  const panelAnimation = useRef(new Animated.Value(1)).current;
+  const panelDragStartRef = useRef(1);
   const selectedShelterTypes = useMapFilterStore(
     state => state.selectedShelterTypes,
   );
@@ -885,6 +893,59 @@ export default function MapScreen() {
     });
   };
 
+  const expandedPanelHeight = Math.round(screenHeight * 0.5);
+  const collapsedPanelHeight = 42;
+  const panelRange = expandedPanelHeight - collapsedPanelHeight;
+  const panelHeight = panelAnimation.interpolate({
+    inputRange: [0, 1],
+    outputRange: [collapsedPanelHeight, expandedPanelHeight],
+  });
+
+  const animatePanelTo = useCallback(
+    (expanded: boolean) => {
+      setIsPanelExpanded(expanded);
+      Animated.timing(panelAnimation, {
+        toValue: expanded ? 1 : 0,
+        duration: 280,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: false,
+      }).start();
+    },
+    [panelAnimation],
+  );
+
+  const handleTogglePanel = () => {
+    animatePanelTo(!isPanelExpanded);
+  };
+
+  const panelPanResponder = useMemo(
+    () =>
+      PanResponder.create({
+        onMoveShouldSetPanResponder: (_, gestureState) =>
+          Math.abs(gestureState.dy) > 6 &&
+          Math.abs(gestureState.dy) > Math.abs(gestureState.dx),
+        onPanResponderGrant: () => {
+          panelDragStartRef.current = isPanelExpanded ? 1 : 0;
+        },
+        onPanResponderMove: (_, gestureState) => {
+          const nextValue =
+            panelDragStartRef.current - gestureState.dy / panelRange;
+          panelAnimation.setValue(Math.max(0, Math.min(1, nextValue)));
+        },
+        onPanResponderRelease: (_, gestureState) => {
+          const shouldExpand =
+            gestureState.vy < -0.35 ||
+            (gestureState.vy <= 0.35 &&
+              panelDragStartRef.current - gestureState.dy / panelRange > 0.45);
+          animatePanelTo(shouldExpand);
+        },
+        onPanResponderTerminate: () => {
+          animatePanelTo(isPanelExpanded);
+        },
+      }),
+    [animatePanelTo, isPanelExpanded, panelAnimation, panelRange],
+  );
+
   return (
     <Screen edges={['top', 'left', 'right']}>
       <Header>
@@ -922,7 +983,13 @@ export default function MapScreen() {
 
       {mapError ? <ErrorText>{mapError}</ErrorText> : null}
 
-      <BottomPanel>
+      <BottomPanel style={{ height: panelHeight }}>
+        <PanelHandleButton
+          onPress={handleTogglePanel}
+          {...panelPanResponder.panHandlers}
+        >
+          <PanelHandleBar />
+        </PanelHandleButton>
         {selectedPlace ? (
           <>
             <PanelHeader>
@@ -1202,6 +1269,7 @@ export default function MapScreen() {
 
 const Screen = styled(SafeAreaView)`
   flex: 1;
+  position: relative;
   background-color: #f4f7fb;
 `;
 
@@ -1210,7 +1278,7 @@ const Header = styled.View`
 `;
 
 const MapFrame = styled.View`
-  flex: 6;
+  flex: 1;
   overflow: hidden;
   margin: 10px 12px 0;
   border-radius: 18px;
@@ -1238,14 +1306,35 @@ const ErrorText = styled.Text`
   font-weight: 600;
 `;
 
-const BottomPanel = styled.View`
-  flex: 4;
+const BottomPanel = styled(Animated.View)`
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 0;
   gap: 6px;
-  margin: 6px 12px 0;
-  padding: 10px;
-  border-radius: 16px;
+  padding: 0 10px 10px;
+  border-radius: 16px 16px 0 0;
   background-color: #ffffff;
   min-height: 0;
+  overflow: hidden;
+  shadow-color: #111827;
+  shadow-opacity: 0.14;
+  shadow-radius: 12px;
+  shadow-offset: 0 -3px;
+  elevation: 10;
+`;
+
+const PanelHandleButton = styled.Pressable`
+  height: 42px;
+  align-items: center;
+  justify-content: center;
+`;
+
+const PanelHandleBar = styled.View`
+  width: 42px;
+  height: 4px;
+  border-radius: 999px;
+  background-color: #d1d5db;
 `;
 
 const PanelHeader = styled.View`
