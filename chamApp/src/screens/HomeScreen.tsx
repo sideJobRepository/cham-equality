@@ -159,7 +159,9 @@ export default function HomeScreen() {
           onPress={handlePressDisaster}
         >
           <TopBox>
-            <MessageTitle2>{t('home.messageTitle2')}</MessageTitle2>
+            <MessageTitle2 numberOfLines={1} ellipsizeMode="tail">
+              {t('home.messageTitle2')}
+            </MessageTitle2>
             <TimeText>{disasterDate}</TimeText>
           </TopBox>
           <CenterBox>
@@ -656,6 +658,7 @@ const TopBox = styled.View`
   flex-direction: row;
   justify-content: space-between;
   align-items: center;
+  gap: 8px;
 `;
 
 const SummaryRow = styled.View`
@@ -674,12 +677,14 @@ const SummaryDot = styled.View`
 `;
 
 const MessageTitle2 = styled.Text`
+  flex: 1;
   color: #2776e0;
   font-size: 16px;
   font-weight: 600;
 `;
 
 const TimeText = styled.Text`
+  flex-shrink: 0;
   font-size: 14px;
   color: #a3a7ac;
 `;

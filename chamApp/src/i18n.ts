@@ -13,6 +13,13 @@ const resources = {
       home: {
         messageTitle2: '일일 재난안전관리 상황',
       },
+      manual: {
+        title: '재난 행동요령',
+        no: 'No',
+        subject: '제목',
+        createdAt: '작성일',
+        empty: '등록된 행동요령이 없습니다.',
+      },
       auth: {
         loginTitle: '로그인하고 제보를 시작하세요',
         kakao: '카카오로 로그인',
@@ -58,6 +65,13 @@ const resources = {
       },
       home: {
         messageTitle2: 'Daily Disaster Safety Status',
+      },
+      manual: {
+        title: 'Disaster Safety Guide',
+        no: 'No',
+        subject: 'Title',
+        createdAt: 'Date',
+        empty: 'No safety guides are available.',
       },
       auth: {
         loginTitle: 'Log in to start reporting',
@@ -105,6 +119,13 @@ const resources = {
       home: {
         messageTitle2: '每日灾害安全管理情况',
       },
+      manual: {
+        title: '灾害行动指南',
+        no: '编号',
+        subject: '标题',
+        createdAt: '日期',
+        empty: '暂无行动指南。',
+      },
       auth: {
         loginTitle: '登录后开始举报',
         kakao: '使用 Kakao 登录',
@@ -151,6 +172,13 @@ const resources = {
       home: {
         messageTitle2: '日次災害安全管理状況',
       },
+      manual: {
+        title: '災害時行動ガイド',
+        no: 'No',
+        subject: 'タイトル',
+        createdAt: '作成日',
+        empty: '登録された行動ガイドはありません。',
+      },
       auth: {
         loginTitle: 'ログインして提報を始める',
         kakao: 'カカオでログイン',
@@ -196,6 +224,13 @@ const resources = {
       },
       home: {
         messageTitle2: 'Tình hình quản lý an toàn thiên tai hằng ngày',
+      },
+      manual: {
+        title: 'Hướng dẫn ứng phó thiên tai',
+        no: 'STT',
+        subject: 'Tiêu đề',
+        createdAt: 'Ngày tạo',
+        empty: 'Chưa có hướng dẫn nào.',
       },
       auth: {
         loginTitle: 'Đăng nhập để bắt đầu báo cáo',
