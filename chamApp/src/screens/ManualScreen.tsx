@@ -92,9 +92,9 @@ export default function ManualScreen() {
         <BannerImage source={manualBanner} resizeMode="contain" />
       </BannerFrame>
 
-      <Header>
-        <Title>{t('manual.title')}</Title>
-      </Header>
+      {/*<Header>*/}
+      {/*  <Title>{t('manual.title')}</Title>*/}
+      {/*</Header>*/}
 
       <Board>
         <BoardHeader>
@@ -125,7 +125,7 @@ export default function ManualScreen() {
         <PageButton disabled={currentPage === 1} onPress={handlePrevPage}>
           <ChevronLeft
             color={currentPage === 1 ? '#d1d5db' : '#111827'}
-            size={20}
+            size={16}
             strokeWidth={2.6}
           />
         </PageButton>
@@ -138,7 +138,7 @@ export default function ManualScreen() {
         >
           <ChevronRight
             color={currentPage === totalPages ? '#d1d5db' : '#111827'}
-            size={20}
+            size={16}
             strokeWidth={2.6}
           />
         </PageButton>
@@ -288,13 +288,13 @@ const Pagination = styled.View`
   flex-direction: row;
   align-items: center;
   justify-content: center;
-  gap: 14px;
+  gap: 4px;
   margin-top: 16px;
 `;
 
 const PageButton = styled.Pressable`
-  width: 36px;
-  height: 36px;
+  width: 24px;
+  height: 24px;
   align-items: center;
   justify-content: center;
   border-radius: 999px;
@@ -306,9 +306,9 @@ const PageButton = styled.Pressable`
 const PageText = styled.Text`
   min-width: 58px;
   text-align: center;
-  color: #111827;
-  font-size: 14px;
-  font-weight: 800;
+  color: #6b7280;
+  font-size: 12px;
+  font-weight: 600;
 `;
 
 const ModalOverlay = styled.Pressable`
