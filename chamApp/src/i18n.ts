@@ -27,6 +27,14 @@ const resources = {
         logout: '로그아웃',
         greeting: '{{name}}님 환영합니다',
       },
+      more: {
+        citizenServices: '연결된 시민 서비스',
+        foodMap: '대전참여자치시민연대 맛집지도',
+        chamSite: '대전참여자치시민연대',
+        appSettings: '언어 설정',
+        languageSettings: '언어 설정',
+        login: '로그인',
+      },
       map: {
         labels: {
           nearbyLocation: '내 위치 주변 보기',
@@ -79,6 +87,14 @@ const resources = {
         apple: 'Sign in with Apple',
         logout: 'Log out',
         greeting: 'Welcome, {{name}}',
+      },
+      more: {
+        citizenServices: 'Connected Civic Services',
+        foodMap: 'Daejeon PSPD Food Map',
+        chamSite: 'Daejeon PSPD',
+        appSettings: 'Language Settings',
+        languageSettings: 'Language Settings',
+        login: 'Login',
       },
       map: {
         labels: {
@@ -133,6 +149,14 @@ const resources = {
         logout: '退出登录',
         greeting: '欢迎，{{name}}',
       },
+      more: {
+        citizenServices: '已连接的市民服务',
+        foodMap: '大田参与自治市民联盟美食地图',
+        chamSite: '大田参与自治市民联盟',
+        appSettings: '语言设置',
+        languageSettings: '语言设置',
+        login: '登录',
+      },
       map: {
         labels: {
           nearbyLocation: '查看我的位置附近',
@@ -186,6 +210,14 @@ const resources = {
         logout: 'ログアウト',
         greeting: '{{name}}さん、ようこそ',
       },
+      more: {
+        citizenServices: '連携された市民サービス',
+        foodMap: '大田参与自治市民連帯グルメマップ',
+        chamSite: '大田参与自治市民連帯',
+        appSettings: '言語設定',
+        languageSettings: '言語設定',
+        login: 'ログイン',
+      },
       map: {
         labels: {
           nearbyLocation: '現在地周辺を見る',
@@ -238,6 +270,14 @@ const resources = {
         apple: 'Đăng nhập bằng Apple',
         logout: 'Đăng xuất',
         greeting: 'Xin chào, {{name}}',
+      },
+      more: {
+        citizenServices: 'Dịch vụ công dân đã kết nối',
+        foodMap: 'Bản đồ quán ăn Daejeon PSPD',
+        chamSite: 'Daejeon PSPD',
+        appSettings: 'Cài đặt ngôn ngữ',
+        languageSettings: 'Cài đặt ngôn ngữ',
+        login: 'Đăng nhập',
       },
       map: {
         labels: {
