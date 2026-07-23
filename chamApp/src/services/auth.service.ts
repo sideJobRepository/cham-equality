@@ -66,6 +66,29 @@ export function useAppleLogin() {
   }, [request]);
 }
 
+// 회원 탈퇴: 서버에서 회원+관련 데이터 삭제 → 로컬 세션·소셜 세션 정리
+export function useWithdraw() {
+  const { request } = useRequest();
+  return useCallback(async () => {
+    await request(
+      () => api.delete('/api/app/member').then(res => res.data),
+      undefined,
+      { ignoreErrorRedirect: true },
+    );
+    await clearSession();
+    try {
+      await logoutFromKakao();
+    } catch {
+      // 카카오 세션이 없을 수도 있음
+    }
+    try {
+      await logoutFromNaver();
+    } catch {
+      // 네이버 세션이 없을 수도 있음
+    }
+  }, [request]);
+}
+
 // 로그아웃: 서버 refresh 삭제 시도 → 로컬 세션·카카오 세션 정리(실패해도 로컬은 정리)
 export function useLogout() {
   const { request } = useRequest();

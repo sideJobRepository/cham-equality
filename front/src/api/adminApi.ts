@@ -85,6 +85,57 @@ export async function requestReInvestigation(id: number): Promise<void> {
   await http.post(`/admin/reports/${id}/re-investigate`)
 }
 
+// ===== 앱 제보(관리자) =====
+// 웹 제보와 거의 동일하나 조사자(reporter)·조사메모(requestNote)가 없고 재조사(RE_INVESTIGATION)가 없다.
+
+export type ShelterAppReport = {
+  id: number
+  shelterId: number
+  shelterName: string | null
+  signageLanguage: string | null
+  accessibleToilet: boolean | null
+  ramp: boolean | null
+  elevator: boolean | null
+  brailleBlock: boolean | null
+  etcFacilities: string | null
+  requestStatus: ShelterReportStatus
+  createDate: string
+}
+
+export type ShelterAppReportDetail = ShelterAppReport & {
+  shelterAddress: string | null
+  shelterSurveyStatus: ShelterSurveyStatus | null
+  images: ShelterReportImageView[]
+}
+
+export type AdminAppReportFilter = ShelterReportStatus
+
+export async function fetchAppReports(
+  filter: AdminAppReportFilter | 'ALL',
+  page: number,
+  size: number,
+): Promise<PageResponse<ShelterAppReport>> {
+  const params: Record<string, string | number> = { page, size }
+  if (filter !== 'ALL') params.filter = filter
+  const { data } = await http.get<ApiResponse<PageResponse<ShelterAppReport>>>('/admin/app-reports', {
+    params,
+  })
+  return data.data
+}
+
+export async function fetchAppReportDetail(id: number): Promise<ShelterAppReportDetail> {
+  const { data } = await http.get<ApiResponse<ShelterAppReportDetail>>(`/admin/app-reports/${id}`)
+  return data.data
+}
+
+export async function approveAppReport(id: number): Promise<void> {
+  await http.post(`/admin/app-reports/${id}/approve`)
+}
+
+export async function rejectAppReport(id: number): Promise<void> {
+  await http.post(`/admin/app-reports/${id}/reject`)
+}
+
 export async function getDownloadUrl(fileId: number): Promise<string> {
   const { data } = await http.get<ApiResponse<string>>(`/download-file/${fileId}`)
   return data.data

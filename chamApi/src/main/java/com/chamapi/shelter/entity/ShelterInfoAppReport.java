@@ -71,4 +71,12 @@ public class ShelterInfoAppReport extends DateSuperClass {
             throw new BadRequestException("대기 중인 제보만 수정 가능합니다");
         }
     }
+
+    public void approve() {
+        this.requestStatus = ShelterInfoReportStatus.APPROVED;
+    }
+
+    public void reject() {
+        this.requestStatus = ShelterInfoReportStatus.REJECTED;
+    }
 }

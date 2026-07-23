@@ -27,6 +27,12 @@ const resources = {
         apple: 'Apple로 로그인',
         logout: '로그아웃',
         greeting: '{{name}}님 환영합니다',
+        withdraw: '회원 탈퇴',
+        withdrawConfirmTitle: '회원 탈퇴',
+        withdrawConfirmDesc:
+          '탈퇴하면 계정과 내 제보가 삭제되며 되돌릴 수 없습니다. 계속하시겠습니까?',
+        withdrawDone: '회원 탈퇴가 완료되었습니다.',
+        withdrawFailed: '회원 탈퇴에 실패했습니다. 잠시 후 다시 시도해주세요.',
       },
       more: {
         citizenServices: '연결된 시민 서비스',
@@ -89,6 +95,12 @@ const resources = {
         apple: 'Sign in with Apple',
         logout: 'Log out',
         greeting: 'Welcome, {{name}}',
+        withdraw: 'Delete account',
+        withdrawConfirmTitle: 'Delete account',
+        withdrawConfirmDesc:
+          'Deleting your account permanently removes your account and your reports. This cannot be undone. Continue?',
+        withdrawDone: 'Your account has been deleted.',
+        withdrawFailed: 'Failed to delete account. Please try again later.',
       },
       more: {
         citizenServices: 'Connected Civic Services',
@@ -151,6 +163,11 @@ const resources = {
         apple: '使用 Apple 登录',
         logout: '退出登录',
         greeting: '欢迎，{{name}}',
+        withdraw: '注销账号',
+        withdrawConfirmTitle: '注销账号',
+        withdrawConfirmDesc: '注销后账号和您的举报将被永久删除，且无法恢复。是否继续？',
+        withdrawDone: '账号已注销。',
+        withdrawFailed: '注销失败，请稍后重试。',
       },
       more: {
         citizenServices: '已连接的市民服务',
@@ -213,6 +230,12 @@ const resources = {
         apple: 'Appleでログイン',
         logout: 'ログアウト',
         greeting: '{{name}}さん、ようこそ',
+        withdraw: '退会する',
+        withdrawConfirmTitle: '退会する',
+        withdrawConfirmDesc:
+          '退会するとアカウントと提報が完全に削除され、元に戻せません。続行しますか？',
+        withdrawDone: '退会が完了しました。',
+        withdrawFailed: '退会に失敗しました。しばらくしてから再度お試しください。',
       },
       more: {
         citizenServices: '連携された市民サービス',
@@ -275,6 +298,12 @@ const resources = {
         apple: 'Đăng nhập bằng Apple',
         logout: 'Đăng xuất',
         greeting: 'Xin chào, {{name}}',
+        withdraw: 'Xóa tài khoản',
+        withdrawConfirmTitle: 'Xóa tài khoản',
+        withdrawConfirmDesc:
+          'Xóa tài khoản sẽ xóa vĩnh viễn tài khoản và các báo cáo của bạn, không thể hoàn tác. Tiếp tục?',
+        withdrawDone: 'Tài khoản của bạn đã được xóa.',
+        withdrawFailed: 'Xóa tài khoản thất bại. Vui lòng thử lại sau.',
       },
       more: {
         citizenServices: 'Dịch vụ công dân đã kết nối',

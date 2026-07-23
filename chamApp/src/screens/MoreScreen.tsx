@@ -9,6 +9,7 @@ import {
   useNaverLogin,
   useAppleLogin,
   useLogout,
+  useWithdraw,
 } from '../services/auth.service';
 import { useDialogUtil } from '../utils/dialog';
 
@@ -36,12 +37,13 @@ const citizenServices = [
 
 export default function MoreScreen() {
   const { t, i18n } = useTranslation();
-  const { alert } = useDialogUtil();
+  const { alert, confirm } = useDialogUtil();
   const user = useUserStore(state => state.user);
   const kakaoLogin = useKakaoLogin();
   const naverLogin = useNaverLogin();
   const appleLogin = useAppleLogin();
   const logout = useLogout();
+  const withdraw = useWithdraw();
 
   const onKakao = async () => {
     try {
@@ -74,6 +76,20 @@ export default function MoreScreen() {
       const message =
         error instanceof Error ? error.message : 'Apple 로그인에 실패했습니다.';
       alert(message);
+    }
+  };
+
+  const onWithdraw = async () => {
+    const ok = await confirm(
+      t('auth.withdrawConfirmTitle'),
+      t('auth.withdrawConfirmDesc'),
+    );
+    if (!ok) return;
+    try {
+      await withdraw();
+      alert(t('auth.withdrawDone'));
+    } catch {
+      alert(t('auth.withdrawFailed'));
     }
   };
 
@@ -122,6 +138,9 @@ export default function MoreScreen() {
               <LogoutButton onPress={() => logout()}>
                 <LogoutText>{t('auth.logout')}</LogoutText>
               </LogoutButton>
+              <WithdrawButton onPress={onWithdraw}>
+                <WithdrawText>{t('auth.withdraw')}</WithdrawText>
+              </WithdrawButton>
             </LoginBlock>
           ) : (
             <LoginBlock>
@@ -315,5 +334,18 @@ const LogoutText = styled.Text`
   color: #374151;
   font-size: 15px;
   font-weight: 700;
+`;
+
+const WithdrawButton = styled.Pressable`
+  height: 36px;
+  align-items: center;
+  justify-content: center;
+`;
+
+const WithdrawText = styled.Text`
+  color: #9ca3af;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration-line: underline;
 `;
 

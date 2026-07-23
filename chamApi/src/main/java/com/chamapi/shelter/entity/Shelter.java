@@ -101,6 +101,13 @@ public class Shelter extends DateSuperClass {
         this.surveyStatus = ShelterSurveyStatus.INVESTIGATED;
     }
 
+    // 앱 제보 승인 시 대피소 반영. 웹 제보(applyReport)와 동일 규칙, 인자 타입만 다름.
+    public void applyAppReport(ShelterInfoAppReport report) {
+        if (report.getSignageLanguage() != null) this.signageLanguage = report.getSignageLanguage();
+        if (report.getAccessibility() != null) this.accessibility = report.getAccessibility();
+        this.surveyStatus = ShelterSurveyStatus.INVESTIGATED;
+    }
+
     public void markReInvestigation() {
         this.surveyStatus = ShelterSurveyStatus.RE_INVESTIGATION;
     }

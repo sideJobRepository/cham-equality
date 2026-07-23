@@ -18,4 +18,9 @@ public class MemberRoleServiceImpl implements MemberRoleService {
     public MemberRole getMemberRole(Long memberId) {
         return memberRoleRepository.findByMemberId(memberId).orElseThrow(() -> new RuntimeException("회원 권한을 찾을수가 없습니다."));
     }
+
+    @Override
+    public void deleteByMember(Long memberId) {
+        memberRoleRepository.findByMemberId(memberId).ifPresent(memberRoleRepository::delete);
+    }
 }

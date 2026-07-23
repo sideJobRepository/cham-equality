@@ -1,5 +1,6 @@
 package com.chamapi.shelter.service;
 
+import com.chamapi.common.dto.PageResponse;
 import com.chamapi.common.exception.BadRequestException;
 import com.chamapi.file.dto.request.FileRequest;
 import com.chamapi.file.dto.response.FileViewResponse;
@@ -15,11 +16,15 @@ import com.chamapi.shelter.dto.response.ShelterAppReportListResponse;
 import com.chamapi.shelter.entity.Shelter;
 import com.chamapi.shelter.entity.ShelterImage;
 import com.chamapi.shelter.entity.ShelterInfoAppReport;
+import com.chamapi.shelter.enums.AdminReportFilter;
+import com.chamapi.shelter.enums.ShelterInfoReportStatus;
 import com.chamapi.shelter.enums.ShelterSurveyStatus;
 import com.chamapi.shelter.repository.ShelterImageRepository;
 import com.chamapi.shelter.repository.ShelterInfoAppReportRepository;
 import com.chamapi.shelter.repository.ShelterRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -176,6 +181,168 @@ public class ShelterInfoAppReportService {
         if (!newRows.isEmpty()) {
             shelterImageRepository.saveAll(newRows);
         }
+    }
+
+    // ===== 관리자(승인/반려/조회) =====
+
+    /**
+     * 관리자 앱 제보 목록: 필터(null이면 전체) + 페이지네이션. 웹 제보와 동일 구조.
+     * 앱 제보엔 재조사(RE_INVESTIGATION) 개념이 없어 해당 필터는 거부한다.
+     */
+    public PageResponse<ShelterAppReportListResponse> findReports(AdminReportFilter filter, Pageable pageable) {
+        Page<ShelterInfoAppReport> page = fetchReportPage(filter, pageable);
+
+        List<Long> shelterIds = page.getContent().stream()
+                .map(ShelterInfoAppReport::getShelterId)
+                .distinct()
+                .toList();
+        Map<Long, String> shelterNames = shelterIds.isEmpty()
+                ? Map.of()
+                : shelterRepository.findAllById(shelterIds).stream()
+                        .collect(Collectors.toMap(Shelter::getId, Shelter::getName));
+
+        return PageResponse.from(page.map(r ->
+                ShelterAppReportListResponse.from(r, shelterNames.get(r.getShelterId()))
+        ));
+    }
+
+    private Page<ShelterInfoAppReport> fetchReportPage(AdminReportFilter filter, Pageable pageable) {
+        if (filter == null) {
+            return shelterInfoAppReportRepository.findAll(pageable);
+        }
+        return switch (filter) {
+            case PENDING -> shelterInfoAppReportRepository.findAllByRequestStatus(ShelterInfoReportStatus.PENDING, pageable);
+            case APPROVED -> shelterInfoAppReportRepository.findAllByRequestStatus(ShelterInfoReportStatus.APPROVED, pageable);
+            case REJECTED -> shelterInfoAppReportRepository.findAllByRequestStatus(ShelterInfoReportStatus.REJECTED, pageable);
+            case RE_INVESTIGATION -> throw new BadRequestException("앱 제보엔 재조사 필터가 지원되지 않습니다");
+        };
+    }
+
+    /** 관리자 상세: 소유권 검증 없이 조회. 이미지 활성 판별은 시민 상세와 동일. */
+    public ShelterAppReportDetailResponse getReportDetailForAdmin(Long reportId) {
+        ShelterInfoAppReport report = shelterInfoAppReportRepository.findById(reportId)
+                .orElseThrow(() -> new BadRequestException("존재하지 않는 앱 제보 ID: " + reportId));
+
+        Shelter shelter = shelterRepository.findById(report.getShelterId()).orElse(null);
+
+        List<CommonFile> files = commonFileRepository.findByTargetIdAndFileType(reportId, FileType.APP_SHELTER_IMAGE);
+        List<Long> candidateFileIds = files.stream().map(CommonFile::getId).toList();
+
+        Map<Long, ShelterImage> imageByFileId = candidateFileIds.isEmpty()
+                ? Map.of()
+                : shelterImageRepository.findAllByFileIdIn(candidateFileIds).stream()
+                        .collect(Collectors.toMap(ShelterImage::getFileId, Function.identity(), (a, b) -> a));
+
+        List<Long> activeFileIds = candidateFileIds.stream()
+                .filter(imageByFileId::containsKey)
+                .toList();
+
+        List<FileViewResponse> views = s3FileService.getFilesForView(activeFileIds);
+
+        List<ShelterAppReportDetailResponse.ImageView> imageViews = views.stream()
+                .map(view -> {
+                    ShelterImage img = imageByFileId.get(view.getFileId());
+                    return new ShelterAppReportDetailResponse.ImageView(
+                            view.getFileId(),
+                            img != null ? img.getCategory() : null,
+                            img != null ? img.getImageDescription() : null,
+                            view.getUrl(),
+                            view.getFileName()
+                    );
+                })
+                .toList();
+
+        return ShelterAppReportDetailResponse.of(report, shelter, imageViews);
+    }
+
+    /**
+     * 앱 제보 승인. 웹 제보와 동일: 본문을 대피소에 반영(INVESTIGATED) + 상태 APPROVED + 첨부사진 승인 노출,
+     * 같은 대피소의 이전 승인본 사진 정리, 같은 대피소의 다른 PENDING 앱 제보 자동 반려.
+     * (웹 제보와의 상호 자동반려는 하지 않는다 - 각 타입 내에서만.)
+     */
+    @Transactional
+    public void approve(Long reportId) {
+        ShelterInfoAppReport report = shelterInfoAppReportRepository.findById(reportId)
+                .orElseThrow(() -> new BadRequestException("존재하지 않는 앱 제보 ID: " + reportId));
+
+        Shelter shelter = shelterRepository.findById(report.getShelterId())
+                .orElseThrow(() -> new BadRequestException("존재하지 않는 대피소 ID: " + report.getShelterId()));
+
+        List<ShelterInfoAppReport> previousApproved = shelterInfoAppReportRepository
+                .findAllByShelterIdAndRequestStatusOrderByCreateDateDesc(report.getShelterId(), ShelterInfoReportStatus.APPROVED);
+        for (ShelterInfoAppReport prev : previousApproved) {
+            if (prev.getId().equals(reportId)) continue;
+            cleanupImagesOf(prev);
+        }
+
+        shelter.applyAppReport(report);
+        report.approve();
+        approveImagesOf(report);
+
+        List<ShelterInfoAppReport> others = shelterInfoAppReportRepository
+                .findAllByShelterIdAndRequestStatusOrderByCreateDateDesc(report.getShelterId(), ShelterInfoReportStatus.PENDING);
+        for (ShelterInfoAppReport other : others) {
+            if (other.getId().equals(reportId)) continue;
+            rejectInternal(other);
+        }
+    }
+
+    /** 앱 제보 반려. 첨부사진은 TEMPORARY 환원 후 일일 배치가 수거. */
+    @Transactional
+    public void reject(Long reportId) {
+        ShelterInfoAppReport report = shelterInfoAppReportRepository.findById(reportId)
+                .orElseThrow(() -> new BadRequestException("존재하지 않는 앱 제보 ID: " + reportId));
+        rejectInternal(report);
+    }
+
+    /**
+     * 회원 탈퇴 시 그 회원의 앱 제보 삭제. 미승인(PENDING/REJECTED) 제보의 사진은 정리하고,
+     * 승인(APPROVED) 제보의 사진은 이미 대피소 공개 데이터라 유지한 채 제보 행만 삭제한다.
+     */
+    @Transactional
+    public void deleteAllByMember(Long memberId) {
+        List<ShelterInfoAppReport> reports = shelterInfoAppReportRepository.findAllByMemberIdOrderByCreateDateDesc(memberId);
+        for (ShelterInfoAppReport report : reports) {
+            if (report.getRequestStatus() != ShelterInfoReportStatus.APPROVED) {
+                cleanupImagesOf(report);
+            }
+        }
+        shelterInfoAppReportRepository.deleteAll(reports);
+    }
+
+    /** 승인된 제보의 첨부사진을 승인 상태로 전환(공개 지도 노출). 웹 제보와 동일. */
+    private void approveImagesOf(ShelterInfoAppReport report) {
+        List<CommonFile> files = commonFileRepository
+                .findByTargetIdAndFileType(report.getId(), FileType.APP_SHELTER_IMAGE);
+        if (files.isEmpty()) return;
+
+        List<Long> fileIds = files.stream().map(CommonFile::getId).toList();
+        shelterImageRepository.findAllByFileIdIn(fileIds)
+                .forEach(ShelterImage::approve);
+    }
+
+    /** 제보의 첨부사진만 비활성화(ShelterImage 삭제 + CommonFile TEMPORARY 환원). report 상태는 안 건드림. */
+    private void cleanupImagesOf(ShelterInfoAppReport report) {
+        List<CommonFile> files = commonFileRepository
+                .findByTargetIdAndFileType(report.getId(), FileType.APP_SHELTER_IMAGE);
+        if (files.isEmpty()) return;
+
+        List<Long> fileIds = files.stream().map(CommonFile::getId).toList();
+        shelterImageRepository.deleteAllByFileIdIn(fileIds);
+        files.forEach(CommonFile::modifyTemporaryFileStatus);
+    }
+
+    /** 반려 공통 처리: 상태 전환 + 첨부사진 비활성화. */
+    private void rejectInternal(ShelterInfoAppReport report) {
+        report.reject();
+
+        List<CommonFile> files = commonFileRepository
+                .findByTargetIdAndFileType(report.getId(), FileType.APP_SHELTER_IMAGE);
+        if (files.isEmpty()) return;
+
+        List<Long> fileIds = files.stream().map(CommonFile::getId).toList();
+        shelterImageRepository.deleteAllByFileIdIn(fileIds);
+        files.forEach(CommonFile::modifyTemporaryFileStatus);
     }
 
     /**
