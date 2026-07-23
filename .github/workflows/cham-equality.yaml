@@ -146,7 +146,6 @@ jobs:
     if: needs.detect-changes.outputs.app == 'true'
     runs-on: ubuntu-latest
     env:
-      # secrets는 if에 직접 못 쓰므로 env로 매핑해 존재 여부만 검사한다.
       PLAY_SA: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
 
     steps:

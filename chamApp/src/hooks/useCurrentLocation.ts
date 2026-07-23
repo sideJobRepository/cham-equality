@@ -10,7 +10,7 @@ import { useTranslation } from 'react-i18next';
 import { fetchReverseGeocoding } from '../services/geocoding.service.ts';
 import {
   type UserLocation,
-  useLocationStore,
+   useLocationStore,
 } from '../store/location.ts';
 
 const { ChamLocation } = NativeModules as {
