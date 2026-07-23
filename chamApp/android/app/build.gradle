@@ -93,7 +93,8 @@ android {
         applicationId "kr.or.cham.equality"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
+        // CI에서 -PappVersionCode=<github.run_number>로 넘겨 자동 증가시킨다(중복 방지). 로컬은 1.
+        versionCode (project.hasProperty('appVersionCode') ? project.property('appVersionCode').toInteger() : 1)
         versionName "1.0"
 
         // 카카오 URL scheme — AuthCodeHandlerActivity의 intent-filter에서 사용

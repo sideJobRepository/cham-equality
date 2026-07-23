@@ -145,6 +145,9 @@ jobs:
     needs: detect-changes
     if: needs.detect-changes.outputs.app == 'true'
     runs-on: ubuntu-latest
+    env:
+      # secrets는 if에 직접 못 쓰므로 env로 매핑해 존재 여부만 검사한다.
+      PLAY_SA: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
 
     steps:
       - name: Checkout repository
@@ -193,7 +196,8 @@ jobs:
 
       - name: AAB 빌드
         working-directory: chamApp/android
-        run: chmod +x ./gradlew && ./gradlew bundleRelease --no-daemon
+        # versionCode를 워크플로 실행번호로 넘겨 매 빌드 고유값 보장(중복 방지). +100 오프셋으로 수동 업로드분과 충돌 회피.
+        run: chmod +x ./gradlew && ./gradlew bundleRelease --no-daemon -PappVersionCode=$(( ${{ github.run_number }} + 100 ))
 
       - name: AAB 아티팩트 업로드
         uses: actions/upload-artifact@v4
@@ -201,3 +205,14 @@ jobs:
           name: app-release-aab
           path: chamApp/android/app/build/outputs/bundle/release/app-release.aab
           if-no-files-found: error
+
+      # Google Play 내부 테스트 자동 업로드. 서비스 계정 JSON 시크릿이 있을 때만 실행(없으면 아티팩트까지만).
+      - name: Play 내부 테스트 업로드
+        if: ${{ env.PLAY_SA != '' }}
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: kr.or.cham.equality
+          releaseFiles: chamApp/android/app/build/outputs/bundle/release/app-release.aab
+          track: internal
+          status: completed

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  release 빌드는 기본적으로 cleartext(HTTP)를 막는다. 카카오맵 JS SDK의 타일 이미지가
+  http(daumcdn.net 등)로 내려와 release에서만 지도가 빈 화면이 되므로,
+  지도 관련 도메인에 한해서만 cleartext를 허용한다. 그 외는 계속 차단.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false" />
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">daumcdn.net</domain>
+        <domain includeSubdomains="true">daum.net</domain>
+        <domain includeSubdomains="true">kakao.com</domain>
+        <domain includeSubdomains="true">kakaocdn.net</domain>
+    </domain-config>
+</network-security-config>

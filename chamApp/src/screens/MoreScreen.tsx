@@ -48,8 +48,10 @@ export default function MoreScreen() {
   const onKakao = async () => {
     try {
       await kakaoLogin();
-    } catch {
-      // 사용자 취소 등은 무시
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : '카카오 로그인에 실패했습니다.';
+      alert(message);
     }
   };
 
