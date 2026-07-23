@@ -1,7 +1,8 @@
-import { useCallback } from 'react';
+﻿import { useCallback } from 'react';
 import { useRequest } from '../hooks/useRequest';
 import api from '../lib/axiosInstance';
 import { loginWithKakao, logoutFromKakao } from '../auth/kakao';
+import { loginWithNaver, logoutFromNaver } from '../auth/naver';
 import { loginWithApple } from '../auth/apple';
 import { applySession, clearSession, type AuthResponse } from './authSession';
 import { getRefreshToken } from './refreshTokenStore';
@@ -16,6 +17,25 @@ export function useKakaoLogin() {
         api
           .post<AuthResponse>('/api/app/kakao-login', {
             accessToken: kakao.token.accessToken,
+          })
+          .then(res => res.data),
+      undefined,
+      { ignoreErrorRedirect: true },
+    );
+    if (data) await applySession(data);
+  }, [request]);
+}
+
+// 네이버 로그인: SDK accessToken → 우리 서버 JWT 발급 → 세션 반영
+export function useNaverLogin() {
+  const { request } = useRequest();
+  return useCallback(async () => {
+    const naver = await loginWithNaver();
+    const data = await request<AuthResponse>(
+      () =>
+        api
+          .post<AuthResponse>('/api/app/naver-login', {
+            accessToken: naver.token.accessToken,
           })
           .then(res => res.data),
       undefined,
@@ -69,5 +89,11 @@ export function useLogout() {
     } catch {
       // 카카오 세션이 없을 수도 있음
     }
+    try {
+      await logoutFromNaver();
+    } catch {
+      // 네이버 세션이 없을 수도 있음
+    }
   }, [request]);
 }
+

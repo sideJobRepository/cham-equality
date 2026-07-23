@@ -174,6 +174,9 @@ jobs:
           API_BASE_URL=${{ secrets.APP_API_BASE_URL }}
           KAKAO_NATIVE_APP_KEY=${{ secrets.KAKAO_NATIVE_APP_KEY }}
           KAKAO_MAP_APP_KEY=${{ secrets.KAKAO_MAP_APP_KEY }}
+          NAVER_CLIENT_KEY=${{ secrets.NAVER_CLIENT_KEY }}
+          NAVER_CLIENT_SECRET=${{ secrets.NAVER_CLIENT_SECRET }}
+          NAVER_APP_NAME=대전 모두의 안전
           EOF
 
       - name: 업로드 keystore 복원

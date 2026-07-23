@@ -1,4 +1,4 @@
-import { Linking } from 'react-native';
+﻿import { Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import styled from 'styled-components/native';
 import { useTranslation } from 'react-i18next';
@@ -6,6 +6,7 @@ import { ChevronRight } from 'lucide-react-native';
 import { useUserStore } from '../store/user';
 import {
   useKakaoLogin,
+  useNaverLogin,
   useAppleLogin,
   useLogout,
 } from '../services/auth.service';
@@ -38,6 +39,7 @@ export default function MoreScreen() {
   const { alert } = useDialogUtil();
   const user = useUserStore(state => state.user);
   const kakaoLogin = useKakaoLogin();
+  const naverLogin = useNaverLogin();
   const appleLogin = useAppleLogin();
   const logout = useLogout();
 
@@ -46,6 +48,22 @@ export default function MoreScreen() {
       await kakaoLogin();
     } catch {
       // 사용자 취소 등은 무시
+    }
+  };
+
+  const onNaver = async () => {
+    try {
+      await naverLogin();
+    } catch (error) {
+      if (
+        error instanceof Error &&
+        error.message === 'NAVER_LOGIN_CANCELLED'
+      ) {
+        return;
+      }
+      const message =
+        error instanceof Error ? error.message : '네이버 로그인에 실패했습니다.';
+      alert(message);
     }
   };
 
@@ -111,6 +129,10 @@ export default function MoreScreen() {
                 <LoginIcon source={kakaoIcon} resizeMode="contain" />
                 <KakaoText>{t('auth.kakao')}</KakaoText>
               </KakaoButton>
+              <NaverButton onPress={onNaver}>
+                <NaverIconText>N</NaverIconText>
+                <NaverText>{t('auth.naver')}</NaverText>
+              </NaverButton>
               <AppleButton onPress={onApple}>
                 <AppleLoginIcon source={appleIcon} resizeMode="contain" />
                 <AppleText>{t('auth.apple')}</AppleText>
@@ -241,6 +263,28 @@ const KakaoText = styled.Text`
   font-weight: 800;
 `;
 
+const NaverButton = styled.Pressable`
+  height: 50px;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 12px;
+  background-color: #03c75a;
+`;
+
+const NaverIconText = styled.Text`
+  color: #ffffff;
+  font-size: 18px;
+  font-weight: 900;
+`;
+
+const NaverText = styled.Text`
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 800;
+`;
+
 const AppleButton = styled.Pressable`
   height: 50px;
   flex-direction: row;
@@ -272,3 +316,4 @@ const LogoutText = styled.Text`
   font-size: 15px;
   font-weight: 700;
 `;
+

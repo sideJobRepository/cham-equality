@@ -1,4 +1,4 @@
-import i18n from 'i18next';
+﻿import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 
 const resources = {
@@ -23,6 +23,7 @@ const resources = {
       auth: {
         loginTitle: '로그인하고 제보를 시작하세요',
         kakao: '카카오로 로그인',
+        naver: '네이버로 로그인',
         apple: 'Apple로 로그인',
         logout: '로그아웃',
         greeting: '{{name}}님 환영합니다',
@@ -84,6 +85,7 @@ const resources = {
       auth: {
         loginTitle: 'Log in to start reporting',
         kakao: 'Log in with Kakao',
+        naver: 'Log in with Naver',
         apple: 'Sign in with Apple',
         logout: 'Log out',
         greeting: 'Welcome, {{name}}',
@@ -145,6 +147,7 @@ const resources = {
       auth: {
         loginTitle: '登录后开始举报',
         kakao: '使用 Kakao 登录',
+        naver: '使用 Naver 登录',
         apple: '使用 Apple 登录',
         logout: '退出登录',
         greeting: '欢迎，{{name}}',
@@ -206,6 +209,7 @@ const resources = {
       auth: {
         loginTitle: 'ログインして提報を始める',
         kakao: 'カカオでログイン',
+        naver: 'Naverでログイン',
         apple: 'Appleでログイン',
         logout: 'ログアウト',
         greeting: '{{name}}さん、ようこそ',
@@ -267,6 +271,7 @@ const resources = {
       auth: {
         loginTitle: 'Đăng nhập để bắt đầu báo cáo',
         kakao: 'Đăng nhập bằng Kakao',
+        naver: 'Đăng nhập bằng Naver',
         apple: 'Đăng nhập bằng Apple',
         logout: 'Đăng xuất',
         greeting: 'Xin chào, {{name}}',
@@ -319,3 +324,4 @@ i18n.use(initReactI18next).init({
 });
 
 export default i18n;
+

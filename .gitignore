@@ -32,6 +32,7 @@ chamApp/.env
 chamApp/android/app/upload-keystore.jks
 chamApp/android/keystore.properties
 
-# Claude Code 개인 메모 (커밋 금지)
 CLAUDE.local.md
 **/CLAUDE.local.md
+
+.claude/settings.local.json
