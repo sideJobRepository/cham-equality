@@ -2,10 +2,11 @@ package com.chamapi.disaster.dto.response;
 
 import com.chamapi.disaster.entity.DisasterMessage;
 import com.chamapi.disaster.enums.EmergencyStep;
+import com.fasterxml.jackson.annotation.JsonFormat;
 
 import java.time.LocalDateTime;
 
-public record DisasterMessageResponse(Long id, Long sn, String content, String regionName, EmergencyStep emergencyStep, String emergencyStepLabel, String category, LocalDateTime issuedAt
+public record DisasterMessageResponse(Long id, Long sn, String content, String regionName, EmergencyStep emergencyStep, String emergencyStepLabel, String category, @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm") LocalDateTime issuedAt
 ) {
     public static DisasterMessageResponse from(DisasterMessage m) {
         return from(m, m.getContent());
