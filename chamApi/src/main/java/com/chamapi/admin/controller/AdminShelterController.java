@@ -1,5 +1,6 @@
 package com.chamapi.admin.controller;
 
+import com.chamapi.admin.dto.request.AdminShelterCreateRequest;
 import com.chamapi.admin.dto.request.AdminShelterUpdateRequest;
 import com.chamapi.admin.service.AdminShelterService;
 import com.chamapi.common.dto.ApiResponse;
@@ -33,6 +34,12 @@ public class AdminShelterController {
             @PageableDefault(size = 20, sort = "id", direction = Sort.Direction.ASC) Pageable pageable
     ) {
         return new ApiResponse<>(200, true, shelterService.findShelters(keyword, filter, pageable));
+    }
+
+    @PostMapping
+    public ApiResponse<Long> createShelter(@RequestBody AdminShelterCreateRequest request) {
+        Long shelterId = adminShelterService.createShelter(request);
+        return new ApiResponse<>(200, true, "대피소 추가 완료", shelterId);
     }
 
     @PutMapping("/{id}")

@@ -109,6 +109,17 @@
   gap: 6px;
 }
 
+/* Two fields side by side */
+.shelter-edit-body .field-row {
+  display: flex;
+  gap: 12px;
+}
+
+.shelter-edit-body .field-row .field {
+  flex: 1;
+  min-width: 0;
+}
+
 /* caption */
 .shelter-edit-body label {
   font-family: inherit;
@@ -120,7 +131,8 @@
 
 /* text-input */
 .shelter-edit-body input,
-.shelter-edit-body select {
+.shelter-edit-body select,
+.shelter-edit-body textarea {
   padding: 9px 10px;
   background: var(--ab-canvas);
   border: 1px solid var(--ab-hairline);
@@ -133,11 +145,34 @@
   transition: border-color 0.12s ease;
 }
 
+.shelter-edit-body textarea {
+  resize: vertical;
+  line-height: 1.4;
+}
+
 .shelter-edit-body input:focus,
-.shelter-edit-body select:focus {
+.shelter-edit-body select:focus,
+.shelter-edit-body textarea:focus {
   outline: none;
   border: 2px solid var(--ab-ink);
   padding: 8px 9px;
+}
+
+.shelter-edit-body select:disabled {
+  background: var(--ab-surface-soft);
+  color: var(--ab-muted);
+  cursor: not-allowed;
+}
+
+/* Inline hint / validation text under a field */
+.shelter-edit-body .field-hint {
+  font-family: inherit;
+  font-size: 12px;
+  color: var(--ab-muted);
+}
+
+.shelter-edit-body .field-hint.error {
+  color: var(--ab-error);
 }
 
 .shelter-edit-error {
@@ -215,9 +250,15 @@
   }
 
   .shelter-edit-body input,
-  .shelter-edit-body select {
+  .shelter-edit-body select,
+  .shelter-edit-body textarea {
     font-size: 16px; /* iOS 자동 확대 방지 */
     min-height: 42px;
+  }
+
+  .shelter-edit-body .field-row {
+    flex-direction: column;
+    gap: 12px;
   }
 
   .shelter-edit-footer button {

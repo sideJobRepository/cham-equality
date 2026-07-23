@@ -7,6 +7,7 @@ import {
   UnauthorizedError,
 } from '@/api/adminApi'
 import AdminLayout from '@/components/AdminLayout'
+import AdminShelterCreateModal from '@/components/AdminShelterCreateModal'
 import AdminShelterEditModal from '@/components/AdminShelterEditModal'
 import { SHELTER_TYPE_LABEL, type PageResponse, type Shelter } from '@/types/shelter'
 import './AdminSheltersPage.css'
@@ -23,6 +24,7 @@ export default function AdminSheltersPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [editing, setEditing] = useState<Shelter | null>(null)
+  const [creating, setCreating] = useState(false)
   const [flash, setFlash] = useState<string | null>(null)
 
   const handleUnauthorized = useCallback(() => {
@@ -75,6 +77,9 @@ export default function AdminSheltersPage() {
           <h1>대피소 편집</h1>
           <p className="subtitle">시설명 / 건축년도 / 대피소 타입을 직접 수정합니다.</p>
         </div>
+        <button type="button" className="add-btn" onClick={() => setCreating(true)}>
+          + 대피소 추가
+        </button>
       </header>
 
       <div className="search-bar">
@@ -145,6 +150,18 @@ export default function AdminSheltersPage() {
             </nav>
           )}
         </>
+      )}
+
+      {creating && (
+        <AdminShelterCreateModal
+          onClose={() => setCreating(false)}
+          onSaved={() => {
+            setCreating(false)
+            setFlash('대피소가 추가되었습니다')
+            load()
+          }}
+          onUnauthorized={handleUnauthorized}
+        />
       )}
 
       {editing && (

@@ -87,6 +87,28 @@ public class Place extends DateSuperClass {
         return place;
     }
 
+    public static Place createForShelter(Region region,
+                                         String name,
+                                         String englishName,
+                                         String address,
+                                         String oldAddress,
+                                         String englishAddress,
+                                         String description,
+                                         BigDecimal latitude,
+                                         BigDecimal longitude) {
+        Place place = new Place();
+        place.region = region;
+        place.name = name;
+        place.englishName = englishName;
+        place.address = address;
+        place.oldAddress = oldAddress;
+        place.englishAddress = englishAddress;
+        place.description = description;
+        place.latitude = latitude;
+        place.longitude = longitude;
+        return place;
+    }
+
     public String getNameByLanguage(Language lang){
         if(lang == Language.KO)
             return name;

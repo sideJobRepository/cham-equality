@@ -92,6 +92,27 @@
   background: var(--ab-hairline-soft);
 }
 
+/* button-primary : Rausch */
+.admin-shelters-page .add-btn {
+  flex-shrink: 0;
+  padding: 11px 18px;
+  background: var(--ab-primary);
+  color: var(--ab-on-primary);
+  border: none;
+  border-radius: var(--ab-radius-sm);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.25;
+  min-height: 42px;
+  transition: background 0.12s ease;
+}
+
+.admin-shelters-page .add-btn:hover {
+  background: var(--ab-primary-active);
+}
+
 .shelter-flash {
   margin-bottom: 16px;
   padding: 12px 16px;

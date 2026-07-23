@@ -2,6 +2,7 @@ package com.chamapi.geocoding.service;
 
 import com.chamapi.common.exception.BadRequestException;
 import com.chamapi.geocoding.client.GeocodingClient;
+import com.chamapi.geocoding.dto.GeocodingResponse;
 import com.chamapi.geocoding.dto.ResolvedAddress;
 import com.chamapi.multilingual.entity.Language;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +20,14 @@ public class GeocodingService {
     public String convertToEnglishAddress(String address) {
         return geocodingClient.getEnglishAddress(address)
                 .orElseThrow(() -> new BadRequestException("영문주소 검색 결과가 없습니다. address = " + address));
+    }
+
+    /**
+     * 주소를 좌표로 변환한다(정지오코딩). 응답의 x=경도, y=위도.
+     */
+    public GeocodingResponse.Address getCoordinate(String address) {
+        return geocodingClient.getCoordinate(address)
+                .orElseThrow(() -> new BadRequestException("좌표 검색 결과가 없습니다. address = " + address));
     }
 
     public String getAddressByCoord(BigDecimal latitude, BigDecimal longitude, Language lang) {

@@ -48,6 +48,23 @@ public class GeocodingClient {
         return Optional.of(response.addresses().getFirst().englishAddress());
     }
 
+    public Optional<GeocodingResponse.Address> getCoordinate(String query) {
+        GeocodingResponse response = restClient.get()
+                .uri(uriBuilder ->
+                        uriBuilder.path(properties.getGeocodingPath())
+                                .queryParam("query", query)
+                                .build()
+                )
+                .accept(MediaType.APPLICATION_JSON)
+                .retrieve()
+                .body(GeocodingResponse.class);
+
+        if (response == null || response.addresses() == null || response.addresses().isEmpty())
+            return Optional.empty();
+
+        return Optional.of(response.addresses().getFirst());
+    }
+
     public ResolvedAddress getAddress(BigDecimal latitude, BigDecimal longitude){
         String coord =  "%s,%s".formatted(longitude, latitude);
 

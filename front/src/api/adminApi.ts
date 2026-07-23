@@ -176,3 +176,29 @@ export async function updateAdminShelter(
 ): Promise<void> {
   await http.put(`/admin/shelters/${id}`, body)
 }
+
+/**
+ * 관리자 대피소 추가 요청. 위도/경도는 서버가 주소를 지오코딩해 채우므로 보내지 않는다.
+ * address 또는 oldAddress 중 하나는 반드시 있어야 한다(서버가 지오코딩 대상으로 사용).
+ */
+export type AdminShelterCreateRequest = {
+  name: string
+  englishName: string | null
+  description: string | null
+  regionId: number | null
+  address: string | null
+  oldAddress: string | null
+  englishAddress: string | null
+  shelterType: ShelterType | null
+  area: number | null
+  capacity: number | null
+  builtYear: number | null
+  safetyGrade: number | null
+  managingAuthorityName: string | null
+  managingAuthorityTelNo: string | null
+}
+
+export async function createAdminShelter(body: AdminShelterCreateRequest): Promise<number> {
+  const { data } = await http.post<ApiResponse<number>>('/admin/shelters', body)
+  return data.data
+}
