@@ -48,16 +48,20 @@ export default function MoreScreen() {
   const withdraw = useWithdraw();
 
   const onKakao = async () => {
+    const keyHash =
+      Platform.OS === 'android'
+        ? await getKeyHashAndroid().catch(error =>
+            error instanceof Error ? `조회 실패: ${error.message}` : '조회 실패',
+          )
+        : undefined;
+
     try {
       await kakaoLogin();
     } catch (error) {
       let message =
         error instanceof Error ? error.message : '카카오 로그인에 실패했습니다.';
       if (Platform.OS === 'android') {
-        const keyHash = await getKeyHashAndroid().catch(() => undefined);
-        if (keyHash) {
-          message = `${message}\n\nAndroid key hash:\n${keyHash}`;
-        }
+        message = `${message}\n\nAndroid key hash:\n${keyHash || '값 없음'}`;
       }
       alert(message);
     }
