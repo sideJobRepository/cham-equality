@@ -3,6 +3,7 @@ import {
   ActivityIndicator,
   Animated,
   Easing,
+  LayoutChangeEvent,
   Modal,
   PanResponder,
   useWindowDimensions,
@@ -731,6 +732,7 @@ export default function MapScreen() {
     useState(false);
   const [mapError, setMapError] = useState('');
   const [panelReady, setPanelReady] = useState(false);
+  const [mapFrameHeight, setMapFrameHeight] = useState(0);
   const mapViewRef = useRef<MapViewState | null>(null);
   const webViewRef = useRef<WebView>(null);
   const pendingFocusPlaceIdRef = useRef<number | null>(null);
@@ -773,6 +775,40 @@ export default function MapScreen() {
 
   const webViewSource = useMemo(() => ({ html: mapHtml }), [mapHtml]);
 
+  const expandedPanelHeight = Math.round(
+    (mapFrameHeight || screenHeight) * 0.9,
+  );
+  const collapsedPanelHeight = 42;
+  const panelRange = expandedPanelHeight - collapsedPanelHeight;
+  const panelHeight = panelAnimation.interpolate({
+    inputRange: [0, 1],
+    outputRange: [collapsedPanelHeight, expandedPanelHeight],
+  });
+
+  const animatePanelTo = useCallback(
+    (expanded: boolean) => {
+      setIsPanelExpanded(expanded);
+      Animated.timing(panelAnimation, {
+        toValue: expanded ? 1 : 0,
+        duration: 280,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: false,
+      }).start();
+    },
+    [panelAnimation],
+  );
+
+  const handleTogglePanel = () => {
+    animatePanelTo(!isPanelExpanded);
+  };
+
+  const handleMapFrameLayout = (event: LayoutChangeEvent) => {
+    const nextHeight = event.nativeEvent.layout.height;
+    setMapFrameHeight(current =>
+      Math.abs(current - nextHeight) > 1 ? nextHeight : current,
+    );
+  };
+
   const handleMessage = (event: MapMessageEvent) => {
     try {
       const parsed = JSON.parse(event.nativeEvent.data) as WebMessagePayload;
@@ -782,6 +818,7 @@ export default function MapScreen() {
         selectedPlaceIdRef.current = parsed.payload.placeId;
         setMapError('');
         setSelectedPlace(parsed.payload);
+        animatePanelTo(true);
         return;
       }
 
@@ -843,6 +880,7 @@ export default function MapScreen() {
     pendingFocusPlaceIdRef.current = null;
     selectedPlaceIdRef.current = place.placeId;
     setSelectedPlace(place);
+    animatePanelTo(true);
     webViewRef.current?.injectJavaScript(`
       if (window.__selectPlaceMarker) {
         window.__selectPlaceMarker(${JSON.stringify(place.placeId)});
@@ -863,13 +901,19 @@ export default function MapScreen() {
     pendingFocusPlaceIdRef.current = focusPlaceId;
     selectedPlaceIdRef.current = focusPlaceId;
     setSelectedPlace(normalizeSelectedPlace(detail));
+    animatePanelTo(true);
     webViewRef.current?.injectJavaScript(`
       if (window.__selectPlaceMarker) {
         window.__selectPlaceMarker(${JSON.stringify(focusPlaceId)});
       }
       true;
     `);
-  }, [mapData, route.params?.focusNonce, route.params?.focusPlaceId]);
+  }, [
+    animatePanelTo,
+    mapData,
+    route.params?.focusNonce,
+    route.params?.focusPlaceId,
+  ]);
 
   const handleBackToPlaceList = () => {
     selectedPlaceIdRef.current = null;
@@ -895,30 +939,6 @@ export default function MapScreen() {
     });
   };
 
-  const expandedPanelHeight = Math.round(screenHeight * 0.5);
-  const collapsedPanelHeight = 42;
-  const panelRange = expandedPanelHeight - collapsedPanelHeight;
-  const panelHeight = panelAnimation.interpolate({
-    inputRange: [0, 1],
-    outputRange: [collapsedPanelHeight, expandedPanelHeight],
-  });
-
-  const animatePanelTo = useCallback(
-    (expanded: boolean) => {
-      setIsPanelExpanded(expanded);
-      Animated.timing(panelAnimation, {
-        toValue: expanded ? 1 : 0,
-        duration: 280,
-        easing: Easing.out(Easing.cubic),
-        useNativeDriver: false,
-      }).start();
-    },
-    [panelAnimation],
-  );
-
-  const handleTogglePanel = () => {
-    animatePanelTo(!isPanelExpanded);
-  };
   const openAccessibilityInfo = () => {
     console.log('[accessibility-info] map overlay open');
     setIsAccessibilityInfoVisible(true);
@@ -931,7 +951,12 @@ export default function MapScreen() {
   const panelPanResponder = useMemo(
     () =>
       PanResponder.create({
+        onStartShouldSetPanResponder: () => true,
+        onStartShouldSetPanResponderCapture: () => true,
         onMoveShouldSetPanResponder: (_, gestureState) =>
+          Math.abs(gestureState.dy) > 6 &&
+          Math.abs(gestureState.dy) > Math.abs(gestureState.dx),
+        onMoveShouldSetPanResponderCapture: (_, gestureState) =>
           Math.abs(gestureState.dy) > 6 &&
           Math.abs(gestureState.dy) > Math.abs(gestureState.dx),
         onPanResponderGrant: () => {
@@ -943,6 +968,14 @@ export default function MapScreen() {
           panelAnimation.setValue(Math.max(0, Math.min(1, nextValue)));
         },
         onPanResponderRelease: (_, gestureState) => {
+          if (
+            Math.abs(gestureState.dy) <= 6 &&
+            Math.abs(gestureState.dx) <= 6
+          ) {
+            animatePanelTo(!isPanelExpanded);
+            return;
+          }
+
           const shouldExpand =
             gestureState.vy < -0.35 ||
             (gestureState.vy <= 0.35 &&
@@ -952,6 +985,7 @@ export default function MapScreen() {
         onPanResponderTerminate: () => {
           animatePanelTo(isPanelExpanded);
         },
+        onShouldBlockNativeResponder: () => false,
       }),
     [animatePanelTo, isPanelExpanded, panelAnimation, panelRange],
   );
@@ -967,7 +1001,7 @@ export default function MapScreen() {
 
       <MapSearchFilters onPressAccessibilityInfo={openAccessibilityInfo} />
 
-      <MapFrame>
+      <MapFrame onLayout={handleMapFrameLayout}>
         {mapHtml ? (
           <WebView
             ref={webViewRef}

@@ -7,6 +7,7 @@ import {
   MoreHorizontal,
   type LucideIcon,
 } from 'lucide-react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import HomeScreen from '../screens/HomeScreen';
 import MapScreen from '../screens/MapScreen';
@@ -37,6 +38,8 @@ const tabIcons: Record<keyof RootTabParamList, LucideIcon> = {
 
 export default function AppNavigator() {
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
+  const tabBarBottomPadding = Math.max(insets.bottom, 8);
 
   return (
     <NavigationContainer>
@@ -56,9 +59,9 @@ export default function AppNavigator() {
             );
           },
           tabBarStyle: {
-            height: 64,
+            height: 56 + tabBarBottomPadding,
             paddingTop: 6,
-            paddingBottom: 8,
+            paddingBottom: tabBarBottomPadding,
             borderTopColor: '#e5e7eb',
           },
           tabBarLabelStyle: {

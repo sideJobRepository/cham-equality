@@ -12,6 +12,7 @@ const resources = {
       },
       home: {
         messageTitle2: '일일 재난안전관리 상황',
+        more: '더보기',
       },
       manual: {
         title: '재난 행동요령',
@@ -94,6 +95,7 @@ const resources = {
       },
       home: {
         messageTitle2: 'Daily Disaster Safety Status',
+        more: 'More',
       },
       manual: {
         title: 'Disaster Safety Guide',
@@ -177,6 +179,7 @@ const resources = {
       },
       home: {
         messageTitle2: '每日灾害安全管理情况',
+        more: '更多',
       },
       manual: {
         title: '灾害行动指南',
@@ -258,6 +261,7 @@ const resources = {
       },
       home: {
         messageTitle2: '日次災害安全管理状況',
+        more: 'もっと見る',
       },
       manual: {
         title: '災害時行動ガイド',
@@ -341,6 +345,7 @@ const resources = {
       },
       home: {
         messageTitle2: 'Tình hình quản lý an toàn thiên tai hằng ngày',
+        more: 'Xem thêm',
       },
       manual: {
         title: 'Hướng dẫn ứng phó thiên tai',
@@ -426,4 +431,3 @@ i18n.use(initReactI18next).init({
 });
 
 export default i18n;
-

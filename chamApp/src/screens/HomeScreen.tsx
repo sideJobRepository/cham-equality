@@ -183,10 +183,7 @@ export default function HomeScreen() {
               {smsData[0]?.content ?? '현재 발령된 재난이 없습니다.'}
             </MessageTitle>
           </MessageBox>
-          <MessageBox2
-            disabled={!disasterData?.originUrl}
-            onPress={handlePressDisaster}
-          >
+          <MessageBox2>
             <TopBox>
               <MessageTitle2 numberOfLines={1} ellipsizeMode="tail">
                 {t('home.messageTitle2')}
@@ -201,6 +198,11 @@ export default function HomeScreen() {
                 </SummaryRow>
               ))}
             </CenterBox>
+            {disasterData?.originUrl ? (
+              <DisasterMoreButton onPress={handlePressDisaster}>
+                <DisasterMoreText>{t('home.more')}</DisasterMoreText>
+              </DisasterMoreButton>
+            ) : null}
           </MessageBox2>
         </TopSection>
         <MiddleSection>
@@ -238,7 +240,11 @@ export default function HomeScreen() {
                         );
                       }}
                     >
-                      <ChevronLeft color="#ffffff" size={18} strokeWidth={2.8} />
+                      <ChevronLeft
+                        color="#ffffff"
+                        size={18}
+                        strokeWidth={2.8}
+                      />
                     </ImageNavButton>
                     <ImageNavButton
                       $position="right"
@@ -249,7 +255,11 @@ export default function HomeScreen() {
                         );
                       }}
                     >
-                      <ChevronRight color="#ffffff" size={18} strokeWidth={2.8} />
+                      <ChevronRight
+                        color="#ffffff"
+                        size={18}
+                        strokeWidth={2.8}
+                      />
                     </ImageNavButton>
                     <ImageCounter>
                       <ImageCounterText>
@@ -265,8 +275,9 @@ export default function HomeScreen() {
                 <TypeChip>
                   <TypeChipText>
                     {t(
-                      getShelterTypeTranslationKey(nearestShelter.shelterType) ??
-                        getShelterTypeLabel(nearestShelter.shelterType),
+                      getShelterTypeTranslationKey(
+                        nearestShelter.shelterType,
+                      ) ?? getShelterTypeLabel(nearestShelter.shelterType),
                     )}
                   </TypeChipText>
                 </TypeChip>
@@ -308,7 +319,9 @@ export default function HomeScreen() {
                     $active={chip.active}
                   >
                     <AccessChipText $active={chip.active}>
-                      {t(accessibilityFilterLabelKeys[chip.label] ?? chip.label)}
+                      {t(
+                        accessibilityFilterLabelKeys[chip.label] ?? chip.label,
+                      )}
                     </AccessChipText>
                   </AccessChip>
                 ))}
@@ -718,7 +731,7 @@ const MessageTitle = styled.Text`
   font-weight: 700;
 `;
 
-const MessageBox2 = styled.Pressable`
+const MessageBox2 = styled.View`
   display: flex;
   background-color: #edf5ff;
   margin-top: 14px;
@@ -776,6 +789,18 @@ const SummaryText = styled.Text`
   line-height: 20px;
   flex: 1;
   font-weight: 500;
+`;
+
+const DisasterMoreButton = styled.Pressable`
+  align-self: flex-end;
+  margin-top: 10px;
+  padding: 4px 0 0 12px;
+`;
+
+const DisasterMoreText = styled.Text`
+  color: #a3a7ac;
+  font-size: 13px;
+  font-weight: 600;
 `;
 
 const ModalOverlay = styled.Pressable`
