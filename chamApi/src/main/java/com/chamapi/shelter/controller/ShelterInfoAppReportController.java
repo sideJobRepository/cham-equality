@@ -46,7 +46,7 @@ public class ShelterInfoAppReportController {
     }
 
     /** 내 제보 수정. 본인 소유 + PENDING 상태에서만 허용(본문 + 사진). */
-    @PutMapping("/app/shelter-reports{id}")
+    @PutMapping("/app/shelter-reports/{id}")
     public ApiResponse<Void> updateReport(@PathVariable Long id, @RequestBody ShelterInfoAppReportUpdateRequest request, @AuthenticationPrincipal Jwt jwt) {
         shelterInfoAppReportService.updateReport(id, requireMemberId(jwt), request);
         return ApiResponse.of(200, true, "수정 완료");

@@ -3,9 +3,11 @@ import {
   ActivityIndicator,
   Animated,
   Easing,
+  KeyboardAvoidingView,
   LayoutChangeEvent,
   Modal,
   PanResponder,
+  Platform,
   useWindowDimensions,
   type ImageSourcePropType,
 } from 'react-native';
@@ -16,17 +18,29 @@ import { WebView } from 'react-native-webview';
 import {
   ChevronLeft,
   ChevronRight,
+  Camera,
+  ImagePlus,
+  Send,
   Square,
+  Trash2,
   Users,
   X,
 } from 'lucide-react-native';
+import {
+  launchImageLibrary,
+  type Asset,
+} from 'react-native-image-picker';
 import styled from 'styled-components/native';
 import { useTranslation } from 'react-i18next';
 import CurrentLocationBar from '../components/CurrentLocationBar.tsx';
 import MapSearchFilters from '../components/MapSearchFilters.tsx';
 import { useFetchMap } from '../services/map.service.ts';
+import type { ShelterImageCategory } from '../services/report.service.ts';
 import { useMapStore } from '../store/map.ts';
 import { useLocationStore } from '../store/location.ts';
+import { useShelterReportStore } from '../store/shelterReport.ts';
+import { useUserStore } from '../store/user.ts';
+import { useDialogUtil } from '../utils/dialog.ts';
 import {
   ACCESSIBILITY_ALL_LABEL,
   ACCESSIBILITY_SELECTED_COLOR,
@@ -42,6 +56,7 @@ import {
 import type { RootTabParamList } from '../navigation/AppNavigator.tsx';
 
 const defaultShelterImage = require('../assets/images/shelter.png') as ImageSourcePropType;
+const reportModalScrollContentStyle = { flexGrow: 1 };
 
 function getShelterTypeLabel(type?: string) {
   if (!type) return '유형 정보 없음';
@@ -101,6 +116,7 @@ interface ShelterSummary {
   ramp?: boolean;
   elevator?: boolean;
   brailleBlock?: boolean;
+  etcFacilities?: string;
   images?: ShelterImage[];
 }
 
@@ -117,6 +133,25 @@ interface SelectedPlace {
   shelterCount: number;
   accessibilityMatchStatus?: string;
   shelters: ShelterSummary[];
+}
+
+interface ShelterReportForm {
+  accessibleToilet: boolean;
+  ramp: boolean;
+  elevator: boolean;
+  brailleBlock: boolean;
+  etcFacilities: string;
+  images: ReportLocalImage[];
+}
+
+interface ReportLocalImage {
+  id: string;
+  uri: string;
+  fileName: string;
+  contentType: string;
+  fileSize: number;
+  category: ShelterImageCategory;
+  description: string;
 }
 
 interface WebMessagePayload {
@@ -158,6 +193,38 @@ function normalizeSelectedPlace(item: any): SelectedPlace {
       brailleBlock: shelter.brailleBlock,
       images: Array.isArray(shelter.images) ? shelter.images : [],
     })),
+  };
+}
+
+const reportImageCategories: Array<{
+  value: ShelterImageCategory;
+  labelKey: string;
+}> = [
+  { value: 'ENTRANCE', labelKey: 'map.report.categories.ENTRANCE' },
+  { value: 'EXTERIOR', labelKey: 'map.report.categories.EXTERIOR' },
+  { value: 'INTERIOR', labelKey: 'map.report.categories.INTERIOR' },
+  { value: 'RAMP', labelKey: 'map.report.categories.RAMP' },
+  { value: 'ELEVATOR', labelKey: 'map.report.categories.ELEVATOR' },
+  { value: 'TOILET', labelKey: 'map.report.categories.TOILET' },
+  { value: 'BRAILLE', labelKey: 'map.report.categories.BRAILLE' },
+  { value: 'SIGNAGE', labelKey: 'map.report.categories.SIGNAGE' },
+  { value: 'ETC', labelKey: 'map.report.categories.ETC' },
+];
+
+function toReportLocalImage(asset: Asset): ReportLocalImage | null {
+  if (!asset.uri) return null;
+
+  const fallbackName = `shelter-report-${Date.now()}.jpg`;
+  const contentType = asset.type || 'image/jpeg';
+
+  return {
+    id: `${asset.uri}-${asset.fileSize ?? Date.now()}`,
+    uri: asset.uri,
+    fileName: asset.fileName || fallbackName,
+    contentType,
+    fileSize: asset.fileSize ?? 0,
+    category: 'ETC',
+    description: '',
   };
 }
 
@@ -669,7 +736,8 @@ function buildMapHtml(
 }
 
 export default function MapScreen() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const { alert } = useDialogUtil();
   const { height: screenHeight } = useWindowDimensions();
   const route = useRoute<RouteProp<RootTabParamList, 'Map'>>();
   const [isPanelExpanded, setIsPanelExpanded] = useState(true);
@@ -682,6 +750,22 @@ export default function MapScreen() {
     state => state.selectedAccessibility,
   );
   const userLocation = useLocationStore(state => state.location);
+  const user = useUserStore(state => state.user);
+  const submitReport = useShelterReportStore(state => state.submitReport);
+  const isReportSubmitting = useShelterReportStore(
+    state => state.isSubmitting,
+  );
+  const [reportShelter, setReportShelter] = useState<ShelterSummary | null>(
+    null,
+  );
+  const [reportForm, setReportForm] = useState<ShelterReportForm>({
+    accessibleToilet: false,
+    ramp: false,
+    elevator: false,
+    brailleBlock: false,
+    etcFacilities: '',
+    images: [],
+  });
 
   const mapRequestBody = useMemo(() => {
     const shelterTypes = selectedShelterTypes
@@ -935,6 +1019,115 @@ export default function MapScreen() {
     });
   };
 
+  const openReportModal = (shelter: ShelterSummary) => {
+    setReportShelter(shelter);
+    setReportForm({
+      accessibleToilet: shelter.accessibleToilet === true,
+      ramp: shelter.ramp === true,
+      elevator: shelter.elevator === true,
+      brailleBlock: shelter.brailleBlock === true,
+      etcFacilities: shelter.etcFacilities ?? '',
+      images: [],
+    });
+  };
+
+  const closeReportModal = () => {
+    if (isReportSubmitting) return;
+    setReportShelter(null);
+  };
+
+  const updateReportForm = <K extends keyof ShelterReportForm>(
+    key: K,
+    value: ShelterReportForm[K],
+  ) => {
+    setReportForm(prev => ({ ...prev, [key]: value }));
+  };
+
+  const addReportImages = async () => {
+    const result = await launchImageLibrary({
+      mediaType: 'photo',
+      selectionLimit: 5,
+      quality: 0.8,
+    });
+    console.log('[report-images] picker result', {
+      didCancel: result.didCancel,
+      errorCode: result.errorCode,
+      errorMessage: result.errorMessage,
+      assetCount: result.assets?.length ?? 0,
+      assets: result.assets?.map(asset => ({
+        uri: asset.uri,
+        fileName: asset.fileName,
+        type: asset.type,
+        fileSize: asset.fileSize,
+      })),
+    });
+
+    if (result.didCancel) return;
+    if (result.errorMessage) {
+      alert(result.errorMessage);
+      return;
+    }
+
+    const nextImages = (result.assets ?? [])
+      .map(toReportLocalImage)
+      .filter((image): image is ReportLocalImage => !!image);
+
+    if (!nextImages.length) return;
+
+    setReportForm(prev => ({
+      ...prev,
+      images: [...prev.images, ...nextImages].slice(0, 5),
+    }));
+    console.log('[report-images] added', nextImages);
+  };
+
+  const removeReportImage = (id: string) => {
+    setReportForm(prev => ({
+      ...prev,
+      images: prev.images.filter(image => image.id !== id),
+    }));
+  };
+
+  const updateReportImage = (
+    id: string,
+    patch: Partial<Pick<ReportLocalImage, 'category' | 'description'>>,
+  ) => {
+    setReportForm(prev => ({
+      ...prev,
+      images: prev.images.map(image =>
+        image.id === id ? { ...image, ...patch } : image,
+      ),
+    }));
+  };
+
+  const submitShelterReport = async () => {
+    if (!reportShelter) return;
+
+    try {
+      await submitReport({
+        shelterId: reportShelter.shelterId,
+        signageLanguage: i18n.language,
+        accessibleToilet: reportForm.accessibleToilet,
+        ramp: reportForm.ramp,
+        elevator: reportForm.elevator,
+        brailleBlock: reportForm.brailleBlock,
+        etcFacilities: reportForm.etcFacilities.trim() || undefined,
+        localImages: reportForm.images.map(image => ({
+          uri: image.uri,
+          fileName: image.fileName,
+          contentType: image.contentType,
+          fileSize: image.fileSize,
+          category: image.category,
+          description: image.description,
+        })),
+      });
+      setReportShelter(null);
+      alert(t('map.report.success'));
+    } catch (error: any) {
+      alert(error?.response?.data?.message ?? t('map.report.failed'));
+    }
+  };
+
   const openAccessibilityInfo = () => {
     console.log('[accessibility-info] map overlay open');
     setIsAccessibilityInfoVisible(true);
@@ -1172,6 +1365,18 @@ export default function MapScreen() {
                         </AccessChip>
                       ))}
                     </ChipRow>
+                    {user ? (
+                      <ReportButton onPress={() => openReportModal(shelter)}>
+                        <Camera
+                          color="#2563eb"
+                          size={16}
+                          strokeWidth={2.5}
+                        />
+                        <ReportButtonText>
+                          {t('map.report.button')}
+                        </ReportButtonText>
+                      </ReportButton>
+                    ) : null}
                   </ShelterItem>
                   );
                 })
@@ -1291,6 +1496,181 @@ export default function MapScreen() {
           </AccessibilityInfoCard>
         </AccessibilityInfoOverlay>
       ) : null}
+
+      <Modal
+        animationType="slide"
+        transparent
+        visible={!!reportShelter}
+        onRequestClose={closeReportModal}
+      >
+        <ReportModalOverlay onPress={closeReportModal}>
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          >
+            <ReportModalCard onPress={event => event.stopPropagation()}>
+              <ReportModalHeader>
+                <ReportModalTitle>{t('map.report.title')}</ReportModalTitle>
+                <ReportCloseButton onPress={closeReportModal}>
+                  <X color="#6b7280" size={22} strokeWidth={2.6} />
+                </ReportCloseButton>
+              </ReportModalHeader>
+              {reportShelter ? (
+                <ReportShelterName numberOfLines={2}>
+                  {reportShelter.name}
+                </ReportShelterName>
+              ) : null}
+
+              <ReportModalScroll
+                contentContainerStyle={reportModalScrollContentStyle}
+                showsVerticalScrollIndicator={false}
+              >
+                <ReportField>
+                  <ReportLabel>{t('map.report.accessibility')}</ReportLabel>
+                  <ReportToggleGrid>
+                    <ReportToggle
+                      $active={reportForm.ramp}
+                      onPress={() => updateReportForm('ramp', !reportForm.ramp)}
+                    >
+                      <ReportToggleText $active={reportForm.ramp}>
+                        {t('map.filters.ramp')}
+                      </ReportToggleText>
+                    </ReportToggle>
+                    <ReportToggle
+                      $active={reportForm.elevator}
+                      onPress={() =>
+                        updateReportForm('elevator', !reportForm.elevator)
+                      }
+                    >
+                      <ReportToggleText $active={reportForm.elevator}>
+                        {t('map.filters.elevator')}
+                      </ReportToggleText>
+                    </ReportToggle>
+                    <ReportToggle
+                      $active={reportForm.brailleBlock}
+                      onPress={() =>
+                        updateReportForm(
+                          'brailleBlock',
+                          !reportForm.brailleBlock,
+                        )
+                      }
+                    >
+                      <ReportToggleText $active={reportForm.brailleBlock}>
+                        {t('map.filters.brailleBlock')}
+                      </ReportToggleText>
+                    </ReportToggle>
+                    <ReportToggle
+                      $active={reportForm.accessibleToilet}
+                      onPress={() =>
+                        updateReportForm(
+                          'accessibleToilet',
+                          !reportForm.accessibleToilet,
+                        )
+                      }
+                    >
+                      <ReportToggleText $active={reportForm.accessibleToilet}>
+                        {t('map.filters.accessibleToilet')}
+                      </ReportToggleText>
+                    </ReportToggle>
+                  </ReportToggleGrid>
+                </ReportField>
+
+                <ReportField>
+                  <ReportLabel>{t('map.report.images')}</ReportLabel>
+                  <AddImageButton onPress={addReportImages}>
+                    <ImagePlus color="#2563eb" size={16} strokeWidth={2.6} />
+                    <AddImageButtonText>
+                      {t('map.report.addImage')}
+                    </AddImageButtonText>
+                  </AddImageButton>
+
+                  {reportForm.images.map(image => (
+                    <ReportImageItem key={image.id}>
+                      <ReportImagePreview source={{ uri: image.uri }} />
+                      <ReportImageBody>
+                        <ReportImageTopRow>
+                          <ReportImageName numberOfLines={1}>
+                            {image.fileName}
+                          </ReportImageName>
+                          <ReportImageRemoveButton
+                            onPress={() => removeReportImage(image.id)}
+                          >
+                            <Trash2
+                              color="#ef4444"
+                              size={16}
+                              strokeWidth={2.4}
+                            />
+                          </ReportImageRemoveButton>
+                        </ReportImageTopRow>
+                        <ReportCategoryRow>
+                          {reportImageCategories.map(category => (
+                            <ReportCategoryChip
+                              key={`${image.id}-${category.value}`}
+                              $active={image.category === category.value}
+                              onPress={() =>
+                                updateReportImage(image.id, {
+                                  category: category.value,
+                                })
+                              }
+                            >
+                              <ReportCategoryText
+                                $active={image.category === category.value}
+                              >
+                                {t(category.labelKey)}
+                              </ReportCategoryText>
+                            </ReportCategoryChip>
+                          ))}
+                        </ReportCategoryRow>
+                        <ReportImageDescriptionInput
+                          value={image.description}
+                          onChangeText={value =>
+                            updateReportImage(image.id, {
+                              description: value,
+                            })
+                          }
+                          placeholder={t(
+                            'map.report.imageDescriptionPlaceholder',
+                          )}
+                          placeholderTextColor="#9ca3af"
+                        />
+                      </ReportImageBody>
+                    </ReportImageItem>
+                  ))}
+                </ReportField>
+
+                <ReportEtcField>
+                  <ReportLabel>{t('map.report.etcFacilities')}</ReportLabel>
+                  <ReportTextArea
+                    value={reportForm.etcFacilities}
+                    onChangeText={value =>
+                      updateReportForm('etcFacilities', value)
+                    }
+                    placeholder={t('map.report.etcFacilitiesPlaceholder')}
+                    placeholderTextColor="#9ca3af"
+                    multiline
+                    textAlignVertical="top"
+                  />
+                </ReportEtcField>
+              </ReportModalScroll>
+
+              <ReportSubmitButton
+                disabled={isReportSubmitting}
+                onPress={submitShelterReport}
+              >
+                {isReportSubmitting ? (
+                  <ActivityIndicator color="#ffffff" />
+                ) : (
+                  <>
+                    <Send color="#ffffff" size={16} strokeWidth={2.6} />
+                    <ReportSubmitText>
+                      {t('map.report.submit')}
+                    </ReportSubmitText>
+                  </>
+                )}
+              </ReportSubmitButton>
+            </ReportModalCard>
+          </KeyboardAvoidingView>
+        </ReportModalOverlay>
+      </Modal>
 
       <Modal
         animationType="fade"
@@ -1805,6 +2185,239 @@ const AccessChip = styled.View<{ $active: boolean }>`
 const AccessChipText = styled.Text<{ $active: boolean }>`
   color: ${({ $active }) => ($active ? '#ffffff' : '#9ca3af')};
   font-size: 10px;
+  font-weight: 800;
+`;
+
+const ReportButton = styled.Pressable`
+  min-height: 38px;
+  margin-top: 4px;
+  border-radius: 10px;
+  align-items: center;
+  justify-content: center;
+  flex-direction: row;
+  gap: 6px;
+  background-color: #eff6ff;
+  border-width: 1px;
+  border-color: #bfdbfe;
+`;
+
+const ReportButtonText = styled.Text`
+  color: #2563eb;
+  font-size: 13px;
+  font-weight: 800;
+`;
+
+const ReportModalOverlay = styled.Pressable`
+  flex: 1;
+  justify-content: flex-end;
+  padding: 16px;
+  background-color: rgba(17, 24, 39, 0.32);
+`;
+
+const ReportModalCard = styled.Pressable`
+  height: 90%;
+  gap: 12px;
+  padding: 18px;
+  border-radius: 18px;
+  background-color: #ffffff;
+`;
+
+const ReportModalHeader = styled.View`
+  min-height: 34px;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+`;
+
+const ReportModalTitle = styled.Text`
+  flex: 1;
+  color: #111827;
+  font-size: 18px;
+  font-weight: 800;
+`;
+
+const ReportCloseButton = styled.Pressable`
+  width: 34px;
+  height: 34px;
+  align-items: center;
+  justify-content: center;
+`;
+
+const ReportShelterName = styled.Text`
+  color: #374151;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 700;
+`;
+
+const ReportModalScroll = styled.ScrollView`
+  flex: 1;
+`;
+
+const ReportField = styled.View`
+  gap: 8px;
+  margin-bottom: 14px;
+`;
+
+const ReportEtcField = styled.View`
+  flex: 1;
+  gap: 8px;
+  margin-bottom: 14px;
+`;
+
+const ReportLabel = styled.Text`
+  color: #111827;
+  font-size: 13px;
+  font-weight: 800;
+`;
+
+const ReportTextArea = styled.TextInput`
+  flex: 1;
+  min-height: 104px;
+  padding: 12px;
+  border-radius: 10px;
+  color: #111827;
+  font-size: 14px;
+  line-height: 20px;
+  background-color: #f9fafb;
+  border-width: 1px;
+  border-color: #e5e7eb;
+`;
+
+const ReportToggleGrid = styled.View`
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 8px;
+`;
+
+const ReportToggle = styled.Pressable<{ $active: boolean }>`
+  min-height: 38px;
+  padding: 0 12px;
+  border-radius: 999px;
+  align-items: center;
+  justify-content: center;
+  background-color: ${({ $active }) => ($active ? '#2563eb' : '#f3f4f6')};
+  border-width: 1px;
+  border-color: ${({ $active }) => ($active ? '#2563eb' : '#e5e7eb')};
+`;
+
+const ReportToggleText = styled.Text<{ $active: boolean }>`
+  color: ${({ $active }) => ($active ? '#ffffff' : '#4b5563')};
+  font-size: 12px;
+  font-weight: 800;
+`;
+
+const AddImageButton = styled.Pressable`
+  min-height: 40px;
+  border-radius: 10px;
+  align-items: center;
+  justify-content: center;
+  flex-direction: row;
+  gap: 6px;
+  background-color: #eff6ff;
+  border-width: 1px;
+  border-color: #bfdbfe;
+`;
+
+const AddImageButtonText = styled.Text`
+  color: #2563eb;
+  font-size: 13px;
+  font-weight: 800;
+`;
+
+const ReportImageItem = styled.View`
+  flex-direction: row;
+  gap: 10px;
+  padding: 10px;
+  border-radius: 12px;
+  background-color: #f9fafb;
+  border-width: 1px;
+  border-color: #e5e7eb;
+`;
+
+const ReportImagePreview = styled.Image`
+  width: 74px;
+  height: 74px;
+  border-radius: 10px;
+  background-color: #e5e7eb;
+`;
+
+const ReportImageBody = styled.View`
+  flex: 1;
+  gap: 8px;
+  min-width: 0;
+`;
+
+const ReportImageTopRow = styled.View`
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+`;
+
+const ReportImageName = styled.Text`
+  flex: 1;
+  color: #374151;
+  font-size: 12px;
+  font-weight: 700;
+`;
+
+const ReportImageRemoveButton = styled.Pressable`
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  align-items: center;
+  justify-content: center;
+  background-color: #fee2e2;
+`;
+
+const ReportCategoryRow = styled.View`
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 6px;
+`;
+
+const ReportCategoryChip = styled.Pressable<{ $active: boolean }>`
+  min-height: 28px;
+  padding: 0 8px;
+  border-radius: 999px;
+  align-items: center;
+  justify-content: center;
+  background-color: ${({ $active }) => ($active ? '#111827' : '#ffffff')};
+  border-width: 1px;
+  border-color: ${({ $active }) => ($active ? '#111827' : '#e5e7eb')};
+`;
+
+const ReportCategoryText = styled.Text<{ $active: boolean }>`
+  color: ${({ $active }) => ($active ? '#ffffff' : '#4b5563')};
+  font-size: 11px;
+  font-weight: 800;
+`;
+
+const ReportImageDescriptionInput = styled.TextInput`
+  min-height: 36px;
+  padding: 0 10px;
+  border-radius: 8px;
+  color: #111827;
+  font-size: 12px;
+  background-color: #ffffff;
+  border-width: 1px;
+  border-color: #e5e7eb;
+`;
+
+const ReportSubmitButton = styled.Pressable`
+  min-height: 46px;
+  border-radius: 12px;
+  align-items: center;
+  justify-content: center;
+  flex-direction: row;
+  gap: 7px;
+  background-color: #2563eb;
+`;
+
+const ReportSubmitText = styled.Text`
+  color: #ffffff;
+  font-size: 14px;
   font-weight: 800;
 `;
 

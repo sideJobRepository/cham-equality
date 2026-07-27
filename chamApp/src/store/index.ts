@@ -7,5 +7,6 @@ export * from './language';
 export * from './mapFilters';
 export * from './location';
 export * from './nearestShelter';
+export * from './shelterReport';
 export * from './manual';
 export * from './content';
