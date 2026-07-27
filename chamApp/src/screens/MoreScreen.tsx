@@ -4,6 +4,7 @@ import styled from 'styled-components/native';
 import { useTranslation } from 'react-i18next';
 import { ChevronRight } from 'lucide-react-native';
 import LinearGradient from 'react-native-linear-gradient';
+import { getKeyHashAndroid } from '@react-native-kakao/core';
 import { useUserStore } from '../store/user';
 import {
   useKakaoLogin,
@@ -50,8 +51,14 @@ export default function MoreScreen() {
     try {
       await kakaoLogin();
     } catch (error) {
-      const message =
+      let message =
         error instanceof Error ? error.message : '카카오 로그인에 실패했습니다.';
+      if (Platform.OS === 'android') {
+        const keyHash = await getKeyHashAndroid().catch(() => undefined);
+        if (keyHash) {
+          message = `${message}\n\nAndroid key hash:\n${keyHash}`;
+        }
+      }
       alert(message);
     }
   };
