@@ -153,7 +153,7 @@ export default function HomeScreen() {
   }, [dismissedNoticeId, popupContent]);
 
   return (
-    <Screen>
+    <Screen edges={['top', 'left', 'right']}>
       <HomeScroll showsVerticalScrollIndicator={false}>
         <TopSection>
           <LanguageRow>
