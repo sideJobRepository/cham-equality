@@ -1,8 +1,9 @@
-﻿import { Linking } from 'react-native';
+import { Linking, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import styled from 'styled-components/native';
 import { useTranslation } from 'react-i18next';
 import { ChevronRight } from 'lucide-react-native';
+import LinearGradient from 'react-native-linear-gradient';
 import { useUserStore } from '../store/user';
 import {
   useKakaoLogin,
@@ -98,6 +99,23 @@ export default function MoreScreen() {
   return (
     <Screen edges={['top', 'left', 'right']}>
       <Content showsVerticalScrollIndicator={false}>
+        <IntroHero>
+          <IntroRightGradient
+            colors={['rgba(31,58,95,0)', '#2f4f6f', '#4b6b7a']}
+            locations={[0, 0.55, 1]}
+            start={{ x: 0, y: 0.5 }}
+            end={{ x: 1, y: 0.5 }}
+          />
+          <IntroTitle>
+            대전을 사람의 만남이 아름다운 도시로, 열린시대 새 지방자치를
+            만들어갑니다.
+          </IntroTitle>
+          <IntroDescription>
+            시민의 자발적인 참여와 연대에 기초해 참된 주민자치를 실현하는
+            대전참여자치시민연대입니다.
+          </IntroDescription>
+        </IntroHero>
+
         <Section>
           <SectionTitle>{t('more.citizenServices')}</SectionTitle>
           <ServiceList>
@@ -154,10 +172,12 @@ export default function MoreScreen() {
                 <NaverIconText>N</NaverIconText>
                 <NaverText>{t('auth.naver')}</NaverText>
               </NaverButton>
-              <AppleButton onPress={onApple}>
-                <AppleLoginIcon source={appleIcon} resizeMode="contain" />
-                <AppleText>{t('auth.apple')}</AppleText>
-              </AppleButton>
+                {Platform.OS === 'ios' ? (
+                    <AppleButton onPress={onApple}>
+                        <AppleLoginIcon source={appleIcon} resizeMode="contain" />
+                        <AppleText>{t('auth.apple')}</AppleText>
+                    </AppleButton>
+                ) : null}
             </LoginBlock>
           )}
         </Section>
@@ -173,12 +193,59 @@ const Screen = styled(SafeAreaView)`
 
 const Content = styled.ScrollView`
   flex: 1;
-  padding: 24px 20px;
+`;
+
+const IntroHero = styled.View`
+  position: relative;
+  min-height: 150px;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  padding: 26px 18px;
+  overflow: hidden;
+  background-color: #1f3a5f;
+`;
+
+const IntroRightGradient = styled(LinearGradient)`
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 58%;
+`;
+
+const IntroTitle = styled.Text.attrs({
+  textBreakStrategy: 'balanced',
+  lineBreakStrategyIOS: 'hangul-word',
+})`
+  z-index: 1;
+  width: 100%;
+  flex-shrink: 1;
+  color: #ffffff;
+  font-size: 19px;
+  line-height: 27px;
+  font-weight: 800;
+  text-align: center;
+`;
+
+const IntroDescription = styled.Text.attrs({
+  textBreakStrategy: 'balanced',
+  lineBreakStrategyIOS: 'hangul-word',
+})`
+  z-index: 1;
+  width: 100%;
+  flex-shrink: 1;
+  color: #d7e2e6;
+  font-size: 13px;
+  line-height: 20px;
+  font-weight: 600;
+  text-align: center;
 `;
 
 const Section = styled.View`
   margin-top: 24px;
   gap: 12px;
+  padding: 0 12px;
 `;
 
 const SectionTitle = styled.Text`
@@ -228,18 +295,15 @@ const LanguageRow = styled.View`
 `;
 
 const LanguageButton = styled.Pressable<{ $active: boolean }>`
-  min-height: 34px;
-  padding: 0 12px;
+  padding: 6px 10px;
   align-items: center;
   justify-content: center;
   border-radius: 8px;
-  border-width: 1px;
-  border-color: ${({ $active }) => ($active ? '#2563eb' : '#d1d5db')};
-  background-color: ${({ $active }) => ($active ? '#eff6ff' : '#ffffff')};
+  background-color: ${({ $active }) => ($active ? '#1d1d1f' : '#f3f4f6')};
 `;
 
 const LanguageText = styled.Text<{ $active: boolean }>`
-  color: ${({ $active }) => ($active ? '#1d4ed8' : '#374151')};
+  color: ${({ $active }) => ($active ? '#ffffff' : '#6b7280')};
   font-size: 13px;
   font-weight: 700;
 `;
@@ -254,8 +318,7 @@ const LoginBlock = styled.View`
 `;
 
 const Greeting = styled.Text`
-  color: #111827;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 700;
 `;
 

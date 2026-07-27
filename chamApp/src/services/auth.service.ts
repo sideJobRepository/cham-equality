@@ -50,7 +50,8 @@ export function useAppleLogin() {
   const { request } = useRequest();
   return useCallback(async () => {
     const apple = await loginWithApple();
-    if (!apple.identityToken) throw new Error('Apple identityToken이 없습니다.');
+    if (!apple.identityToken)
+      throw new Error('Apple identityToken이 없습니다.');
     const data = await request<AuthResponse>(
       () =>
         api

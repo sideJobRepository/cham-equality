@@ -727,6 +727,8 @@ export default function MapScreen() {
     images: ImageSourcePropType[];
     index: number;
   } | null>(null);
+  const [isAccessibilityInfoVisible, setIsAccessibilityInfoVisible] =
+    useState(false);
   const [mapError, setMapError] = useState('');
   const [panelReady, setPanelReady] = useState(false);
   const mapViewRef = useRef<MapViewState | null>(null);
@@ -917,6 +919,14 @@ export default function MapScreen() {
   const handleTogglePanel = () => {
     animatePanelTo(!isPanelExpanded);
   };
+  const openAccessibilityInfo = () => {
+    console.log('[accessibility-info] map overlay open');
+    setIsAccessibilityInfoVisible(true);
+  };
+  const closeAccessibilityInfo = () => {
+    console.log('[accessibility-info] map overlay close');
+    setIsAccessibilityInfoVisible(false);
+  };
 
   const panelPanResponder = useMemo(
     () =>
@@ -955,7 +965,7 @@ export default function MapScreen() {
         />
       </Header>
 
-      <MapSearchFilters />
+      <MapSearchFilters onPressAccessibilityInfo={openAccessibilityInfo} />
 
       <MapFrame>
         {mapHtml ? (
@@ -1192,6 +1202,69 @@ export default function MapScreen() {
         )}
       </BottomPanel>
 
+      {isAccessibilityInfoVisible ? (
+        <AccessibilityInfoOverlay onPress={closeAccessibilityInfo}>
+          <AccessibilityInfoCard onPress={event => event.stopPropagation()}>
+            <AccessibilityInfoHeader>
+              <AccessibilityInfoTitle>
+                {t('map.accessibilityInfo.title')}
+              </AccessibilityInfoTitle>
+              <AccessibilityInfoCloseButton onPress={closeAccessibilityInfo}>
+                <X color="#6b7280" size={22} strokeWidth={2.6} />
+              </AccessibilityInfoCloseButton>
+            </AccessibilityInfoHeader>
+            <AccessibilityInfoDescription>
+              {t('map.accessibilityInfo.description')}
+            </AccessibilityInfoDescription>
+            <AccessibilityInfoList>
+              <AccessibilityInfoText>
+                {t('map.accessibilityInfo.ramp')}
+              </AccessibilityInfoText>
+              <AccessibilityInfoText>
+                {t('map.accessibilityInfo.elevator')}
+              </AccessibilityInfoText>
+              <AccessibilityInfoText>
+                {t('map.accessibilityInfo.brailleBlock')}
+              </AccessibilityInfoText>
+              <AccessibilityInfoText>
+                {t('map.accessibilityInfo.accessibleToilet')}
+              </AccessibilityInfoText>
+            </AccessibilityInfoList>
+            <AccessibilityLegendList>
+              <AccessibilityLegendRow>
+                <AccessibilityLegendDot $color="#2563eb" />
+                <AccessibilityLegendText>
+                  {t('map.accessibilityInfo.blue')}
+                </AccessibilityLegendText>
+              </AccessibilityLegendRow>
+              <AccessibilityLegendRow>
+                <AccessibilityLegendDot $color="#16a34a" />
+                <AccessibilityLegendText>
+                  {t('map.accessibilityInfo.green')}
+                </AccessibilityLegendText>
+              </AccessibilityLegendRow>
+              <AccessibilityLegendRow>
+                <AccessibilityLegendDot $color="#f59e0b" />
+                <AccessibilityLegendText>
+                  {t('map.accessibilityInfo.orange')}
+                </AccessibilityLegendText>
+              </AccessibilityLegendRow>
+              <AccessibilityLegendRow>
+                <AccessibilityLegendDot $color="#dc2626" />
+                <AccessibilityLegendText>
+                  {t('map.accessibilityInfo.red')}
+                </AccessibilityLegendText>
+              </AccessibilityLegendRow>
+            </AccessibilityLegendList>
+            <AccessibilityInfoButton onPress={closeAccessibilityInfo}>
+              <AccessibilityInfoButtonText>
+                {t('map.accessibilityInfo.close')}
+              </AccessibilityInfoButtonText>
+            </AccessibilityInfoButton>
+          </AccessibilityInfoCard>
+        </AccessibilityInfoOverlay>
+      ) : null}
+
       <Modal
         animationType="fade"
         transparent
@@ -1322,6 +1395,104 @@ const BottomPanel = styled(Animated.View)`
   shadow-radius: 12px;
   shadow-offset: 0 -3px;
   elevation: 10;
+`;
+
+const AccessibilityInfoOverlay = styled.Pressable`
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 80;
+  elevation: 80;
+  padding: 92px 20px 20px;
+  background-color: transparent;
+`;
+
+const AccessibilityInfoCard = styled.Pressable`
+  gap: 14px;
+  padding: 18px;
+  border-radius: 16px;
+  background-color: #ffffff;
+`;
+
+const AccessibilityInfoHeader = styled.View`
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+`;
+
+const AccessibilityInfoTitle = styled.Text`
+  flex: 1;
+  color: #111827;
+  font-size: 17px;
+  font-weight: 800;
+`;
+
+const AccessibilityInfoCloseButton = styled.Pressable`
+  width: 34px;
+  height: 34px;
+  align-items: center;
+  justify-content: center;
+`;
+
+const AccessibilityInfoDescription = styled.Text`
+  color: #4b5563;
+  font-size: 14px;
+  line-height: 22px;
+  font-weight: 500;
+`;
+
+const AccessibilityInfoList = styled.View`
+  gap: 8px;
+`;
+
+const AccessibilityInfoText = styled.Text`
+  color: #374151;
+  font-size: 13px;
+  line-height: 20px;
+  font-weight: 500;
+`;
+
+const AccessibilityLegendList = styled.View`
+  gap: 8px;
+  padding-top: 2px;
+`;
+
+const AccessibilityLegendRow = styled.View`
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 8px;
+`;
+
+const AccessibilityLegendDot = styled.View<{ $color: string }>`
+  width: 10px;
+  height: 10px;
+  margin-top: 5px;
+  border-radius: 999px;
+  background-color: ${({ $color }) => $color};
+`;
+
+const AccessibilityLegendText = styled.Text`
+  flex: 1;
+  color: #374151;
+  font-size: 13px;
+  line-height: 20px;
+  font-weight: 500;
+`;
+
+const AccessibilityInfoButton = styled.Pressable`
+  align-self: flex-end;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background-color: #f3f4f6;
+`;
+
+const AccessibilityInfoButtonText = styled.Text`
+  color: #111827;
+  font-size: 14px;
+  font-weight: 700;
 `;
 
 const PanelHandleButton = styled.Pressable`

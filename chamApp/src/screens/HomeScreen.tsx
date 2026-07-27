@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Linking, Modal, type ImageSourcePropType } from 'react-native';
 import styled from 'styled-components/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -18,7 +18,12 @@ import { useCurrentLocation } from '../hooks/useCurrentLocation.ts';
 import SpeakerIcon from '../assets/icons/SpeakerIcon';
 import { useFetchSMS } from '../services/sms.service.ts';
 import { useFetchNearestShelter } from '../services/map.service.ts';
-import { useDisasterStore, useNearestShelterStore, useSMSStore } from '../store';
+import {
+  useContentStore,
+  useDisasterStore,
+  useNearestShelterStore,
+  useSMSStore,
+} from '../store';
 import type { NearestShelter } from '../store/nearestShelter.ts';
 import {
   ACCESSIBILITY_SELECTED_COLOR,
@@ -29,8 +34,10 @@ import {
 } from '../store/mapFilters.ts';
 import { useFetchDisaster } from '../services/disaster.service.ts';
 import type { RootTabParamList } from '../navigation/AppNavigator.tsx';
+import { useFetchContents } from '../services/content.service.ts';
 
-const defaultShelterImage = require('../assets/images/shelter.png') as ImageSourcePropType;
+const defaultShelterImage =
+  require('../assets/images/shelter.png') as ImageSourcePropType;
 
 const languageOptions = [
   { code: 'KO', label: '한국어' },
@@ -91,11 +98,19 @@ export default function HomeScreen() {
   useFetchSMS();
   useFetchDisaster();
   useFetchNearestShelter();
+  useFetchContents();
   const smsData = useSMSStore(state => state.sms);
+  const contents = useContentStore(state => state.contents);
   const disasterData = useDisasterStore(state => state.disaster);
   const nearestShelter = useNearestShelterStore(state => state.nearestShelter);
+  const popupContent =
+    contents.find(content => content.contentType === 'IN_APP_POPUP') ?? null;
   const disasterSummary = disasterData?.summary?.slice(0, 3) ?? [];
   const disasterDate = formatDisasterDate(disasterData?.createDate);
+  const [isNoticeModalVisible, setIsNoticeModalVisible] = useState(false);
+  const [dismissedNoticeId, setDismissedNoticeId] = useState<number | null>(
+    null,
+  );
   const [isSMSModalVisible, setIsSMSModalVisible] = useState(false);
   const [selectedSMSIndex, setSelectedSMSIndex] = useState(0);
   const [shelterImageIndex, setShelterImageIndex] = useState(0);
@@ -123,165 +138,219 @@ export default function HomeScreen() {
       focusNonce: Date.now(),
     });
   };
+  const closeNoticeModal = () => {
+    if (popupContent) setDismissedNoticeId(popupContent.id);
+    setIsNoticeModalVisible(false);
+  };
+  const handlePressNoticeLink = () => {
+    if (!popupContent?.url) return;
+    Linking.openURL(popupContent.url);
+  };
+
+  useEffect(() => {
+    if (!popupContent || dismissedNoticeId === popupContent.id) return;
+    setIsNoticeModalVisible(true);
+  }, [dismissedNoticeId, popupContent]);
 
   return (
     <Screen>
-      <TopSection>
-        <LanguageRow>
-          {languageOptions.map(item => (
-            <LanguageButton
-              key={item.code}
-              $active={i18n.language === item.code}
-              onPress={() => i18n.changeLanguage(item.code)}
-            >
-              <LanguageText $active={i18n.language === item.code}>
-                {item.label}
-              </LanguageText>
-            </LanguageButton>
-          ))}
-        </LanguageRow>
-
-        <MessageBox
-          disabled={!smsData[0]?.content}
-          onPress={() => {
-            if (!smsData[0]?.content) return;
-            setSelectedSMSIndex(0);
-            setIsSMSModalVisible(true);
-          }}
-        >
-          <SpeakerIcon size={32} />
-          <MessageTitle numberOfLines={1} ellipsizeMode="tail">
-            {smsData[0]?.content ?? '현재 발령된 재난이 없습니다.'}
-          </MessageTitle>
-        </MessageBox>
-        <MessageBox2
-          disabled={!disasterData?.originUrl}
-          onPress={handlePressDisaster}
-        >
-          <TopBox>
-            <MessageTitle2 numberOfLines={1} ellipsizeMode="tail">
-              {t('home.messageTitle2')}
-            </MessageTitle2>
-            <TimeText>{disasterDate}</TimeText>
-          </TopBox>
-          <CenterBox>
-            {disasterSummary.map((item, index) => (
-              <SummaryRow key={`${index}-${item}`}>
-                <SummaryDot />
-                <SummaryText>{item}</SummaryText>
-              </SummaryRow>
+      <HomeScroll showsVerticalScrollIndicator={false}>
+        <TopSection>
+          <LanguageRow>
+            {languageOptions.map(item => (
+              <LanguageButton
+                key={item.code}
+                $active={i18n.language === item.code}
+                onPress={() => i18n.changeLanguage(item.code)}
+              >
+                <LanguageText $active={i18n.language === item.code}>
+                  {item.label}
+                </LanguageText>
+              </LanguageButton>
             ))}
-          </CenterBox>
-        </MessageBox2>
-      </TopSection>
-      <MiddleSection>
-        <CurrentLocationBar />
-        <MapSearchFilters horizontalPadding={0} showShelterTypes={false} />
-        {nearestShelter ? (
-          <ShelterItem onPress={handlePressNearestShelter}>
-            <ShelterImageFrame
-              onPress={event => {
-                event.stopPropagation();
-                setImageModal({
-                  images: nearestShelterImages,
-                  index: nearestShelterImageIndex,
-                });
-              }}
-            >
-              <ShelterImage
-                source={nearestShelterImages[nearestShelterImageIndex]}
-                resizeMode="cover"
-              />
-              {nearestShelterImages.length > 1 ? (
-                <>
-                  <ImageNavButton
-                    $position="left"
-                    onPress={event => {
-                      event.stopPropagation();
-                      setShelterImageIndex(
-                        index =>
-                          (index - 1 + nearestShelterImages.length) %
-                          nearestShelterImages.length,
-                      );
-                    }}
-                  >
-                    <ChevronLeft color="#ffffff" size={18} strokeWidth={2.8} />
-                  </ImageNavButton>
-                  <ImageNavButton
-                    $position="right"
-                    onPress={event => {
-                      event.stopPropagation();
-                      setShelterImageIndex(
-                        index => (index + 1) % nearestShelterImages.length,
-                      );
-                    }}
-                  >
-                    <ChevronRight color="#ffffff" size={18} strokeWidth={2.8} />
-                  </ImageNavButton>
-                  <ImageCounter>
-                    <ImageCounterText>
-                      {nearestShelterImageIndex + 1}/{nearestShelterImages.length}
-                    </ImageCounterText>
-                  </ImageCounter>
-                </>
-              ) : null}
-            </ShelterImageFrame>
-            <ShelterTitleRow>
-              <ShelterName>{nearestShelter.name}</ShelterName>
-              <TypeChip>
-                <TypeChipText>
-                  {t(
-                    getShelterTypeTranslationKey(nearestShelter.shelterType) ??
-                      getShelterTypeLabel(nearestShelter.shelterType),
-                  )}
-                </TypeChipText>
-              </TypeChip>
-            </ShelterTitleRow>
-            <ShelterMetaRow>
-              {typeof nearestShelter.capacity === 'number' ? (
-                <ShelterMetaIconText>
-                  <Users color="#4b5563" size={14} strokeWidth={2.4} />
-                  <ShelterMetaText>
-                    {nearestShelter.capacity.toLocaleString()}
-                  </ShelterMetaText>
-                </ShelterMetaIconText>
-              ) : null}
-              {typeof nearestShelter.area === 'number' ? (
-                <ShelterMetaIconText>
-                  <Square color="#4b5563" size={13} strokeWidth={2.4} />
-                  <ShelterMetaText>
-                    {nearestShelter.area.toLocaleString()}㎡
-                  </ShelterMetaText>
-                </ShelterMetaIconText>
-              ) : null}
-              {typeof nearestShelter.capacity !== 'number' &&
-              typeof nearestShelter.area !== 'number' ? (
-                <ShelterMetaText>규모 정보 없음</ShelterMetaText>
-              ) : null}
-            </ShelterMetaRow>
-            <ShelterMeta>
-              {[
-                nearestShelter.managingAuthorityName,
-                nearestShelter.managingAuthorityTelNo,
-              ]
-                .filter(Boolean)
-                .join(' · ') || '관리기관 정보 없음'}
-            </ShelterMeta>
-            <ChipRow>
-              {getAccessibilityChips(nearestShelter).map(chip => (
-                <AccessChip
-                  key={`${nearestShelter.shelterId}-${chip.label}`}
-                  $active={chip.active}
-                >
-                  <AccessChipText $active={chip.active}>
-                    {t(accessibilityFilterLabelKeys[chip.label] ?? chip.label)}
-                  </AccessChipText>
-                </AccessChip>
+          </LanguageRow>
+
+          <MessageBox
+            disabled={!smsData[0]?.content}
+            onPress={() => {
+              if (!smsData[0]?.content) return;
+              setSelectedSMSIndex(0);
+              setIsSMSModalVisible(true);
+            }}
+          >
+            <SpeakerIcon size={32} />
+            <MessageTitle numberOfLines={1} ellipsizeMode="tail">
+              {smsData[0]?.content ?? '현재 발령된 재난이 없습니다.'}
+            </MessageTitle>
+          </MessageBox>
+          <MessageBox2
+            disabled={!disasterData?.originUrl}
+            onPress={handlePressDisaster}
+          >
+            <TopBox>
+              <MessageTitle2 numberOfLines={1} ellipsizeMode="tail">
+                {t('home.messageTitle2')}
+              </MessageTitle2>
+              <TimeText>{disasterDate}</TimeText>
+            </TopBox>
+            <CenterBox>
+              {disasterSummary.map((item, index) => (
+                <SummaryRow key={`${index}-${item}`}>
+                  <SummaryDot />
+                  <SummaryText>{item}</SummaryText>
+                </SummaryRow>
               ))}
-            </ChipRow>
-          </ShelterItem>
-        ) : null}
-      </MiddleSection>
+            </CenterBox>
+          </MessageBox2>
+        </TopSection>
+        <MiddleSection>
+          <CurrentLocationBar />
+          <MapSearchFilters
+            horizontalPadding={0}
+            showShelterTypes={false}
+            showAccessibilityAll={false}
+          />
+          {nearestShelter ? (
+            <ShelterItem onPress={handlePressNearestShelter}>
+              <ShelterImageFrame
+                onPress={event => {
+                  event.stopPropagation();
+                  setImageModal({
+                    images: nearestShelterImages,
+                    index: nearestShelterImageIndex,
+                  });
+                }}
+              >
+                <ShelterImage
+                  source={nearestShelterImages[nearestShelterImageIndex]}
+                  resizeMode="cover"
+                />
+                {nearestShelterImages.length > 1 ? (
+                  <>
+                    <ImageNavButton
+                      $position="left"
+                      onPress={event => {
+                        event.stopPropagation();
+                        setShelterImageIndex(
+                          index =>
+                            (index - 1 + nearestShelterImages.length) %
+                            nearestShelterImages.length,
+                        );
+                      }}
+                    >
+                      <ChevronLeft color="#ffffff" size={18} strokeWidth={2.8} />
+                    </ImageNavButton>
+                    <ImageNavButton
+                      $position="right"
+                      onPress={event => {
+                        event.stopPropagation();
+                        setShelterImageIndex(
+                          index => (index + 1) % nearestShelterImages.length,
+                        );
+                      }}
+                    >
+                      <ChevronRight color="#ffffff" size={18} strokeWidth={2.8} />
+                    </ImageNavButton>
+                    <ImageCounter>
+                      <ImageCounterText>
+                        {nearestShelterImageIndex + 1}/
+                        {nearestShelterImages.length}
+                      </ImageCounterText>
+                    </ImageCounter>
+                  </>
+                ) : null}
+              </ShelterImageFrame>
+              <ShelterTitleRow>
+                <ShelterName>{nearestShelter.name}</ShelterName>
+                <TypeChip>
+                  <TypeChipText>
+                    {t(
+                      getShelterTypeTranslationKey(nearestShelter.shelterType) ??
+                        getShelterTypeLabel(nearestShelter.shelterType),
+                    )}
+                  </TypeChipText>
+                </TypeChip>
+              </ShelterTitleRow>
+              <ShelterMetaRow>
+                {typeof nearestShelter.capacity === 'number' ? (
+                  <ShelterMetaIconText>
+                    <Users color="#4b5563" size={14} strokeWidth={2.4} />
+                    <ShelterMetaText>
+                      {nearestShelter.capacity.toLocaleString()}
+                    </ShelterMetaText>
+                  </ShelterMetaIconText>
+                ) : null}
+                {typeof nearestShelter.area === 'number' ? (
+                  <ShelterMetaIconText>
+                    <Square color="#4b5563" size={13} strokeWidth={2.4} />
+                    <ShelterMetaText>
+                      {nearestShelter.area.toLocaleString()}㎡
+                    </ShelterMetaText>
+                  </ShelterMetaIconText>
+                ) : null}
+                {typeof nearestShelter.capacity !== 'number' &&
+                typeof nearestShelter.area !== 'number' ? (
+                  <ShelterMetaText>규모 정보 없음</ShelterMetaText>
+                ) : null}
+              </ShelterMetaRow>
+              <ShelterMeta>
+                {[
+                  nearestShelter.managingAuthorityName,
+                  nearestShelter.managingAuthorityTelNo,
+                ]
+                  .filter(Boolean)
+                  .join(' · ') || '관리기관 정보 없음'}
+              </ShelterMeta>
+              <ChipRow>
+                {getAccessibilityChips(nearestShelter).map(chip => (
+                  <AccessChip
+                    key={`${nearestShelter.shelterId}-${chip.label}`}
+                    $active={chip.active}
+                  >
+                    <AccessChipText $active={chip.active}>
+                      {t(accessibilityFilterLabelKeys[chip.label] ?? chip.label)}
+                    </AccessChipText>
+                  </AccessChip>
+                ))}
+              </ChipRow>
+            </ShelterItem>
+          ) : null}
+        </MiddleSection>
+      </HomeScroll>
+      <Modal
+        animationType="fade"
+        transparent
+        visible={!!popupContent && isNoticeModalVisible}
+        onRequestClose={closeNoticeModal}
+      >
+        <ModalOverlay onPress={closeNoticeModal}>
+          <NoticeModalCard onPress={e => e.stopPropagation()}>
+            <NoticeModalHeader>
+              <NoticeModalCategory>공지사항</NoticeModalCategory>
+              <NoticeCloseButton onPress={closeNoticeModal}>
+                <X color="#6b7280" size={22} strokeWidth={2.6} />
+              </NoticeCloseButton>
+            </NoticeModalHeader>
+            {popupContent?.imageUrl ? (
+              <NoticeImage source={{ uri: popupContent.imageUrl }} />
+            ) : null}
+            <NoticeTitle>{popupContent?.name}</NoticeTitle>
+            {popupContent?.additionalInfo ? (
+              <NoticeContent>{popupContent.additionalInfo}</NoticeContent>
+            ) : null}
+            <NoticeButtonRow>
+              {popupContent?.url ? (
+                <NoticePrimaryButton onPress={handlePressNoticeLink}>
+                  <NoticePrimaryButtonText>자세히 보기</NoticePrimaryButtonText>
+                </NoticePrimaryButton>
+              ) : null}
+              <NoticeButton onPress={closeNoticeModal}>
+                <ModalButtonText>닫기</ModalButtonText>
+              </NoticeButton>
+            </NoticeButtonRow>
+          </NoticeModalCard>
+        </ModalOverlay>
+      </Modal>
       <Modal
         animationType="fade"
         transparent
@@ -381,7 +450,8 @@ export default function HomeScreen() {
                           current
                             ? {
                                 ...current,
-                                index: (current.index + 1) % current.images.length,
+                                index:
+                                  (current.index + 1) % current.images.length,
                               }
                             : current,
                         )
@@ -415,6 +485,10 @@ const Screen = styled(SafeAreaView)`
   flex-direction: column;
   padding: 0 12px;
   background-color: #ffffff;
+`;
+
+const HomeScroll = styled.ScrollView`
+  flex: 1;
 `;
 
 const TopSection = styled.View`
@@ -640,7 +714,7 @@ const MessageBox = styled.Pressable`
 const MessageTitle = styled.Text`
   flex: 1;
   color: #999999;
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 700;
 `;
 
@@ -717,6 +791,77 @@ const ModalCard = styled.Pressable`
   padding: 20px;
   border-radius: 18px;
   background-color: #ffffff;
+`;
+
+const NoticeModalCard = styled(ModalCard)`
+  gap: 14px;
+  padding: 18px;
+`;
+
+const NoticeModalHeader = styled.View`
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+`;
+
+const NoticeModalCategory = styled.Text`
+  color: #1f3a5f;
+  font-size: 14px;
+  font-weight: 800;
+`;
+
+const NoticeCloseButton = styled.Pressable`
+  width: 36px;
+  height: 36px;
+  align-items: center;
+  justify-content: center;
+`;
+
+const NoticeImage = styled.Image`
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 12px;
+  background-color: #e5e7eb;
+`;
+
+const NoticeTitle = styled.Text`
+  color: #111827;
+  font-size: 18px;
+  line-height: 25px;
+  font-weight: 800;
+`;
+
+const NoticeContent = styled.Text`
+  color: #4b5563;
+  font-size: 14px;
+  line-height: 22px;
+  font-weight: 500;
+`;
+
+const NoticeButtonRow = styled.View`
+  flex-direction: row;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+`;
+
+const NoticeButton = styled.Pressable`
+  padding: 10px 14px;
+  border-radius: 10px;
+  background-color: #f3f4f6;
+`;
+
+const NoticePrimaryButton = styled.Pressable`
+  padding: 10px 14px;
+  border-radius: 10px;
+  background-color: #1f3a5f;
+`;
+
+const NoticePrimaryButtonText = styled.Text`
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 800;
 `;
 
 const ModalHeader = styled.View`

@@ -8,3 +8,4 @@ export * from './mapFilters';
 export * from './location';
 export * from './nearestShelter';
 export * from './manual';
+export * from './content';
