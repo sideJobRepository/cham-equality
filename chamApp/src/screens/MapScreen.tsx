@@ -798,10 +798,6 @@ export default function MapScreen() {
     [panelAnimation],
   );
 
-  const handleTogglePanel = () => {
-    animatePanelTo(!isPanelExpanded);
-  };
-
   const handleMapFrameLayout = (event: LayoutChangeEvent) => {
     const nextHeight = event.nativeEvent.layout.height;
     setMapFrameHeight(current =>
@@ -1028,10 +1024,7 @@ export default function MapScreen() {
       {mapError ? <ErrorText>{mapError}</ErrorText> : null}
 
       <BottomPanel style={{ height: panelHeight }}>
-        <PanelHandleButton
-          onPress={handleTogglePanel}
-          {...panelPanResponder.panHandlers}
-        >
+        <PanelHandleButton {...panelPanResponder.panHandlers}>
           <PanelHandleBar />
         </PanelHandleButton>
         {selectedPlace ? (
@@ -1529,7 +1522,7 @@ const AccessibilityInfoButtonText = styled.Text`
   font-weight: 700;
 `;
 
-const PanelHandleButton = styled.Pressable`
+const PanelHandleButton = styled.View`
   height: 42px;
   align-items: center;
   justify-content: center;
