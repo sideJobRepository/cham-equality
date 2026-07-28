@@ -152,6 +152,7 @@ interface ReportLocalImage {
   fileSize: number;
   category: ShelterImageCategory;
   description: string;
+  base64?: string;
 }
 
 interface WebMessagePayload {
@@ -225,6 +226,7 @@ function toReportLocalImage(asset: Asset): ReportLocalImage | null {
     fileSize: asset.fileSize ?? 0,
     category: 'ETC',
     description: '',
+    base64: asset.base64,
   };
 }
 
@@ -1048,6 +1050,7 @@ export default function MapScreen() {
       mediaType: 'photo',
       selectionLimit: 5,
       quality: 0.8,
+      includeBase64: true,
     });
     console.log('[report-images] picker result', {
       didCancel: result.didCancel,
@@ -1059,6 +1062,7 @@ export default function MapScreen() {
         fileName: asset.fileName,
         type: asset.type,
         fileSize: asset.fileSize,
+        hasBase64: !!asset.base64,
       })),
     });
 
@@ -1119,11 +1123,17 @@ export default function MapScreen() {
           fileSize: image.fileSize,
           category: image.category,
           description: image.description,
+          base64: image.base64,
         })),
       });
       setReportShelter(null);
       alert(t('map.report.success'));
     } catch (error: any) {
+      console.log('[report-submit] failed', {
+        message: error?.message,
+        status: error?.response?.status,
+        data: error?.response?.data,
+      });
       alert(error?.response?.data?.message ?? t('map.report.failed'));
     }
   };

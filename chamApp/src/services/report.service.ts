@@ -1,4 +1,5 @@
 import api from '../lib/axiosInstance.ts';
+import ReactNativeBlobUtil from 'react-native-blob-util';
 
 export type ShelterImageCategory =
   | 'EXTERIOR'
@@ -31,7 +32,9 @@ export interface ShelterReportCreateRequest {
 export async function createShelterReport(
   body: ShelterReportCreateRequest,
 ): Promise<number> {
+  console.log('[report-submit] create report request', body);
   const { data } = await api.post('/api/app/shelter-reports', body);
+  console.log('[report-submit] create report response', data);
   return data.data;
 }
 
@@ -42,6 +45,7 @@ export interface LocalShelterReportImage {
   fileSize: number;
   category: ShelterImageCategory;
   description?: string;
+  base64?: string;
 }
 
 interface PresignedUrlResponse {
@@ -61,13 +65,17 @@ export async function uploadShelterReportImages(
 ): Promise<ShelterReportImageItem[]> {
   if (!images.length) return [];
 
+  console.log('[report-submit] upload images start', images);
   const presignedUrls = await getShelterImagePresignedUrls(images);
+  console.log('[report-submit] presigned urls', presignedUrls);
 
   await Promise.all(
     images.map((image, index) => uploadToS3(image, presignedUrls[index])),
   );
+  console.log('[report-submit] s3 upload complete');
 
   const uploadedFiles = await registerShelterImageFiles(images, presignedUrls);
+  console.log('[report-submit] upload-file response', uploadedFiles);
 
   return uploadedFiles.map((file, index) => ({
     fileId: file.fileId,
@@ -94,19 +102,37 @@ async function uploadToS3(
   image: LocalShelterReportImage,
   presignedUrl: PresignedUrlResponse,
 ): Promise<void> {
-  const file = await fetch(image.uri);
-  const blob = await file.blob();
-  const response = await fetch(presignedUrl.url, {
-    method: 'PUT',
-    headers: {
+  console.log('[report-submit] local image read start', {
+    uri: image.uri,
+    fileName: image.fileName,
+    contentType: image.contentType,
+  });
+  console.log('[report-submit] s3 put start', {
+    url: presignedUrl.url,
+    fileName: image.fileName,
+    uri: image.uri,
+  });
+  const response = await ReactNativeBlobUtil.fetch(
+    'PUT',
+    presignedUrl.url,
+    {
       'Content-Type': presignedUrl.contentType || image.contentType,
     },
-    body: blob,
-  });
+    ReactNativeBlobUtil.wrap(toBlobUtilPath(image.uri)),
+  );
+  const status = response.info().status;
 
-  if (!response.ok) {
+  if (status < 200 || status >= 300) {
+    console.log('[report-submit] s3 upload failed', {
+      status,
+      fileName: image.fileName,
+    });
     throw new Error('이미지 업로드에 실패했습니다.');
   }
+}
+
+function toBlobUtilPath(uri: string) {
+  return decodeURIComponent(uri.replace(/^file:\/\//, ''));
 }
 
 async function registerShelterImageFiles(
