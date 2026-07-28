@@ -29,12 +29,54 @@ export interface ShelterReportCreateRequest {
   images?: ShelterReportImageItem[];
 }
 
+export interface ShelterReportListItem {
+  id: number;
+  shelterId: number;
+  shelterName?: string;
+  signageLanguage?: string;
+  accessibleToilet?: boolean;
+  ramp?: boolean;
+  elevator?: boolean;
+  brailleBlock?: boolean;
+  etcFacilities?: string;
+  requestStatus: 'PENDING' | 'APPROVED' | 'REJECTED';
+  createDate?: string;
+}
+
+export interface ShelterReportDetailImage {
+  fileId: number;
+  category?: ShelterImageCategory;
+  description?: string;
+  url?: string;
+  fileName?: string;
+}
+
+export interface ShelterReportDetail extends ShelterReportListItem {
+  shelterAddress?: string;
+  shelterSurveyStatus?: string;
+  images: ShelterReportDetailImage[];
+}
+
 export async function createShelterReport(
   body: ShelterReportCreateRequest,
 ): Promise<number> {
   console.log('[report-submit] create report request', body);
   const { data } = await api.post('/api/app/shelter-reports', body);
   console.log('[report-submit] create report response', data);
+  return data.data;
+}
+
+export async function fetchMyShelterReports(): Promise<
+  ShelterReportListItem[]
+> {
+  const { data } = await api.get('/api/app/shelter-reports');
+  return data.data ?? [];
+}
+
+export async function fetchMyShelterReportDetail(
+  reportId: number,
+): Promise<ShelterReportDetail> {
+  const { data } = await api.get(`/api/app/shelter-reports/${reportId}`);
   return data.data;
 }
 

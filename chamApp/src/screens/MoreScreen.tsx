@@ -1,8 +1,19 @@
-import { Linking, Platform } from 'react-native';
+import { useEffect, useState } from 'react';
+import {
+  ActivityIndicator,
+  Linking,
+  Modal,
+  Platform,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import styled from 'styled-components/native';
 import { useTranslation } from 'react-i18next';
-import { ChevronRight } from 'lucide-react-native';
+import {
+  ChevronRight,
+  ClipboardList,
+  Image as ImageIcon,
+  X,
+} from 'lucide-react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { getKeyHashAndroid } from '@react-native-kakao/core';
 import { useUserStore } from '../store/user';
@@ -13,6 +24,12 @@ import {
   useLogout,
   useWithdraw,
 } from '../services/auth.service';
+import {
+  fetchMyShelterReportDetail,
+  fetchMyShelterReports,
+  type ShelterReportDetail,
+  type ShelterReportListItem,
+} from '../services/report.service';
 import { useDialogUtil } from '../utils/dialog';
 
 const kakaoIcon = require('../assets/icons/kakao.png');
@@ -37,6 +54,41 @@ const citizenServices = [
   },
 ];
 
+function formatReportDate(value?: string) {
+  if (!value) return '-';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value.slice(0, 10);
+  return `${date.getFullYear()}.${String(date.getMonth() + 1).padStart(
+    2,
+    '0',
+  )}.${String(date.getDate()).padStart(2, '0')}`;
+}
+
+function toAccessibilityChips(report: ShelterReportDetail) {
+  return [
+    {
+      key: 'ramp',
+      labelKey: 'map.filters.ramp',
+      active: report.ramp,
+    },
+    {
+      key: 'elevator',
+      labelKey: 'map.filters.elevator',
+      active: report.elevator,
+    },
+    {
+      key: 'brailleBlock',
+      labelKey: 'map.filters.brailleBlock',
+      active: report.brailleBlock,
+    },
+    {
+      key: 'accessibleToilet',
+      labelKey: 'map.filters.accessibleToilet',
+      active: report.accessibleToilet,
+    },
+  ];
+}
+
 export default function MoreScreen() {
   const { t, i18n } = useTranslation();
   const { alert, confirm } = useDialogUtil();
@@ -46,6 +98,56 @@ export default function MoreScreen() {
   const appleLogin = useAppleLogin();
   const logout = useLogout();
   const withdraw = useWithdraw();
+  const [reports, setReports] = useState<ShelterReportListItem[]>([]);
+  const [reportsLoading, setReportsLoading] = useState(false);
+  const [selectedReport, setSelectedReport] =
+    useState<ShelterReportDetail | null>(null);
+  const [reportDetailLoading, setReportDetailLoading] = useState(false);
+
+  useEffect(() => {
+    if (!user) {
+      setReports([]);
+      return;
+    }
+
+    let ignore = false;
+    setReportsLoading(true);
+    fetchMyShelterReports()
+      .then(data => {
+        if (!ignore) setReports(data);
+      })
+      .catch(error => {
+        console.log('[my-reports] fetch failed', {
+          status: error?.response?.status,
+          data: error?.response?.data,
+          message: error?.message,
+        });
+      })
+      .finally(() => {
+        if (!ignore) setReportsLoading(false);
+      });
+
+    return () => {
+      ignore = true;
+    };
+  }, [user]);
+
+  const openReportDetail = async (reportId: number) => {
+    setReportDetailLoading(true);
+    try {
+      const detail = await fetchMyShelterReportDetail(reportId);
+      setSelectedReport(detail);
+    } catch (error: any) {
+      console.log('[my-reports] detail failed', {
+        status: error?.response?.status,
+        data: error?.response?.data,
+        message: error?.message,
+      });
+      alert(error?.response?.data?.message ?? t('moreReports.detailFailed'));
+    } finally {
+      setReportDetailLoading(false);
+    }
+  };
 
   const onKakao = async () => {
     const keyHash =
@@ -161,8 +263,52 @@ export default function MoreScreen() {
           </SettingBlock>
         </Section>
 
+        {user ? (
+          <Section>
+            <SectionTitle>{t('moreReports.title')}</SectionTitle>
+            <ReportListBlock>
+              {reportsLoading ? (
+                <ReportLoadingRow>
+                  <ActivityIndicator color="#2563eb" />
+                </ReportLoadingRow>
+              ) : reports.length ? (
+                reports.map(report => (
+                  <ReportListButton
+                    key={String(report.id)}
+                    onPress={() => openReportDetail(report.id)}
+                  >
+                    <ReportListIconBox>
+                      <ClipboardList
+                        color="#2563eb"
+                        size={18}
+                        strokeWidth={2.5}
+                      />
+                    </ReportListIconBox>
+                    <ReportListBody>
+                      <ReportListTitle numberOfLines={1}>
+                        {report.shelterName || t('moreReports.unknownShelter')}
+                      </ReportListTitle>
+                      <ReportListMeta numberOfLines={1}>
+                        {formatReportDate(report.createDate)} ·{' '}
+                        {t(`moreReports.status.${report.requestStatus}`)}
+                      </ReportListMeta>
+                    </ReportListBody>
+                    <ChevronRight
+                      color="#9ca3af"
+                      size={20}
+                      strokeWidth={2.4}
+                    />
+                  </ReportListButton>
+                ))
+              ) : (
+                <ReportEmptyText>{t('moreReports.empty')}</ReportEmptyText>
+              )}
+            </ReportListBlock>
+          </Section>
+        ) : null}
+
         <Section>
-          <SectionTitle>{t('more.login')}</SectionTitle>
+          {!user ? <SectionTitle>{t('more.login')}</SectionTitle> : null}
           {user ? (
             <LoginBlock>
               <Greeting>{t('auth.greeting', { name: user.name })}</Greeting>
@@ -193,6 +339,111 @@ export default function MoreScreen() {
           )}
         </Section>
       </Content>
+
+      <Modal
+        animationType="slide"
+        transparent
+        visible={!!selectedReport || reportDetailLoading}
+        onRequestClose={() => setSelectedReport(null)}
+      >
+        <ReportModalOverlay onPress={() => setSelectedReport(null)}>
+          <ReportModalCard onPress={event => event.stopPropagation()}>
+            <ReportModalHeader>
+              <ReportModalTitle>{t('moreReports.detailTitle')}</ReportModalTitle>
+              <ReportModalCloseButton onPress={() => setSelectedReport(null)}>
+                <X color="#6b7280" size={22} strokeWidth={2.6} />
+              </ReportModalCloseButton>
+            </ReportModalHeader>
+
+            {reportDetailLoading && !selectedReport ? (
+              <ReportDetailLoading>
+                <ActivityIndicator color="#2563eb" />
+              </ReportDetailLoading>
+            ) : selectedReport ? (
+              <ReportDetailScroll showsVerticalScrollIndicator={false}>
+                <ReportDetailName>
+                  {selectedReport.shelterName ||
+                    t('moreReports.unknownShelter')}
+                </ReportDetailName>
+                {selectedReport.shelterAddress ? (
+                  <ReportDetailAddress>
+                    {selectedReport.shelterAddress}
+                  </ReportDetailAddress>
+                ) : null}
+                <ReportDetailStatus>
+                  {t(`moreReports.status.${selectedReport.requestStatus}`)}
+                </ReportDetailStatus>
+
+                <ReportDetailSection>
+                  <ReportDetailSectionTitle>
+                    {t('map.report.accessibility')}
+                  </ReportDetailSectionTitle>
+                  <ReportChipRow>
+                    {toAccessibilityChips(selectedReport).map(chip => (
+                      <ReportAccessChip
+                        key={chip.key}
+                        $active={chip.active === true}
+                      >
+                        <ReportAccessChipText $active={chip.active === true}>
+                          {t(chip.labelKey)}
+                        </ReportAccessChipText>
+                      </ReportAccessChip>
+                    ))}
+                  </ReportChipRow>
+                </ReportDetailSection>
+
+                {selectedReport.etcFacilities ? (
+                  <ReportDetailSection>
+                    <ReportDetailSectionTitle>
+                      {t('map.report.etcFacilities')}
+                    </ReportDetailSectionTitle>
+                    <ReportDetailText>
+                      {selectedReport.etcFacilities}
+                    </ReportDetailText>
+                  </ReportDetailSection>
+                ) : null}
+
+                <ReportDetailSection>
+                  <ReportDetailSectionTitle>
+                    {t('map.report.images')}
+                  </ReportDetailSectionTitle>
+                  {selectedReport.images?.length ? (
+                    selectedReport.images.map(image => (
+                      <ReportDetailImageRow key={String(image.fileId)}>
+                        {image.url ? (
+                          <ReportDetailImage source={{ uri: image.url }} />
+                        ) : (
+                          <ReportDetailImagePlaceholder>
+                            <ImageIcon
+                              color="#9ca3af"
+                              size={20}
+                              strokeWidth={2.4}
+                            />
+                          </ReportDetailImagePlaceholder>
+                        )}
+                        <ReportDetailImageInfo>
+                          <ReportDetailImageCategory>
+                            {t(
+                              `map.report.categories.${image.category ?? 'ETC'}`,
+                            )}
+                          </ReportDetailImageCategory>
+                          {image.description ? (
+                            <ReportDetailImageDescription numberOfLines={2}>
+                              {image.description}
+                            </ReportDetailImageDescription>
+                          ) : null}
+                        </ReportDetailImageInfo>
+                      </ReportDetailImageRow>
+                    ))
+                  ) : (
+                    <ReportDetailText>{t('moreReports.noImages')}</ReportDetailText>
+                  )}
+                </ReportDetailSection>
+              </ReportDetailScroll>
+            ) : null}
+          </ReportModalCard>
+        </ReportModalOverlay>
+      </Modal>
     </Screen>
   );
 }
@@ -425,3 +676,218 @@ const WithdrawText = styled.Text`
   text-decoration-line: underline;
 `;
 
+const ReportListBlock = styled.View`
+  overflow: hidden;
+  border-radius: 8px;
+  border-width: 1px;
+  border-color: #e5e7eb;
+  background-color: #ffffff;
+`;
+
+const ReportLoadingRow = styled.View`
+  min-height: 72px;
+  align-items: center;
+  justify-content: center;
+`;
+
+const ReportListButton = styled.Pressable`
+  min-height: 64px;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-bottom-width: 1px;
+  border-bottom-color: #f1f5f9;
+`;
+
+const ReportListIconBox = styled.View`
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  align-items: center;
+  justify-content: center;
+  background-color: #eff6ff;
+`;
+
+const ReportListBody = styled.View`
+  flex: 1;
+  min-width: 0;
+  gap: 4px;
+`;
+
+const ReportListTitle = styled.Text`
+  color: #111827;
+  font-size: 14px;
+  font-weight: 800;
+`;
+
+const ReportListMeta = styled.Text`
+  color: #6b7280;
+  font-size: 12px;
+  font-weight: 600;
+`;
+
+const ReportEmptyText = styled.Text`
+  padding: 18px 14px;
+  color: #9ca3af;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+`;
+
+const ReportModalOverlay = styled.Pressable`
+  flex: 1;
+  justify-content: flex-end;
+  padding: 16px;
+  background-color: rgba(17, 24, 39, 0.32);
+`;
+
+const ReportModalCard = styled.Pressable`
+  height: 90%;
+  gap: 12px;
+  padding: 18px;
+  border-radius: 18px;
+  background-color: #ffffff;
+`;
+
+const ReportModalHeader = styled.View`
+  min-height: 34px;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+`;
+
+const ReportModalTitle = styled.Text`
+  flex: 1;
+  color: #111827;
+  font-size: 18px;
+  font-weight: 800;
+`;
+
+const ReportModalCloseButton = styled.Pressable`
+  width: 34px;
+  height: 34px;
+  align-items: center;
+  justify-content: center;
+`;
+
+const ReportDetailLoading = styled.View`
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+`;
+
+const ReportDetailScroll = styled.ScrollView`
+  flex: 1;
+`;
+
+const ReportDetailName = styled.Text`
+  color: #111827;
+  font-size: 17px;
+  line-height: 24px;
+  font-weight: 800;
+`;
+
+const ReportDetailAddress = styled.Text`
+  margin-top: 4px;
+  color: #4b5563;
+  font-size: 13px;
+  line-height: 19px;
+  font-weight: 600;
+`;
+
+const ReportDetailStatus = styled.Text`
+  align-self: flex-start;
+  margin-top: 10px;
+  padding: 5px 9px;
+  border-radius: 999px;
+  overflow: hidden;
+  color: #2563eb;
+  font-size: 12px;
+  font-weight: 800;
+  background-color: #eff6ff;
+`;
+
+const ReportDetailSection = styled.View`
+  gap: 8px;
+  margin-top: 18px;
+`;
+
+const ReportDetailSectionTitle = styled.Text`
+  color: #111827;
+  font-size: 14px;
+  font-weight: 800;
+`;
+
+const ReportChipRow = styled.View`
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 7px;
+`;
+
+const ReportAccessChip = styled.View<{ $active: boolean }>`
+  padding: 6px 9px;
+  border-radius: 999px;
+  background-color: ${({ $active }) => ($active ? '#2563eb' : '#f3f4f6')};
+  border-width: 1px;
+  border-color: ${({ $active }) => ($active ? '#2563eb' : '#e5e7eb')};
+`;
+
+const ReportAccessChipText = styled.Text<{ $active: boolean }>`
+  color: ${({ $active }) => ($active ? '#ffffff' : '#9ca3af')};
+  font-size: 12px;
+  font-weight: 800;
+`;
+
+const ReportDetailText = styled.Text`
+  color: #4b5563;
+  font-size: 13px;
+  line-height: 20px;
+  font-weight: 600;
+`;
+
+const ReportDetailImageRow = styled.View`
+  flex-direction: row;
+  gap: 10px;
+  padding: 10px;
+  border-radius: 12px;
+  background-color: #f9fafb;
+  border-width: 1px;
+  border-color: #e5e7eb;
+`;
+
+const ReportDetailImage = styled.Image`
+  width: 76px;
+  height: 76px;
+  border-radius: 10px;
+  background-color: #e5e7eb;
+`;
+
+const ReportDetailImagePlaceholder = styled.View`
+  width: 76px;
+  height: 76px;
+  border-radius: 10px;
+  align-items: center;
+  justify-content: center;
+  background-color: #f3f4f6;
+`;
+
+const ReportDetailImageInfo = styled.View`
+  flex: 1;
+  min-width: 0;
+  gap: 6px;
+`;
+
+const ReportDetailImageCategory = styled.Text`
+  color: #111827;
+  font-size: 13px;
+  font-weight: 800;
+`;
+
+const ReportDetailImageDescription = styled.Text`
+  color: #4b5563;
+  font-size: 12px;
+  line-height: 18px;
+  font-weight: 600;
+`;

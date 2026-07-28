@@ -43,6 +43,19 @@ const resources = {
         languageSettings: '언어 설정',
         login: '로그인',
       },
+      moreReports: {
+        title: '내가 제보한 목록',
+        detailTitle: '제보 상세',
+        empty: '제보한 내역이 없습니다.',
+        unknownShelter: '대피소 정보 없음',
+        noImages: '첨부된 사진이 없습니다.',
+        detailFailed: '제보 상세를 불러오지 못했습니다.',
+        status: {
+          PENDING: '검토 대기',
+          APPROVED: '승인',
+          REJECTED: '반려',
+        },
+      },
       map: {
         labels: {
           nearbyLocation: '내 위치 주변 보기',
@@ -149,6 +162,19 @@ const resources = {
         appSettings: 'Language Settings',
         languageSettings: 'Language Settings',
         login: 'Login',
+      },
+      moreReports: {
+        title: 'My Reports',
+        detailTitle: 'Report Detail',
+        empty: 'No reports yet.',
+        unknownShelter: 'Unknown shelter',
+        noImages: 'No attached photos.',
+        detailFailed: 'Failed to load report detail.',
+        status: {
+          PENDING: 'Pending',
+          APPROVED: 'Approved',
+          REJECTED: 'Rejected',
+        },
       },
       map: {
         labels: {
@@ -257,6 +283,19 @@ const resources = {
         languageSettings: '语言设置',
         login: '登录',
       },
+      moreReports: {
+        title: '我的举报列表',
+        detailTitle: '举报详情',
+        empty: '暂无举报记录。',
+        unknownShelter: '无避难所信息',
+        noImages: '没有附加照片。',
+        detailFailed: '无法加载举报详情。',
+        status: {
+          PENDING: '待审核',
+          APPROVED: '已批准',
+          REJECTED: '已驳回',
+        },
+      },
       map: {
         labels: {
           nearbyLocation: '查看我的位置附近',
@@ -363,6 +402,19 @@ const resources = {
         appSettings: '言語設定',
         languageSettings: '言語設定',
         login: 'ログイン',
+      },
+      moreReports: {
+        title: '自分の提報一覧',
+        detailTitle: '提報詳細',
+        empty: '提報履歴がありません。',
+        unknownShelter: '避難所情報なし',
+        noImages: '添付写真はありません。',
+        detailFailed: '提報詳細を読み込めませんでした。',
+        status: {
+          PENDING: '確認待ち',
+          APPROVED: '承認',
+          REJECTED: '却下',
+        },
       },
       map: {
         labels: {
@@ -471,6 +523,19 @@ const resources = {
         appSettings: 'Cài đặt ngôn ngữ',
         languageSettings: 'Cài đặt ngôn ngữ',
         login: 'Đăng nhập',
+      },
+      moreReports: {
+        title: 'Báo cáo của tôi',
+        detailTitle: 'Chi tiết báo cáo',
+        empty: 'Chưa có báo cáo nào.',
+        unknownShelter: 'Không có thông tin nơi trú ẩn',
+        noImages: 'Không có ảnh đính kèm.',
+        detailFailed: 'Không thể tải chi tiết báo cáo.',
+        status: {
+          PENDING: 'Chờ duyệt',
+          APPROVED: 'Đã duyệt',
+          REJECTED: 'Từ chối',
+        },
       },
       map: {
         labels: {
