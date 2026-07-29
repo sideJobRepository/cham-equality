@@ -315,7 +315,7 @@ export default function HomeScreen() {
                 ) : null}
                 {typeof nearestShelter.capacity !== 'number' &&
                 typeof nearestShelter.area !== 'number' ? (
-                  <ShelterMetaText>규모 정보 없음</ShelterMetaText>
+                  <ShelterMetaText>{t('home.noScaleInfo')}</ShelterMetaText>
                 ) : null}
               </ShelterMetaRow>
               <ShelterMeta>
@@ -324,7 +324,7 @@ export default function HomeScreen() {
                   nearestShelter.managingAuthorityTelNo,
                 ]
                   .filter(Boolean)
-                  .join(' · ') || '관리기관 정보 없음'}
+                  .join(' · ') || t('home.noManagingAuthority')}
               </ShelterMeta>
               <ChipRow>
                 {getAccessibilityChips(nearestShelter).map(chip => (
@@ -368,11 +368,13 @@ export default function HomeScreen() {
             <NoticeButtonRow>
               {popupContent?.url ? (
                 <NoticePrimaryButton onPress={handlePressNoticeLink}>
-                  <NoticePrimaryButtonText>자세히 보기</NoticePrimaryButtonText>
+                  <NoticePrimaryButtonText>
+                    {t('home.noticeDetail')}
+                  </NoticePrimaryButtonText>
                 </NoticePrimaryButton>
               ) : null}
               <NoticeButton onPress={closeNoticeModal}>
-                <ModalButtonText>닫기</ModalButtonText>
+                <ModalButtonText>{t('common.close')}</ModalButtonText>
               </NoticeButton>
             </NoticeButtonRow>
           </NoticeModalCard>
@@ -427,10 +429,10 @@ export default function HomeScreen() {
               </SMSDateTime>
             ) : null}
             <ModalContent>
-              {selectedSMS?.content ?? '표시할 재난문자가 없습니다.'}
+              {selectedSMS?.content ?? t('home.noSms')}
             </ModalContent>
             <ModalButton onPress={() => setIsSMSModalVisible(false)}>
-              <ModalButtonText>닫기</ModalButtonText>
+              <ModalButtonText>{t('common.close')}</ModalButtonText>
             </ModalButton>
           </ModalCard>
         </ModalOverlay>
@@ -867,13 +869,6 @@ const NoticeImage = styled.Image`
   aspect-ratio: 16 / 9;
   border-radius: 12px;
   background-color: #e5e7eb;
-`;
-
-const NoticeTitle = styled.Text`
-  color: #111827;
-  font-size: 16px;
-  line-height: 25px;
-  font-weight: 800;
 `;
 
 const NoticeContent = styled.Text`

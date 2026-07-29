@@ -8,6 +8,7 @@ const resources = {
       common: {
         ok: '확인',
         cancel: '취소',
+        close: '닫기',
       },
       tabs: {
         home: '홈',
@@ -19,6 +20,10 @@ const resources = {
         messageTitle2: '일일 재난안전관리 상황',
         more: '더보기',
         notice: '공지사항',
+        noticeDetail: '자세히 보기',
+        noSms: '표시할 재난문자가 없습니다.',
+        noScaleInfo: '규모 정보 없음',
+        noManagingAuthority: '관리기관 정보 없음',
       },
       manual: {
         title: '재난 행동요령',
@@ -135,6 +140,7 @@ const resources = {
       common: {
         ok: 'OK',
         cancel: 'Cancel',
+        close: 'Close',
       },
       tabs: {
         home: 'Home',
@@ -146,6 +152,10 @@ const resources = {
         messageTitle2: 'Daily Disaster Safety Status',
         more: 'More',
         notice: 'Notice',
+        noticeDetail: 'View Details',
+        noSms: 'No emergency message to display.',
+        noScaleInfo: 'No scale information',
+        noManagingAuthority: 'No managing authority information',
       },
       manual: {
         title: 'Disaster Safety Guide',
@@ -263,6 +273,7 @@ const resources = {
       common: {
         ok: '确认',
         cancel: '取消',
+        close: '关闭',
       },
       tabs: {
         home: '首页',
@@ -274,6 +285,10 @@ const resources = {
         messageTitle2: '每日灾害安全管理情况',
         more: '更多',
         notice: '公告',
+        noticeDetail: '查看详情',
+        noSms: '没有可显示的灾害短信。',
+        noScaleInfo: '无规模信息',
+        noManagingAuthority: '无管理机构信息',
       },
       manual: {
         title: '灾害行动指南',
@@ -389,6 +404,7 @@ const resources = {
       common: {
         ok: '確認',
         cancel: 'キャンセル',
+        close: '閉じる',
       },
       tabs: {
         home: 'ホーム',
@@ -400,6 +416,10 @@ const resources = {
         messageTitle2: '日次災害安全管理状況',
         more: 'もっと見る',
         notice: 'お知らせ',
+        noticeDetail: '詳しく見る',
+        noSms: '表示する災害メッセージはありません。',
+        noScaleInfo: '規模情報なし',
+        noManagingAuthority: '管理機関情報なし',
       },
       manual: {
         title: '災害時行動ガイド',
@@ -517,6 +537,7 @@ const resources = {
       common: {
         ok: 'OK',
         cancel: 'Hủy',
+        close: 'Đóng',
       },
       tabs: {
         home: 'Trang chủ',
@@ -528,6 +549,10 @@ const resources = {
         messageTitle2: 'Tình hình quản lý an toàn thiên tai hằng ngày',
         more: 'Xem thêm',
         notice: 'Thông báo',
+        noticeDetail: 'Xem chi tiết',
+        noSms: 'Không có tin nhắn khẩn cấp để hiển thị.',
+        noScaleInfo: 'Không có thông tin quy mô',
+        noManagingAuthority: 'Không có thông tin cơ quan quản lý',
       },
       manual: {
         title: 'Hướng dẫn ứng phó thiên tai',
