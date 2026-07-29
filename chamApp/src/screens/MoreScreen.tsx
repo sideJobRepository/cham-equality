@@ -159,6 +159,7 @@ export default function MoreScreen() {
 
     try {
       await kakaoLogin();
+      alert(t('auth.loginDone'));
     } catch (error) {
       let message =
         error instanceof Error ? error.message : '카카오 로그인에 실패했습니다.';
@@ -172,6 +173,7 @@ export default function MoreScreen() {
   const onNaver = async () => {
     try {
       await naverLogin();
+      alert(t('auth.loginDone'));
     } catch (error) {
       if (
         error instanceof Error &&
@@ -188,11 +190,17 @@ export default function MoreScreen() {
   const onApple = async () => {
     try {
       await appleLogin();
+      alert(t('auth.loginDone'));
     } catch (error) {
       const message =
         error instanceof Error ? error.message : 'Apple 로그인에 실패했습니다.';
       alert(message);
     }
+  };
+
+  const onLogout = async () => {
+    await logout();
+    alert(t('auth.logoutDone'));
   };
 
   const onWithdraw = async () => {
@@ -312,7 +320,7 @@ export default function MoreScreen() {
           {user ? (
             <LoginBlock>
               <Greeting>{t('auth.greeting', { name: user.name })}</Greeting>
-              <LogoutButton onPress={() => logout()}>
+              <LogoutButton onPress={onLogout}>
                 <LogoutText>{t('auth.logout')}</LogoutText>
               </LogoutButton>
               <WithdrawButton onPress={onWithdraw}>

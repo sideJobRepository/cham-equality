@@ -1,6 +1,7 @@
 import { create } from 'zustand';
+import { getDeviceLanguage, type AppLanguage } from '../utils/language';
 
-export type Language = 'KO' | 'EN' | 'ZH' | 'JA' | 'VI';
+export type Language = AppLanguage;
 
 interface LanguageStore {
   language: Language;
@@ -8,6 +9,6 @@ interface LanguageStore {
 }
 
 export const useLanguageStore = create<LanguageStore>(set => ({
-  language: 'KO',
+  language: getDeviceLanguage(),
   setLanguage: language => set({ language }),
 }));

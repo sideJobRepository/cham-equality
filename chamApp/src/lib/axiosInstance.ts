@@ -40,12 +40,21 @@ export async function refreshAccessToken(): Promise<string | null> {
     }
     await applySession(data);
     return data.token;
-  } catch {
-    await clearSession();
+  } catch (error) {
+    if (shouldClearSessionOnRefreshFailure(error)) {
+      await clearSession();
+    }
     return null;
   } finally {
     refreshing = null;
   }
+}
+
+function shouldClearSessionOnRefreshFailure(error: unknown): boolean {
+  if (!axios.isAxiosError(error)) return false;
+
+  const status = error.response?.status;
+  return status === 400 || status === 401 || status === 403;
 }
 
 api.interceptors.request.use((config: AuthAxiosRequestConfig) => {

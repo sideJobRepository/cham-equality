@@ -40,7 +40,7 @@ import { useMapStore } from '../store/map.ts';
 import { useLocationStore } from '../store/location.ts';
 import { useShelterReportStore } from '../store/shelterReport.ts';
 import { useUserStore } from '../store/user.ts';
-import { useDialogUtil } from '../utils/dialog.ts';
+import { useDialogUtil } from '../utils/dialog';
 import {
   ACCESSIBILITY_ALL_LABEL,
   ACCESSIBILITY_SELECTED_COLOR,

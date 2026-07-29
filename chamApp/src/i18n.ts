@@ -1,9 +1,14 @@
 ﻿import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
+import { getDeviceLanguage } from './utils/language';
 
 const resources = {
   KO: {
     translation: {
+      common: {
+        ok: '확인',
+        cancel: '취소',
+      },
       tabs: {
         home: '홈',
         map: '지도',
@@ -13,6 +18,7 @@ const resources = {
       home: {
         messageTitle2: '일일 재난안전관리 상황',
         more: '더보기',
+        notice: '공지사항',
       },
       manual: {
         title: '재난 행동요령',
@@ -26,7 +32,9 @@ const resources = {
         kakao: '카카오로 로그인',
         naver: '네이버로 로그인',
         apple: 'Apple로 로그인',
+        loginDone: '로그인되었습니다.',
         logout: '로그아웃',
+        logoutDone: '로그아웃되었습니다.',
         greeting: '{{name}}님 환영합니다',
         withdraw: '회원 탈퇴',
         withdrawConfirmTitle: '회원 탈퇴',
@@ -124,6 +132,10 @@ const resources = {
   },
   EN: {
     translation: {
+      common: {
+        ok: 'OK',
+        cancel: 'Cancel',
+      },
       tabs: {
         home: 'Home',
         map: 'Map',
@@ -133,6 +145,7 @@ const resources = {
       home: {
         messageTitle2: 'Daily Disaster Safety Status',
         more: 'More',
+        notice: 'Notice',
       },
       manual: {
         title: 'Disaster Safety Guide',
@@ -146,7 +159,9 @@ const resources = {
         kakao: 'Log in with Kakao',
         naver: 'Log in with Naver',
         apple: 'Sign in with Apple',
+        loginDone: 'You are logged in.',
         logout: 'Log out',
+        logoutDone: 'You are logged out.',
         greeting: 'Welcome, {{name}}',
         withdraw: 'Delete account',
         withdrawConfirmTitle: 'Delete account',
@@ -245,6 +260,10 @@ const resources = {
   },
   ZH: {
     translation: {
+      common: {
+        ok: '确认',
+        cancel: '取消',
+      },
       tabs: {
         home: '首页',
         map: '地图',
@@ -254,6 +273,7 @@ const resources = {
       home: {
         messageTitle2: '每日灾害安全管理情况',
         more: '更多',
+        notice: '公告',
       },
       manual: {
         title: '灾害行动指南',
@@ -267,7 +287,9 @@ const resources = {
         kakao: '使用 Kakao 登录',
         naver: '使用 Naver 登录',
         apple: '使用 Apple 登录',
+        loginDone: '已登录。',
         logout: '退出登录',
+        logoutDone: '已退出登录。',
         greeting: '欢迎，{{name}}',
         withdraw: '注销账号',
         withdrawConfirmTitle: '注销账号',
@@ -364,6 +386,10 @@ const resources = {
   },
   JA: {
     translation: {
+      common: {
+        ok: '確認',
+        cancel: 'キャンセル',
+      },
       tabs: {
         home: 'ホーム',
         map: '地図',
@@ -373,6 +399,7 @@ const resources = {
       home: {
         messageTitle2: '日次災害安全管理状況',
         more: 'もっと見る',
+        notice: 'お知らせ',
       },
       manual: {
         title: '災害時行動ガイド',
@@ -386,7 +413,9 @@ const resources = {
         kakao: 'カカオでログイン',
         naver: 'Naverでログイン',
         apple: 'Appleでログイン',
+        loginDone: 'ログインしました。',
         logout: 'ログアウト',
+        logoutDone: 'ログアウトしました。',
         greeting: '{{name}}さん、ようこそ',
         withdraw: '退会する',
         withdrawConfirmTitle: '退会する',
@@ -485,6 +514,10 @@ const resources = {
   },
   VI: {
     translation: {
+      common: {
+        ok: 'OK',
+        cancel: 'Hủy',
+      },
       tabs: {
         home: 'Trang chủ',
         map: 'Bản đồ',
@@ -494,6 +527,7 @@ const resources = {
       home: {
         messageTitle2: 'Tình hình quản lý an toàn thiên tai hằng ngày',
         more: 'Xem thêm',
+        notice: 'Thông báo',
       },
       manual: {
         title: 'Hướng dẫn ứng phó thiên tai',
@@ -507,7 +541,9 @@ const resources = {
         kakao: 'Đăng nhập bằng Kakao',
         naver: 'Đăng nhập bằng Naver',
         apple: 'Đăng nhập bằng Apple',
+        loginDone: 'Đã đăng nhập.',
         logout: 'Đăng xuất',
+        logoutDone: 'Đã đăng xuất.',
         greeting: 'Xin chào, {{name}}',
         withdraw: 'Xóa tài khoản',
         withdrawConfirmTitle: 'Xóa tài khoản',
@@ -608,7 +644,7 @@ const resources = {
 
 i18n.use(initReactI18next).init({
   resources,
-  lng: 'KO',
+  lng: getDeviceLanguage(),
   fallbackLng: 'KO',
   interpolation: {
     escapeValue: false,

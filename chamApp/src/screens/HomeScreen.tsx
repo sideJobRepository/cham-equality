@@ -91,6 +91,20 @@ function formatDisasterDate(dateString?: string) {
   return `${month}.${day}`;
 }
 
+function formatSMSDateTime(dateString?: string) {
+  if (!dateString) return '';
+
+  const date = new Date(dateString);
+  if (Number.isNaN(date.getTime())) return '';
+
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+
+  return `${month}.${day} ${hours}:${minutes}`;
+}
+
 export default function HomeScreen() {
   const { t, i18n } = useTranslation();
   const navigation = useNavigation<BottomTabNavigationProp<RootTabParamList>>();
@@ -339,7 +353,7 @@ export default function HomeScreen() {
         <ModalOverlay onPress={closeNoticeModal}>
           <NoticeModalCard onPress={e => e.stopPropagation()}>
             <NoticeModalHeader>
-              <NoticeModalCategory>공지사항</NoticeModalCategory>
+              <NoticeModalCategory>{popupContent?.name}</NoticeModalCategory>
               <NoticeCloseButton onPress={closeNoticeModal}>
                 <X color="#6b7280" size={22} strokeWidth={2.6} />
               </NoticeCloseButton>
@@ -347,7 +361,7 @@ export default function HomeScreen() {
             {popupContent?.imageUrl ? (
               <NoticeImage source={{ uri: popupContent.imageUrl }} />
             ) : null}
-            <NoticeTitle>{popupContent?.name}</NoticeTitle>
+            {/*<NoticeTitle>{popupContent?.name}</NoticeTitle>*/}
             {popupContent?.additionalInfo ? (
               <NoticeContent>{popupContent.additionalInfo}</NoticeContent>
             ) : null}
@@ -407,6 +421,11 @@ export default function HomeScreen() {
                 />
               </IconButton>
             </ModalHeader>
+            {selectedSMS?.issuedAt ? (
+              <SMSDateTime>
+                {formatSMSDateTime(selectedSMS.issuedAt)}
+              </SMSDateTime>
+            ) : null}
             <ModalContent>
               {selectedSMS?.content ?? '표시할 재난문자가 없습니다.'}
             </ModalContent>
@@ -832,7 +851,7 @@ const NoticeModalHeader = styled.View`
 
 const NoticeModalCategory = styled.Text`
   color: #1f3a5f;
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 800;
 `;
 
@@ -852,7 +871,7 @@ const NoticeImage = styled.Image`
 
 const NoticeTitle = styled.Text`
   color: #111827;
-  font-size: 18px;
+  font-size: 16px;
   line-height: 25px;
   font-weight: 800;
 `;
@@ -910,6 +929,12 @@ const ModalCategory = styled.Text`
   color: #dc2626;
   font-size: 18px;
   font-weight: 800;
+`;
+
+const SMSDateTime = styled.Text`
+  align-self: flex-end;
+  //color: #a3a7ac;
+  font-size: 14px;
 `;
 
 const ModalContent = styled.Text`
