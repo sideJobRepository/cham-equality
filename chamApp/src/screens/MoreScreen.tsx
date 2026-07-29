@@ -1,13 +1,9 @@
-import { useEffect, useState } from 'react';
-import {
-  ActivityIndicator,
-  Linking,
-  Modal,
-  Platform,
-} from 'react-native';
+import { useCallback, useState } from 'react';
+import { ActivityIndicator, Linking, Modal, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import styled from 'styled-components/native';
 import { useTranslation } from 'react-i18next';
+import { useFocusEffect } from '@react-navigation/native';
 import {
   ChevronRight,
   ClipboardList,
@@ -34,6 +30,8 @@ import { useDialogUtil } from '../utils/dialog';
 
 const kakaoIcon = require('../assets/icons/kakao.png');
 const appleIcon = require('../assets/icons/apple.png');
+const foodMapLogo = require('../assets/icons/logo.png');
+const chamLogo = require('../assets/icons/logo2.png');
 
 const languageOptions = [
   { code: 'KO', label: '한국어' },
@@ -47,10 +45,16 @@ const citizenServices = [
   {
     titleKey: 'more.foodMap',
     url: 'https://cham-monimap.com/',
+    icon: foodMapLogo,
+    iconWidth: 24,
+    iconAspectRatio: 542 / 768,
   },
   {
     titleKey: 'more.chamSite',
     url: 'http://www.cham.or.kr/app/main/index',
+    icon: chamLogo,
+    iconWidth: 24,
+    iconAspectRatio: 39 / 38,
   },
 ];
 
@@ -104,33 +108,35 @@ export default function MoreScreen() {
     useState<ShelterReportDetail | null>(null);
   const [reportDetailLoading, setReportDetailLoading] = useState(false);
 
-  useEffect(() => {
-    if (!user) {
-      setReports([]);
-      return;
-    }
+  useFocusEffect(
+    useCallback(() => {
+      if (!user) {
+        setReports([]);
+        return;
+      }
 
-    let ignore = false;
-    setReportsLoading(true);
-    fetchMyShelterReports()
-      .then(data => {
-        if (!ignore) setReports(data);
-      })
-      .catch(error => {
-        console.log('[my-reports] fetch failed', {
-          status: error?.response?.status,
-          data: error?.response?.data,
-          message: error?.message,
+      let ignore = false;
+      setReportsLoading(true);
+      fetchMyShelterReports()
+        .then(data => {
+          if (!ignore) setReports(data);
+        })
+        .catch(error => {
+          console.log('[my-reports] fetch failed', {
+            status: error?.response?.status,
+            data: error?.response?.data,
+            message: error?.message,
+          });
+        })
+        .finally(() => {
+          if (!ignore) setReportsLoading(false);
         });
-      })
-      .finally(() => {
-        if (!ignore) setReportsLoading(false);
-      });
 
-    return () => {
-      ignore = true;
-    };
-  }, [user]);
+      return () => {
+        ignore = true;
+      };
+    }, [user]),
+  );
 
   const openReportDetail = async (reportId: number) => {
     setReportDetailLoading(true);
@@ -153,7 +159,9 @@ export default function MoreScreen() {
     const keyHash =
       Platform.OS === 'android'
         ? await getKeyHashAndroid().catch(error =>
-            error instanceof Error ? `조회 실패: ${error.message}` : '조회 실패',
+            error instanceof Error
+              ? `조회 실패: ${error.message}`
+              : '조회 실패',
           )
         : undefined;
 
@@ -162,7 +170,9 @@ export default function MoreScreen() {
       alert(t('auth.loginDone'));
     } catch (error) {
       let message =
-        error instanceof Error ? error.message : '카카오 로그인에 실패했습니다.';
+        error instanceof Error
+          ? error.message
+          : '카카오 로그인에 실패했습니다.';
       if (Platform.OS === 'android') {
         message = `${message}\n\nAndroid key hash:\n${keyHash || '값 없음'}`;
       }
@@ -175,14 +185,13 @@ export default function MoreScreen() {
       await naverLogin();
       alert(t('auth.loginDone'));
     } catch (error) {
-      if (
-        error instanceof Error &&
-        error.message === 'NAVER_LOGIN_CANCELLED'
-      ) {
+      if (error instanceof Error && error.message === 'NAVER_LOGIN_CANCELLED') {
         return;
       }
       const message =
-        error instanceof Error ? error.message : '네이버 로그인에 실패했습니다.';
+        error instanceof Error
+          ? error.message
+          : '네이버 로그인에 실패했습니다.';
       alert(message);
     }
   };
@@ -245,7 +254,15 @@ export default function MoreScreen() {
                 key={service.url}
                 onPress={() => Linking.openURL(service.url)}
               >
-                <ServiceText>{t(service.titleKey)}</ServiceText>
+                <ServiceLabel>
+                  <ServiceIcon
+                    source={service.icon}
+                    resizeMode="contain"
+                    $width={service.iconWidth}
+                    $aspectRatio={service.iconAspectRatio}
+                  />
+                  <ServiceText>{t(service.titleKey)}</ServiceText>
+                </ServiceLabel>
                 <ChevronRight color="#6b7280" size={20} strokeWidth={2.4} />
               </ServiceButton>
             ))}
@@ -301,11 +318,7 @@ export default function MoreScreen() {
                         {t(`moreReports.status.${report.requestStatus}`)}
                       </ReportListMeta>
                     </ReportListBody>
-                    <ChevronRight
-                      color="#9ca3af"
-                      size={20}
-                      strokeWidth={2.4}
-                    />
+                    <ChevronRight color="#9ca3af" size={20} strokeWidth={2.4} />
                   </ReportListButton>
                 ))
               ) : (
@@ -337,12 +350,12 @@ export default function MoreScreen() {
                 <NaverIconText>N</NaverIconText>
                 <NaverText>{t('auth.naver')}</NaverText>
               </NaverButton>
-                {Platform.OS === 'ios' ? (
-                    <AppleButton onPress={onApple}>
-                        <AppleLoginIcon source={appleIcon} resizeMode="contain" />
-                        <AppleText>{t('auth.apple')}</AppleText>
-                    </AppleButton>
-                ) : null}
+              {Platform.OS === 'ios' ? (
+                <AppleButton onPress={onApple}>
+                  <AppleLoginIcon source={appleIcon} resizeMode="contain" />
+                  <AppleText>{t('auth.apple')}</AppleText>
+                </AppleButton>
+              ) : null}
             </LoginBlock>
           )}
         </Section>
@@ -357,7 +370,9 @@ export default function MoreScreen() {
         <ReportModalOverlay onPress={() => setSelectedReport(null)}>
           <ReportModalCard onPress={event => event.stopPropagation()}>
             <ReportModalHeader>
-              <ReportModalTitle>{t('moreReports.detailTitle')}</ReportModalTitle>
+              <ReportModalTitle>
+                {t('moreReports.detailTitle')}
+              </ReportModalTitle>
               <ReportModalCloseButton onPress={() => setSelectedReport(null)}>
                 <X color="#6b7280" size={22} strokeWidth={2.6} />
               </ReportModalCloseButton>
@@ -432,7 +447,9 @@ export default function MoreScreen() {
                         <ReportDetailImageInfo>
                           <ReportDetailImageCategory>
                             {t(
-                              `map.report.categories.${image.category ?? 'ETC'}`,
+                              `map.report.categories.${
+                                image.category ?? 'ETC'
+                              }`,
                             )}
                           </ReportDetailImageCategory>
                           {image.description ? (
@@ -444,7 +461,9 @@ export default function MoreScreen() {
                       </ReportDetailImageRow>
                     ))
                   ) : (
-                    <ReportDetailText>{t('moreReports.noImages')}</ReportDetailText>
+                    <ReportDetailText>
+                      {t('moreReports.noImages')}
+                    </ReportDetailText>
                   )}
                 </ReportDetailSection>
               </ReportDetailScroll>
@@ -543,10 +562,25 @@ const ServiceButton = styled.Pressable`
   border-bottom-color: #f1f5f9;
 `;
 
+const ServiceLabel = styled.View`
+  flex: 1;
+  min-width: 0;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+`;
+
+const ServiceIcon = styled.Image<{ $width: number; $aspectRatio: number }>`
+  width: ${({ $width }) => $width}px;
+  aspect-ratio: ${({ $aspectRatio }) => $aspectRatio};
+`;
+
 const ServiceText = styled.Text`
   flex: 1;
+  min-width: 0;
   font-size: 15px;
   font-weight: 600;
+  color: #111827;
 `;
 
 const SettingBlock = styled.View`
