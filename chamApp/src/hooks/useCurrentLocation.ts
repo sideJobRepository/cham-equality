@@ -1,7 +1,6 @@
 import { useCallback, useEffect } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import {
-  InteractionManager,
   NativeModules,
   PermissionsAndroid,
   Platform,
@@ -26,6 +25,21 @@ function isKoreaLocation(location: UserLocation) {
     location.lng >= 124 &&
     location.lng <= 132.5
   );
+}
+
+function scheduleIdleTask(task: () => void) {
+  const idleApi = globalThis as typeof globalThis & {
+    requestIdleCallback?: (callback: () => void) => number;
+    cancelIdleCallback?: (id: number) => void;
+  };
+
+  if (idleApi.requestIdleCallback) {
+    const id = idleApi.requestIdleCallback(task);
+    return () => idleApi.cancelIdleCallback?.(id);
+  }
+
+  const timeout = setTimeout(task, 0);
+  return () => clearTimeout(timeout);
 }
 
 async function requestLocationPermission() {
@@ -112,11 +126,13 @@ export function useCurrentLocation() {
         }
       }
 
-      const interaction = InteractionManager.runAfterInteractions(loadLocation);
+      const cancelIdleTask = scheduleIdleTask(() => {
+        loadLocation();
+      });
 
       return () => {
         cancelled = true;
-        interaction.cancel();
+        cancelIdleTask();
       };
     }, [
       currentLocation,
