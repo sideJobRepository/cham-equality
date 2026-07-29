@@ -1,5 +1,6 @@
 import styled from 'styled-components/native';
 import { useTranslation } from 'react-i18next';
+import { LocateFixed } from 'lucide-react-native';
 import { useLocationStore } from '../store/location.ts';
 
 interface CurrentLocationBarProps {
@@ -28,7 +29,12 @@ export default function CurrentLocationBar({
 
   return (
     <HeaderRow>
-      <Description numberOfLines={1}>{locationStatusText}</Description>
+      <LocationLabel>
+        <LocationIconBox>
+          <LocateFixed color="#2563eb" size={15} strokeWidth={2.6} />
+        </LocationIconBox>
+        <Description numberOfLines={1}>{locationStatusText}</Description>
+      </LocationLabel>
       {status === 'granted' && location && actionLabel && onAction ? (
         <LocationButton onPress={onAction}>
           <LocationButtonText>{actionLabel}</LocationButtonText>
@@ -46,8 +52,27 @@ const HeaderRow = styled.View`
   gap: 10px;
 `;
 
+const LocationLabel = styled.View`
+  flex: 1;
+  min-width: 0;
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
+`;
+
+const LocationIconBox = styled.View`
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 13px;
+  background-color: #eff6ff;
+`;
+
 const Description = styled.Text`
   flex: 1;
+  min-width: 0;
   color: #6b7280;
   font-size: 12px;
 `;
