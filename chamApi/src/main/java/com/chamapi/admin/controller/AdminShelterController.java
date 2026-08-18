@@ -1,5 +1,6 @@
 package com.chamapi.admin.controller;
 
+import com.chamapi.admin.dto.request.AdminShelterBulkCreateItem;
 import com.chamapi.admin.dto.request.AdminShelterCreateRequest;
 import com.chamapi.admin.dto.request.AdminShelterUpdateRequest;
 import com.chamapi.admin.service.AdminShelterService;
@@ -8,11 +9,15 @@ import com.chamapi.common.dto.PageResponse;
 import com.chamapi.shelter.dto.response.ShelterListResponse;
 import com.chamapi.shelter.enums.ShelterSearchFilter;
 import com.chamapi.shelter.service.ShelterService;
+import com.chamapi.util.ExcelMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
 
 /**
  * 관리자 전용 대피소 직접 편집 API.
@@ -40,6 +45,13 @@ public class AdminShelterController {
     public ApiResponse<Long> createShelter(@RequestBody AdminShelterCreateRequest request) {
         Long shelterId = adminShelterService.createShelter(request);
         return new ApiResponse<>(200, true, "대피소 추가 완료", shelterId);
+    }
+
+    @PostMapping("/bulk")
+    public ApiResponse<List<Long>> bulkCreateShelters(@RequestParam("file") MultipartFile file) {
+        List<AdminShelterBulkCreateItem> items = ExcelMapper.toBulkCreateItems(file);
+        List<Long> shelterIds = adminShelterService.bulkCreateShelters(items);
+        return new ApiResponse<>(200, true, shelterIds.size() + "건 대피소 추가 완료", shelterIds);
     }
 
     @PutMapping("/{id}")

@@ -71,8 +71,8 @@ dependencies {
     //스프링 시큐리티 리소스 서버
      implementation 'org.springframework.boot:spring-boot-starter-oauth2-resource-server'
 
-    //파일 유틸
-    implementation 'commons-io:commons-io:2.15.1'
+    //파일 유틸 (POI 5.4.0이 BoundedInputStream.builder() 사용 → 2.16.0+ 필요)
+    implementation 'commons-io:commons-io:2.20.0'
 
     // .env 파일을 Spring Boot에서 읽어서 환경변수처럼 사용할 수 있게 해주는 라이브러리
     implementation 'me.paulschwarz:spring-dotenv:3.0.0'
@@ -80,6 +80,9 @@ dependencies {
     //캐시 (Caffeine)
     implementation 'org.springframework.boot:spring-boot-starter-cache'
     implementation 'com.github.ben-manes.caffeine:caffeine'
+
+    // 엑셀 업로드
+    implementation 'org.apache.poi:poi-ooxml:5.5.1'
 
 }
 

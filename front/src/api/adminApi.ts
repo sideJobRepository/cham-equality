@@ -12,6 +12,7 @@ export {
   getAdminPassword,
   setAdminPassword,
   clearAdminPassword,
+  errorMessage,
   UnauthorizedError,
 } from './http'
 
@@ -200,5 +201,19 @@ export type AdminShelterCreateRequest = {
 
 export async function createAdminShelter(body: AdminShelterCreateRequest): Promise<number> {
   const { data } = await http.post<ApiResponse<number>>('/admin/shelters', body)
+  return data.data
+}
+
+/**
+ * 엑셀 파일 한 개를 multipart 파라미터 `file`로 올려 대피소를 일괄 등록하고, 생성된 id 목록을 돌려준다.
+ * Content-Type을 null로 지워야 브라우저가 boundary 포함 multipart 헤더를 붙인다 —
+ * 인스턴스 기본값(application/json)이 남아 있으면 axios가 FormData를 JSON으로 직렬화해 버린다.
+ */
+export async function bulkCreateAdminShelters(file: File): Promise<number[]> {
+  const form = new FormData()
+  form.append('file', file)
+  const { data } = await http.post<ApiResponse<number[]>>('/admin/shelters/bulk', form, {
+    headers: { 'Content-Type': null },
+  })
   return data.data
 }

@@ -62,6 +62,9 @@ http.interceptors.response.use(
 export function errorMessage(err: unknown, fallback: string): string {
   if (err instanceof UnauthorizedError) return err.message
   if (axios.isAxiosError(err)) {
+    // 서버 예외는 ErrorMessageResponse({ code, message, validation }) 포맷이라 message를 그대로 보여준다.
+    const serverMessage = (err.response?.data as { message?: unknown } | undefined)?.message
+    if (typeof serverMessage === 'string' && serverMessage.trim()) return serverMessage
     const status = err.response?.status
     return status ? `${fallback} (HTTP ${status})` : fallback
   }
