@@ -137,6 +137,72 @@ export async function rejectAppReport(id: number): Promise<void> {
   await http.post(`/admin/app-reports/${id}/reject`)
 }
 
+// ===== 앱 피드백(관리자) =====
+// 앱의 피드백 창구로 접수된 자유 형식 의견. 대피소에 반영되지 않으므로 승인/반려가 아니라
+// 처리 상태(접수/확인중/완료)와 내부 메모만 관리한다.
+
+export type AppFeedbackStatus = 'RECEIVED' | 'IN_PROGRESS' | 'RESOLVED'
+
+export type AppFeedbackCategory =
+  | 'BUG'
+  | 'IMPROVEMENT'
+  | 'SHELTER_DATA'
+  | 'CONTENT'
+  | 'ETC'
+
+export type AppFeedback = {
+  id: number
+  memberId: number | null
+  category: AppFeedbackCategory | null
+  content: string | null
+  status: AppFeedbackStatus
+  appVersion: string | null
+  platform: string | null
+  createDate: string
+}
+
+export type AppFeedbackImageView = {
+  fileId: number
+  url: string
+  fileName: string
+}
+
+export type AppFeedbackDetail = AppFeedback & {
+  memberName: string | null
+  contact: string | null
+  adminNote: string | null
+  osVersion: string | null
+  deviceModel: string | null
+  screen: string | null
+  modifyDate: string | null
+  images: AppFeedbackImageView[]
+}
+
+export async function fetchFeedbacks(
+  filter: AppFeedbackStatus | 'ALL',
+  page: number,
+  size: number,
+): Promise<PageResponse<AppFeedback>> {
+  const params: Record<string, string | number> = { page, size }
+  if (filter !== 'ALL') params.filter = filter
+  const { data } = await http.get<ApiResponse<PageResponse<AppFeedback>>>('/admin/feedbacks', {
+    params,
+  })
+  return data.data
+}
+
+export async function fetchFeedbackDetail(id: number): Promise<AppFeedbackDetail> {
+  const { data } = await http.get<ApiResponse<AppFeedbackDetail>>(`/admin/feedbacks/${id}`)
+  return data.data
+}
+
+export async function updateFeedback(
+  id: number,
+  body: { status: AppFeedbackStatus; adminNote: string | null },
+): Promise<void> {
+  await http.put(`/admin/feedbacks/${id}`, body)
+}
+
 export async function getDownloadUrl(fileId: number): Promise<string> {
   const { data } = await http.get<ApiResponse<string>>(`/download-file/${fileId}`)
   return data.data

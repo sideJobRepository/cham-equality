@@ -1,0 +1,70 @@
+/* ──────────────────────────────────────────────────────────────────────
+   앱 피드백 페이지 — 표/필터/페이지네이션은 AdminReportsPage.css를 그대로 쓰고,
+   여기서는 피드백 상태 배지만 추가한다. 기존 배지는 제보용(pending/approved/
+   rejected)뿐이라 이름이 맞지 않는다. 색 의미는 기존 규칙을 따른다:
+   중립 = surface-strong, 진행 = 브랜드 소프트 틴트, 종결 = ink 반전.
+   See front/DESIGN.md.
+   ────────────────────────────────────────────────────────────────────── */
+.badge-received {
+  background: var(--ab-surface-strong);
+  color: var(--ab-ink);
+}
+
+.badge-in_progress {
+  background: var(--ab-primary-disabled);
+  color: var(--ab-primary-active);
+}
+
+.badge-resolved {
+  background: var(--ab-ink);
+  color: var(--ab-on-primary);
+}
+
+/* 상세 모달의 관리자 처리 영역(상태 + 메모). 모달 나머지는 AdminReportDetailModal.css를 쓴다. */
+.feedback-admin-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 20px;
+  border-top: 1px solid var(--ab-hairline-soft);
+}
+
+.feedback-admin-form h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ab-ink);
+}
+
+.feedback-admin-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--ab-muted);
+}
+
+.feedback-admin-form select,
+.feedback-admin-form textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--ab-hairline);
+  border-radius: var(--ab-radius-sm);
+  background: var(--ab-canvas);
+  color: var(--ab-ink);
+  font-family: inherit;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+.feedback-admin-form textarea {
+  min-height: 96px;
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.feedback-admin-form select:focus,
+.feedback-admin-form textarea:focus {
+  outline: none;
+  border-color: var(--ab-border-strong);
+}

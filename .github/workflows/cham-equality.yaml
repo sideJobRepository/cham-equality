@@ -205,13 +205,16 @@ jobs:
           path: chamApp/android/app/build/outputs/bundle/release/app-release.aab
           if-no-files-found: error
 
-      # Google Play 내부 테스트 자동 업로드. 서비스 계정 JSON 시크릿이 있을 때만 실행(없으면 아티팩트까지만).
-      - name: Play 내부 테스트 업로드
+      # Google Play 업로드. 서비스 계정 JSON 시크릿이 있을 때만 실행(없으면 아티팩트까지만).
+      # tracks(복수): AAB는 1회만 업로드되고 같은 versionCode가 두 트랙에 동시 할당된다.
+      # 스텝을 트랙별로 쪼개면 두 번째가 version code already used로 실패한다.
+      # track(단수)과 함께 쓰면 액션이 에러를 내므로 tracks 하나만 사용할 것.
+      - name: Play 내부/비공개 테스트 업로드
         if: ${{ env.PLAY_SA != '' }}
         uses: r0adkll/upload-google-play@v1
         with:
           serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
           packageName: kr.or.cham.equality
           releaseFiles: chamApp/android/app/build/outputs/bundle/release/app-release.aab
-          track: internal
+          tracks: internal,alpha
           status: completed
