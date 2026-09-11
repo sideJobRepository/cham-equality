@@ -1,5 +1,11 @@
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, Linking, Modal, Platform } from 'react-native';
+import {
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Linking,
+  Modal,
+  Platform,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import styled from 'styled-components/native';
 import { useTranslation } from 'react-i18next';
@@ -8,8 +14,13 @@ import {
   ChevronRight,
   ClipboardList,
   Image as ImageIcon,
+  ImagePlus,
+  MessageSquare,
+  Send,
+  Trash2,
   X,
 } from 'lucide-react-native';
+import { launchImageLibrary, type Asset } from 'react-native-image-picker';
 import LinearGradient from 'react-native-linear-gradient';
 import { getKeyHashAndroid } from '@react-native-kakao/core';
 import { useUserStore } from '../store/user';
@@ -26,6 +37,13 @@ import {
   type ShelterReportDetail,
   type ShelterReportListItem,
 } from '../services/report.service';
+import {
+  createAppFeedback,
+  getFeedbackDeviceInfo,
+  uploadFeedbackImages,
+  type AppFeedbackCategory,
+  type LocalFeedbackImage,
+} from '../services/feedback.service';
 import { useDialogUtil } from '../utils/dialog';
 
 const kakaoIcon = require('../assets/icons/kakao.png');
@@ -57,6 +75,30 @@ const citizenServices = [
     iconAspectRatio: 39 / 38,
   },
 ];
+
+const feedbackCategoryOptions: Array<{
+  value: AppFeedbackCategory;
+  label: string;
+}> = [
+  { value: 'BUG', label: '오류/버그' },
+  { value: 'IMPROVEMENT', label: '개선 제안' },
+  { value: 'SHELTER_DATA', label: '대피소 정보 오류' },
+  { value: 'CONTENT', label: '콘텐츠/번역 오류' },
+  { value: 'ETC', label: '기타' },
+];
+
+function toFeedbackLocalImage(asset: Asset): LocalFeedbackImage | null {
+  if (!asset.uri) return null;
+
+  const fallbackName = `feedback-${Date.now()}.jpg`;
+  return {
+    id: `${asset.uri}-${asset.fileSize ?? Date.now()}`,
+    uri: asset.uri,
+    fileName: asset.fileName || fallbackName,
+    contentType: asset.type || 'image/jpeg',
+    fileSize: asset.fileSize ?? 0,
+  };
+}
 
 function formatReportDate(value?: string) {
   if (!value) return '-';
@@ -107,6 +149,15 @@ export default function MoreScreen() {
   const [selectedReport, setSelectedReport] =
     useState<ShelterReportDetail | null>(null);
   const [reportDetailLoading, setReportDetailLoading] = useState(false);
+  const [isFeedbackVisible, setIsFeedbackVisible] = useState(false);
+  const [feedbackCategory, setFeedbackCategory] =
+    useState<AppFeedbackCategory>('ETC');
+  const [feedbackContent, setFeedbackContent] = useState('');
+  const [feedbackContact, setFeedbackContact] = useState('');
+  const [feedbackImages, setFeedbackImages] = useState<LocalFeedbackImage[]>(
+    [],
+  );
+  const [isFeedbackSubmitting, setIsFeedbackSubmitting] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -226,6 +277,81 @@ export default function MoreScreen() {
     }
   };
 
+  const closeFeedbackModal = () => {
+    if (isFeedbackSubmitting) return;
+    setIsFeedbackVisible(false);
+  };
+
+  const resetFeedbackForm = () => {
+    setFeedbackCategory('ETC');
+    setFeedbackContent('');
+    setFeedbackContact('');
+    setFeedbackImages([]);
+  };
+
+  const addFeedbackImages = async () => {
+    if (feedbackImages.length >= 5) {
+      alert('사진은 최대 5장까지 첨부할 수 있습니다.');
+      return;
+    }
+
+    const result = await launchImageLibrary({
+      mediaType: 'photo',
+      selectionLimit: 5 - feedbackImages.length,
+    });
+
+    if (result.didCancel) return;
+
+    const nextImages = (result.assets ?? [])
+      .map(toFeedbackLocalImage)
+      .filter((image): image is LocalFeedbackImage => image !== null);
+
+    setFeedbackImages(current => [...current, ...nextImages].slice(0, 5));
+  };
+
+  const removeFeedbackImage = (imageId: string) => {
+    setFeedbackImages(current => current.filter(image => image.id !== imageId));
+  };
+
+  const submitFeedback = async () => {
+    const content = feedbackContent.trim();
+    const contact = feedbackContact.trim();
+
+    if (!content) {
+      alert('피드백 내용을 입력해주세요.');
+      return;
+    }
+    if (content.length > 2000) {
+      alert('피드백 내용은 2000자까지 입력할 수 있습니다.');
+      return;
+    }
+
+    setIsFeedbackSubmitting(true);
+    try {
+      const imageFileIds = await uploadFeedbackImages(feedbackImages);
+      await createAppFeedback({
+        category: feedbackCategory,
+        content,
+        contact: contact || undefined,
+        screen: 'MoreScreen',
+        imageFileIds,
+        ...getFeedbackDeviceInfo(),
+      });
+      resetFeedbackForm();
+      setIsFeedbackVisible(false);
+      alert('피드백이 접수되었습니다.');
+    } catch (error: any) {
+      console.log('[feedback] submit failed', {
+        status: error?.response?.status,
+        data: error?.response?.data,
+        message: error?.message,
+      });
+      alert(error?.response?.data?.message ?? '피드백 제출에 실패했습니다.');
+    } finally {
+      setIsFeedbackSubmitting(false);
+    }
+  };
+
   return (
     <Screen edges={['top', 'left', 'right']}>
       <Content showsVerticalScrollIndicator={false}>
@@ -286,6 +412,19 @@ export default function MoreScreen() {
               ))}
             </LanguageRow>
           </SettingBlock>
+        </Section>
+
+        <Section>
+          <SectionTitle>피드백</SectionTitle>
+          <FeedbackEntryButton onPress={() => setIsFeedbackVisible(true)}>
+            <ServiceLabel>
+              <FeedbackIconBox>
+                <MessageSquare color="#2563eb" size={18} strokeWidth={2.5} />
+              </FeedbackIconBox>
+              <ServiceText>피드백</ServiceText>
+            </ServiceLabel>
+            <ChevronRight color="#9ca3af" size={20} strokeWidth={2.4} />
+          </FeedbackEntryButton>
         </Section>
 
         {user ? (
@@ -360,6 +499,109 @@ export default function MoreScreen() {
           )}
         </Section>
       </Content>
+
+      <Modal
+        animationType="slide"
+        transparent
+        visible={isFeedbackVisible}
+        onRequestClose={closeFeedbackModal}
+      >
+        <ReportModalOverlay onPress={closeFeedbackModal}>
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          >
+            <FeedbackModalCard onPress={event => event.stopPropagation()}>
+              <ReportModalHeader>
+                <ReportModalTitle>피드백</ReportModalTitle>
+                <ReportModalCloseButton onPress={closeFeedbackModal}>
+                  <X color="#6b7280" size={22} strokeWidth={2.6} />
+                </ReportModalCloseButton>
+              </ReportModalHeader>
+
+              <FeedbackModalScroll showsVerticalScrollIndicator={false}>
+                <FeedbackField>
+                  <FeedbackLabel>분류</FeedbackLabel>
+                  <FeedbackChipRow>
+                    {feedbackCategoryOptions.map(option => (
+                      <FeedbackCategoryChip
+                        key={option.value}
+                        $active={feedbackCategory === option.value}
+                        onPress={() => setFeedbackCategory(option.value)}
+                      >
+                        <FeedbackCategoryText
+                          $active={feedbackCategory === option.value}
+                        >
+                          {option.label}
+                        </FeedbackCategoryText>
+                      </FeedbackCategoryChip>
+                    ))}
+                  </FeedbackChipRow>
+                </FeedbackField>
+
+                <FeedbackField>
+                  <FeedbackLabel>내용</FeedbackLabel>
+                  <FeedbackTextArea
+                    value={feedbackContent}
+                    onChangeText={setFeedbackContent}
+                    placeholder="불편한 점이나 개선 의견을 입력하세요."
+                    placeholderTextColor="#9ca3af"
+                    multiline
+                    maxLength={2000}
+                    textAlignVertical="top"
+                  />
+                  <FeedbackCount>{feedbackContent.length}/2000</FeedbackCount>
+                </FeedbackField>
+
+                <FeedbackField>
+                  <FeedbackLabel>연락처</FeedbackLabel>
+                  <FeedbackInput
+                    value={feedbackContact}
+                    onChangeText={setFeedbackContact}
+                    placeholder="답변을 원하면 이메일이나 연락처를 입력하세요."
+                    placeholderTextColor="#9ca3af"
+                  />
+                </FeedbackField>
+
+                <FeedbackField>
+                  <FeedbackLabel>사진</FeedbackLabel>
+                  <AddImageButton onPress={addFeedbackImages}>
+                    <ImagePlus color="#2563eb" size={16} strokeWidth={2.6} />
+                    <AddImageButtonText>사진 추가</AddImageButtonText>
+                  </AddImageButton>
+
+                  {feedbackImages.map(image => (
+                    <FeedbackImageItem key={image.id}>
+                      <FeedbackImagePreview source={{ uri: image.uri }} />
+                      <FeedbackImageName numberOfLines={1}>
+                        {image.fileName}
+                      </FeedbackImageName>
+                      <FeedbackImageRemoveButton
+                        onPress={() => removeFeedbackImage(image.id)}
+                      >
+                        <Trash2 color="#ef4444" size={16} strokeWidth={2.4} />
+                      </FeedbackImageRemoveButton>
+                    </FeedbackImageItem>
+                  ))}
+                </FeedbackField>
+              </FeedbackModalScroll>
+
+              <FeedbackSubmitButton
+                disabled={isFeedbackSubmitting}
+                onPress={submitFeedback}
+              >
+                {isFeedbackSubmitting ? (
+                  <ActivityIndicator color="#ffffff" />
+                ) : (
+                  <>
+                    <Send color="#ffffff" size={16} strokeWidth={2.6} />
+                    <FeedbackSubmitText>피드백 제출</FeedbackSubmitText>
+                  </>
+                )}
+              </FeedbackSubmitButton>
+            </FeedbackModalCard>
+          </KeyboardAvoidingView>
+        </ReportModalOverlay>
+      </Modal>
 
       <Modal
         animationType="slide"
@@ -716,6 +958,174 @@ const WithdrawText = styled.Text`
   font-size: 13px;
   font-weight: 600;
   text-decoration-line: underline;
+`;
+
+const FeedbackEntryButton = styled.Pressable`
+  min-height: 54px;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 16px;
+  border-radius: 8px;
+  border-width: 1px;
+  border-color: #e5e7eb;
+  background-color: #ffffff;
+`;
+
+const FeedbackIconBox = styled.View`
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  align-items: center;
+  justify-content: center;
+  background-color: #eff6ff;
+`;
+
+const FeedbackModalCard = styled.Pressable`
+  max-height: 90%;
+  gap: 12px;
+  padding: 18px;
+  border-radius: 18px;
+  background-color: #ffffff;
+`;
+
+const FeedbackModalScroll = styled.ScrollView`
+  max-height: 560px;
+`;
+
+const FeedbackField = styled.View`
+  gap: 8px;
+  margin-bottom: 14px;
+`;
+
+const FeedbackLabel = styled.Text`
+  color: #111827;
+  font-size: 13px;
+  font-weight: 800;
+`;
+
+const FeedbackChipRow = styled.View`
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 8px;
+`;
+
+const FeedbackCategoryChip = styled.Pressable<{ $active: boolean }>`
+  min-height: 36px;
+  padding: 0 11px;
+  border-radius: 999px;
+  align-items: center;
+  justify-content: center;
+  background-color: ${({ $active }) => ($active ? '#2563eb' : '#f3f4f6')};
+  border-width: 1px;
+  border-color: ${({ $active }) => ($active ? '#2563eb' : '#e5e7eb')};
+`;
+
+const FeedbackCategoryText = styled.Text<{ $active: boolean }>`
+  color: ${({ $active }) => ($active ? '#ffffff' : '#4b5563')};
+  font-size: 12px;
+  font-weight: 800;
+`;
+
+const FeedbackTextArea = styled.TextInput`
+  min-height: 128px;
+  padding: 12px;
+  border-radius: 10px;
+  color: #111827;
+  font-size: 14px;
+  line-height: 20px;
+  background-color: #f9fafb;
+  border-width: 1px;
+  border-color: #e5e7eb;
+`;
+
+const FeedbackInput = styled.TextInput`
+  min-height: 44px;
+  padding: 0 12px;
+  border-radius: 10px;
+  color: #111827;
+  font-size: 14px;
+  background-color: #f9fafb;
+  border-width: 1px;
+  border-color: #e5e7eb;
+`;
+
+const FeedbackCount = styled.Text`
+  color: #9ca3af;
+  font-size: 11px;
+  font-weight: 700;
+  text-align: right;
+`;
+
+const AddImageButton = styled.Pressable`
+  min-height: 40px;
+  border-radius: 10px;
+  align-items: center;
+  justify-content: center;
+  flex-direction: row;
+  gap: 6px;
+  background-color: #eff6ff;
+  border-width: 1px;
+  border-color: #bfdbfe;
+`;
+
+const AddImageButtonText = styled.Text`
+  color: #2563eb;
+  font-size: 13px;
+  font-weight: 800;
+`;
+
+const FeedbackImageItem = styled.View`
+  min-height: 58px;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+  border-radius: 12px;
+  background-color: #f9fafb;
+  border-width: 1px;
+  border-color: #e5e7eb;
+`;
+
+const FeedbackImagePreview = styled.Image`
+  width: 42px;
+  height: 42px;
+  border-radius: 8px;
+  background-color: #e5e7eb;
+`;
+
+const FeedbackImageName = styled.Text`
+  flex: 1;
+  min-width: 0;
+  color: #374151;
+  font-size: 12px;
+  font-weight: 700;
+`;
+
+const FeedbackImageRemoveButton = styled.Pressable`
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  align-items: center;
+  justify-content: center;
+  background-color: #fee2e2;
+`;
+
+const FeedbackSubmitButton = styled.Pressable`
+  min-height: 46px;
+  border-radius: 12px;
+  align-items: center;
+  justify-content: center;
+  flex-direction: row;
+  gap: 7px;
+  background-color: #2563eb;
+`;
+
+const FeedbackSubmitText = styled.Text`
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 800;
 `;
 
 const ReportListBlock = styled.View`
