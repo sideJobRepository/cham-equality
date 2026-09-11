@@ -7,6 +7,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * 조건이 상태 필터 하나뿐이라 QueryDSL 트리오 없이 파생 쿼리만 쓴다
@@ -16,5 +17,8 @@ public interface AppFeedbackRepository extends JpaRepository<AppFeedback, Long> 
 
     Page<AppFeedback> findAllByStatus(AppFeedbackStatus status, Pageable pageable);
 
-    List<AppFeedback> findAllByMemberId(Long memberId);
+    List<AppFeedback> findAllByMemberIdOrderByCreateDateDesc(Long memberId);
+
+    /** id와 작성자를 함께 걸어 조회 자체로 소유권을 검증한다. */
+    Optional<AppFeedback> findByIdAndMemberId(Long id, Long memberId);
 }

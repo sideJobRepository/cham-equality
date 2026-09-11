@@ -1,6 +1,7 @@
 package com.chamapi.feedback.entity;
 
 import com.chamapi.common.entity.DateSuperClass;
+import com.chamapi.common.exception.BadRequestException;
 import com.chamapi.feedback.enums.AppFeedbackCategory;
 import com.chamapi.feedback.enums.AppFeedbackStatus;
 import jakarta.persistence.*;
@@ -82,6 +83,25 @@ public class AppFeedback extends DateSuperClass {
             this.status = status;
         }
         this.adminNote = adminNote;
+    }
+
+    /** 작성자 본인이 접수 내용을 고친다. category가 null이면 기존 분류를 유지한다. */
+    public void updateByMember(AppFeedbackCategory category, String content, String contact) {
+        if (category != null) {
+            this.category = category;
+        }
+        this.content = content;
+        this.contact = contact;
+    }
+
+    /**
+     * 작성자가 손댈 수 있는 상태인지 확인한다. 관리자가 확인중/완료로 옮긴 뒤에는 수정·삭제를 막는다
+     * (제보의 {@code ShelterInfoAppReport#verifyPending()}과 같은 취지).
+     */
+    public void verifyReceived() {
+        if (this.status != AppFeedbackStatus.RECEIVED) {
+            throw new BadRequestException("접수 상태의 피드백만 수정하거나 삭제할 수 있습니다");
+        }
     }
 
     /** 회원 탈퇴 시 작성자만 끊고 피드백 내용은 남긴다. */

@@ -5,6 +5,7 @@ import com.chamapi.common.dto.PageResponse;
 import com.chamapi.common.exception.BadRequestException;
 import com.chamapi.feedback.dto.request.AppFeedbackAdminUpdateRequest;
 import com.chamapi.feedback.dto.request.AppFeedbackCreateRequest;
+import com.chamapi.feedback.dto.request.AppFeedbackUpdateRequest;
 import com.chamapi.feedback.dto.response.AppFeedbackDetailResponse;
 import com.chamapi.feedback.dto.response.AppFeedbackListResponse;
 import com.chamapi.feedback.entity.AppFeedback;
@@ -154,6 +155,113 @@ class AppFeedbackServiceTest extends RepositoryAndServiceTestSupport {
         AppFeedback detached = appFeedbackRepository.findById(feedbackId).orElseThrow();
         assertThat(detached.getMemberId()).isNull();
         assertThat(detached.getContent()).isEqualTo("번역이 어색합니다");
+    }
+
+    @DisplayName("내 피드백 목록에는 내가 쓴 것만 나오고 남의 피드백은 빠진다")
+    @Test
+    void test7() {
+        Member me = persistMember();
+        Member other = persistMember();
+
+        Long mine1 = appFeedbackService.create(
+                createRequest(AppFeedbackCategory.BUG, "첫 번째 피드백", null), me.getId());
+        Long mine2 = appFeedbackService.create(
+                createRequest(AppFeedbackCategory.ETC, "두 번째 피드백", null), me.getId());
+        Long others = appFeedbackService.create(
+                createRequest(AppFeedbackCategory.ETC, "남의 피드백", null), other.getId());
+
+        List<AppFeedbackListResponse> feedbacks = appFeedbackService.findMyFeedbacks(me.getId());
+
+        assertThat(feedbacks).extracting(AppFeedbackListResponse::id)
+                .containsExactlyInAnyOrder(mine1, mine2)
+                .doesNotContain(others);
+    }
+
+    @DisplayName("본인이 접수 상태 피드백을 고치면 본문과 사진이 요청한 목록대로 교체된다")
+    @Test
+    void test8() {
+        Member member = persistMember();
+        CommonFile keep = persistFile("keep.png");
+        CommonFile drop = persistFile("drop.png");
+        CommonFile add = persistFile("add.png");
+
+        Long feedbackId = appFeedbackService.create(
+                createRequest(AppFeedbackCategory.BUG, "원래 내용", List.of(keep.getId(), drop.getId())),
+                member.getId());
+
+        appFeedbackService.updateByMember(feedbackId, member.getId(), new AppFeedbackUpdateRequest(
+                AppFeedbackCategory.IMPROVEMENT, "고친 내용", "010-1111-2222", List.of(keep.getId(), add.getId())));
+
+        AppFeedback updated = appFeedbackRepository.findById(feedbackId).orElseThrow();
+        assertThat(updated.getContent()).isEqualTo("고친 내용");
+        assertThat(updated.getCategory()).isEqualTo(AppFeedbackCategory.IMPROVEMENT);
+        assertThat(updated.getContact()).isEqualTo("010-1111-2222");
+
+        assertThat(commonFileRepository.findById(drop.getId()).orElseThrow().getFileStatus())
+                .isEqualTo(FileStatus.TEMPORARY);
+        assertThat(commonFileRepository.findById(add.getId()).orElseThrow().getTargetId())
+                .isEqualTo(feedbackId);
+
+        AppFeedbackDetailResponse detail = appFeedbackService.getMyDetail(feedbackId, member.getId());
+        assertThat(detail.images()).extracting(AppFeedbackDetailResponse.ImageView::fileId)
+                .containsExactlyInAnyOrder(keep.getId(), add.getId());
+    }
+
+    @DisplayName("남의 피드백이거나 접수 상태가 아니면 수정·삭제가 막히고 관리자 메모는 본인 상세에 안 나온다")
+    @Test
+    void test9() {
+        Member me = persistMember();
+        Member other = persistMember();
+        Long feedbackId = appFeedbackService.create(
+                createRequest(AppFeedbackCategory.BUG, "원래 내용", null), me.getId());
+
+        AppFeedbackUpdateRequest request = new AppFeedbackUpdateRequest(
+                AppFeedbackCategory.BUG, "고친 내용", null, null);
+
+        assertThatThrownBy(() -> appFeedbackService.updateByMember(feedbackId, other.getId(), request))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("본인 피드백이 아니거나");
+        assertThatThrownBy(() -> appFeedbackService.deleteByMember(feedbackId, other.getId()))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("본인 피드백이 아니거나");
+
+        appFeedbackService.updateByAdmin(feedbackId,
+                new AppFeedbackAdminUpdateRequest(AppFeedbackStatus.RECEIVED, "내부 메모"));
+        assertThat(appFeedbackService.getMyDetail(feedbackId, me.getId()).adminNote()).isNull();
+        assertThat(appFeedbackService.getDetail(feedbackId).adminNote()).isEqualTo("내부 메모");
+
+        appFeedbackService.updateByAdmin(feedbackId,
+                new AppFeedbackAdminUpdateRequest(AppFeedbackStatus.IN_PROGRESS, "내부 메모"));
+        assertThatThrownBy(() -> appFeedbackService.updateByMember(feedbackId, me.getId(), request))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("접수 상태");
+        assertThatThrownBy(() -> appFeedbackService.deleteByMember(feedbackId, me.getId()))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("접수 상태");
+    }
+
+    @DisplayName("본인이 삭제하면 행은 지워지고 첨부는 임시 상태로 돌아간다")
+    @Test
+    void test10() {
+        Member member = persistMember();
+        CommonFile file = persistFile("shot.png");
+        Long feedbackId = appFeedbackService.create(
+                createRequest(AppFeedbackCategory.BUG, "잘못 올렸습니다", List.of(file.getId())), member.getId());
+
+        appFeedbackService.deleteByMember(feedbackId, member.getId());
+
+        assertThat(appFeedbackRepository.findById(feedbackId)).isEmpty();
+        assertThat(commonFileRepository.findById(file.getId()).orElseThrow().getFileStatus())
+                .isEqualTo(FileStatus.TEMPORARY);
+    }
+
+    private CommonFile persistFile(String fileName) {
+        return commonFileRepository.save(CommonFile.builder()
+                .fileName(fileName)
+                .filePath("feedback/" + fileName)
+                .fileType(FileType.FEEDBACK_IMAGE)
+                .fileStatus(FileStatus.TEMPORARY)
+                .build());
     }
 
     private Member persistMember() {
