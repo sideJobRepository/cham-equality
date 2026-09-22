@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 원본 로고의 네 모서리가 흰색이라 배경도 흰색으로 맞춘다 -->
+<resources>
+    <color name="ic_launcher_background">#FFFFFF</color>
+</resources>
