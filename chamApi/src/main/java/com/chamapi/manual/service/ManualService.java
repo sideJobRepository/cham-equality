@@ -24,6 +24,12 @@ public class ManualService {
                 .toList();
     }
 
+    public List<ManualListResponse> searchManuals(Language lang, String query) {
+        return manualRepository.searchByTitle(lang, query).stream()
+                .map(ManualListResponse::from)
+                .toList();
+    }
+
     public ManualResponse getManual(Long id) {
         return ManualResponse.from(manualRepository.findById(id)
                 .orElseThrow(() -> new BadRequestException("매뉴얼을 찾을 수 없습니다. id = " + id)));

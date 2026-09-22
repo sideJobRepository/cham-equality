@@ -22,6 +22,11 @@ public class ManualController {
         return ApiResponse.ok(manualService.getManuals(lang));
     }
 
+    @GetMapping("/search")
+    public ApiResponse<List<ManualListResponse>> searchManuals(@RequestParam Language lang, @RequestParam String query) {
+        return ApiResponse.ok(manualService.searchManuals(lang, query));
+    }
+
     @GetMapping("/{id}")
     public ApiResponse<ManualResponse> getManual(@PathVariable Long id) {
         return ApiResponse.ok(manualService.getManual(id));
