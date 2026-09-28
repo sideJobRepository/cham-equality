@@ -5,17 +5,20 @@ import { useRequest } from '../hooks/useRequest.ts';
 import api from '../lib/axiosInstance.ts';
 import { useManualStore } from '../store/manual.ts';
 
-export function useFetchManuals() {
+export function useFetchManuals(query?: string) {
   const { request } = useRequest();
   const { i18n } = useTranslation();
   const setManuals = useManualStore(state => state.setManuals);
 
   const fetchManuals = useCallback(() => {
+    const trimmedQuery = query?.trim();
     request(
       () =>
         api
-          .get('/api/manuals', {
-            params: { lang: i18n.language },
+          .get(trimmedQuery ? '/api/manuals/search' : '/api/manuals', {
+            params: trimmedQuery
+              ? { lang: i18n.language, query: trimmedQuery }
+              : { lang: i18n.language },
           })
           .then(res => res.data.data),
       setManuals,
@@ -23,7 +26,7 @@ export function useFetchManuals() {
         ignoreErrorRedirect: true,
       },
     );
-  }, [i18n.language, request, setManuals]);
+  }, [i18n.language, query, request, setManuals]);
 
   useRefreshOnFocus(fetchManuals);
 

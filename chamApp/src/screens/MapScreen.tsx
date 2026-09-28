@@ -1407,7 +1407,9 @@ export default function MapScreen() {
               {!mapData || !panelReady ? (
                 <PanelLoading>
                   <ActivityIndicator color="#2563eb" />
-                  <PanelLoadingText>대피소 정보를 불러오는 중</PanelLoadingText>
+                  <PanelLoadingText>
+                    {t('map.labels.loadingShelters')}
+                  </PanelLoadingText>
                 </PanelLoading>
               ) : visiblePlaces.length ? (
                 visiblePlaces.map(place => (

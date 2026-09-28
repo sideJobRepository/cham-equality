@@ -31,6 +31,9 @@ const resources = {
         subject: '제목',
         createdAt: '작성일',
         empty: '등록된 행동요령이 없습니다.',
+        searchPlaceholder: '제목을 입력해주세요.',
+        searchEmpty: '검색 결과가 없습니다.',
+        goToMap: '대피소 지도 보기',
       },
       auth: {
         loginTitle: '로그인하고 제보를 시작하세요',
@@ -74,6 +77,7 @@ const resources = {
           nearbyLocation: '내 위치 주변 보기',
           shelter: '대피소',
           totalShelters: '총 대피소',
+          loadingShelters: '대피소 정보를 불러오는 중',
         },
         location: {
           checking: '현재 위치 확인 중',
@@ -163,6 +167,9 @@ const resources = {
         subject: 'Title',
         createdAt: 'Date',
         empty: 'No safety guides are available.',
+        searchPlaceholder: 'Please enter a title.',
+        searchEmpty: 'No search results.',
+        goToMap: 'View Shelter Map',
       },
       auth: {
         loginTitle: 'Log in to start reporting',
@@ -206,6 +213,7 @@ const resources = {
           nearbyLocation: 'Near My Location',
           shelter: 'Shelters',
           totalShelters: 'Total Shelters',
+          loadingShelters: 'Loading shelter information',
         },
         location: {
           checking: 'Checking current location',
@@ -296,6 +304,9 @@ const resources = {
         subject: '标题',
         createdAt: '日期',
         empty: '暂无行动指南。',
+        searchPlaceholder: '请输入标题。',
+        searchEmpty: '没有搜索结果。',
+        goToMap: '查看避难所地图',
       },
       auth: {
         loginTitle: '登录后开始举报',
@@ -338,6 +349,7 @@ const resources = {
           nearbyLocation: '查看我的位置附近',
           shelter: '避难所',
           totalShelters: '避难所总数',
+          loadingShelters: '正在加载避难所信息',
         },
         location: {
           checking: '正在确认当前位置',
@@ -427,6 +439,9 @@ const resources = {
         subject: 'タイトル',
         createdAt: '作成日',
         empty: '登録された行動ガイドはありません。',
+        searchPlaceholder: 'タイトルを入力してください。',
+        searchEmpty: '検索結果がありません。',
+        goToMap: '避難所マップを見る',
       },
       auth: {
         loginTitle: 'ログインして提報を始める',
@@ -470,6 +485,7 @@ const resources = {
           nearbyLocation: '現在地周辺を見る',
           shelter: '避難所',
           totalShelters: '避難所合計',
+          loadingShelters: '避難所情報を読み込み中',
         },
         location: {
           checking: '現在地を確認中',
@@ -560,6 +576,9 @@ const resources = {
         subject: 'Tiêu đề',
         createdAt: 'Ngày tạo',
         empty: 'Chưa có hướng dẫn nào.',
+        searchPlaceholder: 'Vui lòng nhập tiêu đề.',
+        searchEmpty: 'Không có kết quả tìm kiếm.',
+        goToMap: 'Xem bản đồ nơi trú ẩn',
       },
       auth: {
         loginTitle: 'Đăng nhập để bắt đầu báo cáo',
@@ -603,6 +622,7 @@ const resources = {
           nearbyLocation: 'Xem gần vị trí của tôi',
           shelter: 'Nơi trú ẩn',
           totalShelters: 'Tổng nơi trú ẩn',
+          loadingShelters: 'Đang tải thông tin nơi trú ẩn',
         },
         location: {
           checking: 'Đang kiểm tra vị trí hiện tại',

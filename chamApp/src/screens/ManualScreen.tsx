@@ -2,7 +2,9 @@ import { useMemo, useState } from 'react';
 import { Modal, StyleSheet, type ImageSourcePropType } from 'react-native';
 import styled from 'styled-components/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ChevronLeft, ChevronRight, X } from 'lucide-react-native';
+import { useNavigation } from '@react-navigation/native';
+import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
+import { ChevronLeft, ChevronRight, Search, X } from 'lucide-react-native';
 import { WebView } from 'react-native-webview';
 import { useTranslation } from 'react-i18next';
 import {
@@ -10,6 +12,7 @@ import {
   useFetchManuals,
 } from '../services/manual.service.ts';
 import { useManualStore } from '../store/manual.ts';
+import type { RootTabParamList } from '../navigation/AppNavigator.tsx';
 
 const PAGE_SIZE = 10;
 const manualBanner =
@@ -60,7 +63,10 @@ function buildManualHtml(content?: string) {
 
 export default function ManualScreen() {
   const { t } = useTranslation();
-  useFetchManuals();
+  const navigation = useNavigation<BottomTabNavigationProp<RootTabParamList>>();
+  const [searchText, setSearchText] = useState('');
+  const [query, setQuery] = useState('');
+  useFetchManuals(query);
   const fetchManualDetail = useFetchManualDetail();
   const manuals = useManualStore(state => state.manuals);
   const manualDetail = useManualStore(state => state.manualDetail);
@@ -86,15 +92,46 @@ export default function ManualScreen() {
     fetchManualDetail(id);
   };
 
+  const handleSubmitSearch = () => {
+    setPage(1);
+    setQuery(searchText.trim());
+  };
+
+  const handleClearSearch = () => {
+    setSearchText('');
+    setPage(1);
+    setQuery('');
+  };
+
+  const handleGoToMap = () => {
+    clearManualDetail();
+    navigation.navigate('Map');
+  };
+
   return (
     <Screen>
       <BannerFrame>
         <BannerImage source={manualBanner} resizeMode="contain" />
       </BannerFrame>
 
-      {/*<Header>*/}
-      {/*  <Title>{t('manual.title')}</Title>*/}
-      {/*</Header>*/}
+      <SearchBox>
+        <SearchInput
+          value={searchText}
+          onChangeText={setSearchText}
+          onSubmitEditing={handleSubmitSearch}
+          placeholder={t('manual.searchPlaceholder')}
+          placeholderTextColor="#9ca3af"
+          returnKeyType="search"
+        />
+        {searchText ? (
+          <IconButton onPress={handleClearSearch}>
+            <X color="#6b7280" size={18} strokeWidth={2.6} />
+          </IconButton>
+        ) : null}
+        <SearchButton onPress={handleSubmitSearch}>
+          <Search color="#ffffff" size={18} strokeWidth={2.6} />
+        </SearchButton>
+      </SearchBox>
 
       <Board>
         <BoardHeader>
@@ -116,7 +153,9 @@ export default function ManualScreen() {
           ))
         ) : (
           <EmptyBox>
-            <EmptyText>{t('manual.empty')}</EmptyText>
+            <EmptyText>
+              {query ? t('manual.searchEmpty') : t('manual.empty')}
+            </EmptyText>
           </EmptyBox>
         )}
       </Board>
@@ -158,7 +197,19 @@ export default function ManualScreen() {
                 <X color="#111827" size={20} strokeWidth={2.7} />
               </CloseButton>
             </ModalHeader>
-            <ModalDate>{formatManualDate(manualDetail?.createDate)}</ModalDate>
+            <ModalMetaRow>
+              <ModalDate>
+                {formatManualDate(manualDetail?.createDate)}
+              </ModalDate>
+              <MapShortcutButton onPress={handleGoToMap}>
+                <MapShortcutText numberOfLines={1}>
+                  {t('manual.goToMap')}
+                </MapShortcutText>
+                <MapShortcutIcon>
+                  <ChevronRight color="#ffffff" size={16} strokeWidth={2.8} />
+                </MapShortcutIcon>
+              </MapShortcutButton>
+            </ModalMetaRow>
             <ManualWebViewFrame>
               <WebView
                 originWhitelist={['*']}
@@ -188,14 +239,6 @@ const Screen = styled(SafeAreaView)`
   background-color: #ffffff;
 `;
 
-const Header = styled.View`
-  flex-direction: row;
-  align-items: flex-end;
-  justify-content: space-between;
-  margin-bottom: 14px;
-  padding: 0 12px;
-`;
-
 const BannerFrame = styled.View`
   width: 100%;
   aspect-ratio: 2.64;
@@ -207,10 +250,41 @@ const BannerImage = styled.Image`
   height: 100%;
 `;
 
-const Title = styled.Text`
-  color: #2776e0;
-  font-size: 18px;
-  font-weight: 800;
+const SearchBox = styled.View`
+  min-height: 46px;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  margin: 0 12px 14px;
+  padding: 0 8px 0 12px;
+  border-radius: 8px;
+  border-width: 1px;
+  border-color: #dbeafe;
+  background-color: #f8fbff;
+`;
+
+const SearchInput = styled.TextInput`
+  flex: 1;
+  min-width: 0;
+  color: #111827;
+  font-size: 14px;
+  font-weight: 600;
+`;
+
+const IconButton = styled.Pressable`
+  width: 32px;
+  height: 32px;
+  align-items: center;
+  justify-content: center;
+`;
+
+const SearchButton = styled.Pressable`
+  width: 34px;
+  height: 34px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background-color: #2563eb;
 `;
 
 const Board = styled.View`
@@ -326,8 +400,9 @@ const ModalCard = styled.Pressable`
 `;
 
 const ModalHeader = styled.View`
+  min-height: 36px;
   flex-direction: row;
-  align-items: flex-start;
+  align-items: center;
   gap: 12px;
 `;
 
@@ -340,18 +415,30 @@ const ModalTitle = styled.Text`
 `;
 
 const CloseButton = styled.Pressable`
-  width: 12px;
-  height: 12px;
+  width: 36px;
+  height: 36px;
+  margin-right: -8px;
   align-items: center;
   justify-content: center;
 `;
 
-const ModalDate = styled.Text`
+const ModalMetaRow = styled.View`
   margin-top: 6px;
+  padding-bottom: 12px;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom-width: 1px;
+  border-bottom-color: #e5e7eb;
+`;
+
+const ModalDate = styled.Text`
+  flex: 1;
+  min-width: 0;
   color: #6b7280;
   font-size: 12px;
   font-weight: 600;
-  text-align: right;
 `;
 
 const ManualWebViewFrame = styled.View`
@@ -360,4 +447,28 @@ const ManualWebViewFrame = styled.View`
   margin-top: 14px;
   overflow: hidden;
   background-color: #ffffff;
+`;
+
+const MapShortcutButton = styled.Pressable`
+  padding: 8px 12px;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  border-radius: 4px;
+  background-color: #2563eb;
+`;
+
+const MapShortcutText = styled.Text`
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 600;
+`;
+
+const MapShortcutIcon = styled.View`
+  width: 16px;
+  height: 16px;
+  margin-top: 1px;
+  align-items: center;
+  justify-content: center;
 `;

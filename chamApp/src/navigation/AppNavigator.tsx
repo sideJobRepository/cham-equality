@@ -1,5 +1,7 @@
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import type { BottomTabBarButtonProps } from '@react-navigation/bottom-tabs';
+import { PlatformPressable } from '@react-navigation/elements';
 import {
   BookOpen,
   Home,
@@ -28,6 +30,16 @@ export type RootTabParamList = {
 };
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
+
+function TabBarButton(props: BottomTabBarButtonProps) {
+  return (
+    <PlatformPressable
+      {...props}
+      android_ripple={{ color: 'transparent' }}
+      pressColor="transparent"
+    />
+  );
+}
 
 const tabIcons: Record<keyof RootTabParamList, LucideIcon> = {
   Home,
@@ -68,6 +80,7 @@ export default function AppNavigator() {
             fontSize: 12,
             fontWeight: '600',
           },
+          tabBarButton: props => <TabBarButton {...props} />,
         })}
       >
         <Tab.Screen
