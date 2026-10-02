@@ -2,6 +2,7 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Animated,
+  BackHandler,
   Easing,
   FlatList,
   KeyboardAvoidingView,
@@ -14,13 +15,20 @@ import {
 } from 'react-native';
 import Config from 'react-native-config';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRoute, type RouteProp } from '@react-navigation/native';
+import {
+  useFocusEffect,
+  useRoute,
+  type RouteProp,
+} from '@react-navigation/native';
 import { WebView } from 'react-native-webview';
 import {
   ChevronLeft,
   ChevronRight,
   Camera,
   ImagePlus,
+  LocateFixed,
+  Minus,
+  Plus,
   Send,
   Square,
   Trash2,
@@ -134,6 +142,7 @@ interface SelectedPlace {
   description: string;
   shelterCount: number;
   accessibilityMatchStatus?: string;
+  coords: { lat: number; lng: number } | null;
   shelters: ShelterSummary[];
 }
 
@@ -156,11 +165,18 @@ interface ReportLocalImage {
   description: string;
 }
 
+interface RegionTrailItem {
+  depth: number;
+  regionId: number;
+  name: string;
+}
+
 interface WebMessagePayload {
-  type: 'marker' | 'ready' | 'error' | 'viewport' | 'locationAddress';
-  payload?: SelectedPlace;
+  type: 'marker' | 'ready' | 'error' | 'viewport' | 'regionTrail';
+  placeId?: number;
+  version?: number;
+  trail?: RegionTrailItem[];
   message?: string;
-  address?: string;
   totalCount?: number;
   visibleCount?: number;
   visiblePlaceIds?: number[];
@@ -173,8 +189,12 @@ interface WebMessagePayload {
 
 function normalizeSelectedPlace(item: any): SelectedPlace {
   const shelters = Array.isArray(item?.shelters) ? item.shelters : [];
+  // x 가 경도, y 가 위도. 좌표 없는 장소는 null(Number(null) 이 0 이 되지 않게 먼저 거른다).
+  const lat = item?.y == null ? NaN : Number(item.y);
+  const lng = item?.x == null ? NaN : Number(item.x);
 
   return {
+    coords: Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : null,
     placeId: item?.placeId,
     name: item?.name || '대피소',
     address: item?.address || item?.oldAddress || '',
@@ -248,11 +268,49 @@ interface MapViewState {
   level: number;
 }
 
+// 지도 페이지에는 점을 찍는 데 필요한 값만 넘긴다. 대피소 상세·사진 URL 까지 넣으면
+// 필터 칩 하나 누를 때마다 수백 KB 가 브리지를 건넜다. 상세는 RN 의 placesById 에서 찾는다.
 function toMapPayload(mapData: any) {
   return {
-    details: Object.values(mapData?.details ?? {}),
+    details: Object.values(mapData?.details ?? {}).map((item: any) => ({
+      placeId: item?.placeId,
+      regionId: item?.regionId,
+      x: item?.x,
+      y: item?.y,
+      accessibilityMatchStatus: item?.accessibilityMatchStatus,
+    })),
     summaries: mapData?.summaries ?? {},
   };
+}
+
+// 대전 대략 범위. 내 위치가 이 안일 때만 목록에 거리를 붙인다(밖이면 수십 km 라 의미가 없다).
+const DAEJEON_BOUNDS = { south: 36.18, north: 36.51, west: 127.24, east: 127.56 };
+
+function isInDaejeon(location: { lat: number; lng: number }) {
+  return (
+    location.lat >= DAEJEON_BOUNDS.south &&
+    location.lat <= DAEJEON_BOUNDS.north &&
+    location.lng >= DAEJEON_BOUNDS.west &&
+    location.lng <= DAEJEON_BOUNDS.east
+  );
+}
+
+function getDistanceMeters(
+  from: { lat: number; lng: number },
+  to: { lat: number; lng: number },
+) {
+  const toRad = (value: number) => (value * Math.PI) / 180;
+  const dLat = toRad(to.lat - from.lat);
+  const dLng = toRad(to.lng - from.lng);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(from.lat)) * Math.cos(toRad(to.lat)) * Math.sin(dLng / 2) ** 2;
+  return 6371000 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function formatDistance(meters: number) {
+  if (meters < 1000) return `${Math.max(10, Math.round(meters / 10) * 10)}m`;
+  return `${(meters / 1000).toFixed(1)}km`;
 }
 
 function buildMapHtml(
@@ -297,15 +355,28 @@ function buildMapHtml(
       };
     </script>
     <script
-      src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=${mapKey}&autoload=false&libraries=services"
+      src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=${mapKey}&autoload=false"
       onerror="window.__notify({ type: 'error', message: '카카오 지도 SDK 로드 실패' })"
     ></script>
     <script>
+      // 줌 레벨별로 그릴 층. 6 이하는 장소 점, 그 위는 서버가 묶어 준 지역 버블(동 → 구 → 시).
+      const DETAIL_MAX_LEVEL = 6;
+      const DONG_MAX_LEVEL = 8;
+      const GU_MAX_LEVEL = 10;
+      // 버블을 누르면 한 단계 아래 층이 보이는 레벨까지는 들어간다(depth → 최대 레벨).
+      const DRILL_LEVELS = { 0: GU_MAX_LEVEL, 1: DONG_MAX_LEVEL, 2: DETAIL_MAX_LEVEL };
+      const SELECT_LEVEL = 6;
+      const BASE_Z_INDEX = 10;
+      const SELECTED_Z_INDEX = 9000;
+      const FIT_PADDING = 40;
+
       function isKoreaRange(lat, lng) {
         return lat >= 32 && lat <= 39.5 && lng >= 124 && lng <= 132.5;
       }
 
       function toLatLng(item) {
+        // Number(null) 은 0 이라 좌표 없는 장소가 (0,0) 으로 잡혔다. 빈 값은 먼저 거른다.
+        if (item.x == null || item.y == null || item.x === '' || item.y === '') return null;
         const x = Number(item.x);
         const y = Number(item.y);
         if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
@@ -320,12 +391,19 @@ function buildMapHtml(
         return null;
       }
 
-      function summaryLabel(item) {
+      function regionName(item) {
         const path = String(item.path || '');
-        const name = path.includes(',')
+        return path.includes(',')
           ? path.split(',')[0].trim()
           : path.split(' ').filter(Boolean).slice(-1)[0] || path;
-        return name + ' ' + item.count;
+      }
+
+      function summaryLabel(item) {
+        return regionName(item) + ' ' + item.count;
+      }
+
+      function regionKey(depth, regionId) {
+        return depth + '-' + regionId;
       }
 
       function accessibilityMatchColor(status) {
@@ -340,35 +418,24 @@ function buildMapHtml(
         return '#2563eb';
       }
 
-      function normalizePlace(item) {
-        const shelters = Array.isArray(item.shelters) ? item.shelters : [];
-        return {
-          placeId: item.placeId,
-          name: item.name || '대피소',
-          address: item.address || item.oldAddress || '',
-          description: item.description || '',
-          shelterCount: shelters.length,
-          accessibilityMatchStatus: item.accessibilityMatchStatus,
-          shelters: shelters.map(function(shelter) {
-            return {
-              shelterId: shelter.shelterId,
-              name: shelter.name || item.name || '대피소',
-              shelterType: shelter.shelterType,
-              capacity: shelter.capacity,
-              area: shelter.area,
-              managingAuthorityName: shelter.managingAuthorityName,
-              managingAuthorityTelNo: shelter.managingAuthorityTelNo,
-              accessibleToilet: shelter.accessibleToilet,
-              ramp: shelter.ramp,
-              elevator: shelter.elevator,
-              brailleBlock: shelter.brailleBlock,
-              images: Array.isArray(shelter.images) ? shelter.images : [],
-            };
-          }),
-        };
+      function detailMarkerStyle(markerColor, isSelected) {
+        return [
+          'display:flex',
+          'align-items:center',
+          'justify-content:center',
+          'width:' + (isSelected ? '20px' : '14px'),
+          'height:' + (isSelected ? '20px' : '14px'),
+          'border-radius:999px',
+          'background:' + markerColor,
+          'border:' + (isSelected ? '4px' : '2px') + ' solid #ffffff',
+          'box-shadow:0 0 0 ' + (isSelected ? '5px' : '0') + ' ' + markerColor + '33,0 2px 10px ' + markerColor + '80',
+          'cursor:pointer',
+          'transition:width .12s ease,height .12s ease,box-shadow .12s ease',
+        ].join(';');
       }
 
-      function createSummaryOverlay(map, item, position) {
+      // 오버레이는 map 없이 만들어 두고, 보일 때만 setMap 한다.
+      function createSummaryOverlay(item, position, onSelect) {
         const el = document.createElement('div');
         el.style.cssText = [
           'display:flex',
@@ -384,49 +451,47 @@ function buildMapHtml(
           'font-weight:700',
           'box-shadow:0 4px 12px rgba(37,99,235,.28)',
           'white-space:nowrap',
+          'cursor:pointer',
         ].join(';');
         el.textContent = summaryLabel(item);
-
-        return new window.kakao.maps.CustomOverlay({
-          map: map,
-          position: position,
-          content: el,
-          xAnchor: 0.5,
-          yAnchor: 0.5,
-          zIndex: 10,
-        });
-      }
-
-      function createDetailOverlay(map, item, position, selectedPlaceId, onSelect) {
-        const el = document.createElement('div');
-        const markerColor = accessibilityMatchColor(item.accessibilityMatchStatus);
-        const isSelected = String(item.placeId) === String(selectedPlaceId);
-        el.style.cssText = [
-          'display:flex',
-          'align-items:center',
-          'justify-content:center',
-          'width:' + (isSelected ? '20px' : '14px'),
-          'height:' + (isSelected ? '20px' : '14px'),
-          'border-radius:999px',
-          'background:' + markerColor,
-          'border:' + (isSelected ? '4px' : '2px') + ' solid #ffffff',
-          'box-shadow:0 0 0 ' + (isSelected ? '5px' : '0') + ' ' + markerColor + '33,0 2px 10px ' + markerColor + '80',
-          'cursor:pointer',
-          'transition:width .12s ease,height .12s ease,box-shadow .12s ease',
-        ].join(';');
-
         el.addEventListener('click', function() {
           onSelect(item);
         });
 
-        return new window.kakao.maps.CustomOverlay({
-          map: map,
-          position: position,
-          content: el,
-          xAnchor: 0.5,
-          yAnchor: 0.5,
-          zIndex: isSelected ? 9000 : 10,
+        return {
+          overlay: new window.kakao.maps.CustomOverlay({
+            position: position,
+            content: el,
+            xAnchor: 0.5,
+            yAnchor: 0.5,
+            zIndex: BASE_Z_INDEX,
+          }),
+          el: el,
+          shown: false,
+        };
+      }
+
+      function createDetailOverlay(item, position, onSelect) {
+        const el = document.createElement('div');
+        const markerColor = accessibilityMatchColor(item.accessibilityMatchStatus);
+        el.style.cssText = detailMarkerStyle(markerColor, false);
+        el.addEventListener('click', function() {
+          onSelect(item);
         });
+
+        return {
+          overlay: new window.kakao.maps.CustomOverlay({
+            position: position,
+            content: el,
+            xAnchor: 0.5,
+            yAnchor: 0.5,
+            zIndex: BASE_Z_INDEX,
+          }),
+          el: el,
+          color: markerColor,
+          shown: false,
+          selected: false,
+        };
       }
 
       function renderMap() {
@@ -436,14 +501,55 @@ function buildMapHtml(
         }
 
         // 필터가 바뀌면 RN 이 __setMapData 로 갈아끼운다. 페이지를 다시 읽지 않으려고 let 으로 둔다.
+        // details 는 좌표를 미리 풀어 둔 { item, coords } 목록이다. draw 마다 항목별로 다시 풀지 않는다.
         let details = [];
-        let summaries = {};
-        function applyMapData(payload) {
-          const next = payload || {};
-          details = Array.isArray(next.details) ? next.details : [];
-          summaries = next.summaries || {};
+        let summaryLayers = { 0: [], 1: [], 2: [] };
+        let summaryByKey = {};
+        // 장소가 속한 지역 키(동·구·시). 버블을 눌렀을 때 그 지역 장소만 골라 맞추는 데 쓴다.
+        let placeRegionKeys = {};
+        let dataVersion = 0;
+
+        function regionChain(regionId) {
+          // 장소의 지역은 보통 동(depth2)이다. 부모를 따라 올라가며 구·시 키를 모은다.
+          const keys = [];
+          let current = null;
+          for (let depth = 2; depth >= 0 && !current; depth -= 1) {
+            current = summaryByKey[regionKey(depth, regionId)] || null;
+          }
+          while (current) {
+            keys.push(regionKey(current.depth, current.regionId));
+            current = current.depth > 0 && current.parentId != null
+              ? summaryByKey[regionKey(current.depth - 1, current.parentId)] || null
+              : null;
+          }
+          return keys;
         }
-        applyMapData(window.__MAP_DATA__);
+
+        function applyMapData(payload, version) {
+          const next = payload || {};
+          const summaries = next.summaries || {};
+          summaryLayers = { 0: [], 1: [], 2: [] };
+          summaryByKey = {};
+          [0, 1, 2].forEach(function(depth) {
+            (summaries['depth' + depth] || []).forEach(function(item) {
+              const key = regionKey(depth, item.regionId);
+              summaryByKey[key] = item;
+              const coords = toLatLng(item);
+              if (coords) summaryLayers[depth].push({ key: key, item: item, coords: coords });
+            });
+          });
+
+          details = [];
+          placeRegionKeys = {};
+          (Array.isArray(next.details) ? next.details : []).forEach(function(item) {
+            const coords = toLatLng(item);
+            if (!coords) return;
+            details.push({ item: item, coords: coords });
+            placeRegionKeys[item.placeId] = regionChain(item.regionId);
+          });
+          dataVersion = version || 0;
+        }
+        applyMapData(window.__MAP_DATA__, 0);
         const container = document.getElementById('map');
         const initialView = window.__INITIAL_VIEW__ || {};
         const initialCenter = initialView.center || {};
@@ -472,13 +578,90 @@ function buildMapHtml(
           map.relayout();
           map.setCenter(center);
         }, 100);
-        map.addControl(
-          new window.kakao.maps.ZoomControl(),
-          window.kakao.maps.ControlPosition.RIGHT
-        );
+        // 줌 버튼은 RN 쪽에서 하단 패널을 따라 움직이게 그린다(__zoomBy).
 
-        let overlays = [];
-        window.__selectedPlaceId = window.__INITIAL_SELECTED_PLACE_ID__ || null;
+        // placeId·지역 키별로 만들어 둔 오버레이. 데이터가 바뀔 때만 비운다.
+        let detailOverlays = new Map();
+        let summaryOverlays = new Map();
+        let shownEntries = new Set();
+        let selectedPlaceId = window.__INITIAL_SELECTED_PLACE_ID__ || null;
+        // 필터 결과가 지금 화면에 하나도 없으면 결과 전체가 보이게 맞춘다(데이터 교체 직후 한 번).
+        let pendingAutoFit = false;
+        let lastReadyKey = null;
+        // 하단 패널이 덮고 있는 높이(px). 가운데 맞춤은 패널 위 남은 영역 기준으로 한다.
+        let bottomInset = 0;
+        let regionTrail = [];
+        let trailAnchor = null;
+        let pendingTrailAnchor = false;
+
+        function setOverlayShown(entry, shown) {
+          // 같은 상태로 setMap 을 또 부르면 카카오가 DOM 을 다시 붙인다. 바뀔 때만 부른다.
+          if (entry.shown === shown) return;
+          entry.shown = shown;
+          entry.overlay.setMap(shown ? map : null);
+        }
+
+        function clearOverlayCache() {
+          shownEntries.forEach(function(entry) {
+            entry.overlay.setMap(null);
+          });
+          shownEntries = new Set();
+          detailOverlays = new Map();
+          summaryOverlays = new Map();
+        }
+
+        function setDetailSelected(entry, selected) {
+          if (!entry || entry.selected === selected) return;
+          entry.selected = selected;
+          entry.el.style.cssText = detailMarkerStyle(entry.color, selected);
+          entry.overlay.setZIndex(selected ? SELECTED_Z_INDEX : BASE_Z_INDEX);
+        }
+
+        // 선택이 바뀌면 이전·새 점 두 개만 고친다. 전체를 다시 그리면 탭할 때마다 깜빡였다.
+        function paintSelected(nextPlaceId) {
+          const prevPlaceId = selectedPlaceId;
+          selectedPlaceId = nextPlaceId;
+          if (prevPlaceId != null) {
+            setDetailSelected(detailOverlays.get(String(prevPlaceId)), false);
+          }
+          if (nextPlaceId != null) {
+            setDetailSelected(detailOverlays.get(String(nextPlaceId)), true);
+          }
+        }
+
+        // 처음 화면에 들어올 때 만든다. 첫 화면에 수백 개를 한꺼번에 만들지 않으려는 것.
+        function ensureDetailOverlay(entry) {
+          const key = String(entry.item.placeId);
+          let overlayEntry = detailOverlays.get(key);
+          if (overlayEntry) return overlayEntry;
+
+          overlayEntry = createDetailOverlay(
+            entry.item,
+            new window.kakao.maps.LatLng(entry.coords.lat, entry.coords.lng),
+            function(item) {
+              paintSelected(item.placeId);
+              window.__notify({ type: 'marker', placeId: item.placeId });
+            }
+          );
+          detailOverlays.set(key, overlayEntry);
+          if (String(selectedPlaceId) === key) setDetailSelected(overlayEntry, true);
+          return overlayEntry;
+        }
+
+        function ensureSummaryOverlay(entry) {
+          let overlayEntry = summaryOverlays.get(entry.key);
+          if (overlayEntry) return overlayEntry;
+
+          overlayEntry = createSummaryOverlay(
+            entry.item,
+            new window.kakao.maps.LatLng(entry.coords.lat, entry.coords.lng),
+            function(item) {
+              fitRegion(item.depth, item.regionId);
+            }
+          );
+          summaryOverlays.set(entry.key, overlayEntry);
+          return overlayEntry;
+        }
 
         function getUserLocationCoords() {
           const userLocation = window.__USER_LOCATION__;
@@ -491,15 +674,6 @@ function buildMapHtml(
 
           return { lat: lat, lng: lng };
         }
-
-        window.__moveToUserLocation = function() {
-          const coords = getUserLocationCoords();
-          if (!coords) return;
-
-          const markerPosition = new window.kakao.maps.LatLng(coords.lat, coords.lng);
-          map.setCenter(markerPosition);
-          map.setLevel(6);
-        };
 
         let userLocationOverlay = null;
 
@@ -533,95 +707,149 @@ function buildMapHtml(
           });
         }
 
-        function notifyUserLocationAddress() {
-          const coords = getUserLocationCoords();
-          if (!coords) {
-            window.__notify({
-              type: 'locationAddress',
-              address: '주소 확인 실패: 위치 좌표가 없습니다',
-            });
+        // 패널 위로 보이는 영역의 가운데(px). 패널이 화면 대부분을 덮어도 위쪽 틈은 남겨 둔다.
+        function visibleCenterPoint() {
+          const width = container.clientWidth;
+          const height = container.clientHeight;
+          const inset = Math.min(bottomInset, height * 0.85);
+          return { x: width / 2, y: (height - inset) / 2 };
+        }
+
+        function visibleCenterCoords() {
+          const point = visibleCenterPoint();
+          const latLng = map.getProjection().coordsFromContainerPoint(
+            new window.kakao.maps.Point(point.x, point.y)
+          );
+          return { lat: latLng.getLat(), lng: latLng.getLng() };
+        }
+
+        // 줌과 이동을 한 번에 한다. setLevel 뒤에 panTo 를 하면 두 번 튀었다.
+        // anchor 는 줌하는 동안 화면에서 제자리인 점이라, 목표 점이 패널 위 가운데에 떨어지도록 거꾸로 구한다.
+        function moveView(coords, level) {
+          const projection = map.getProjection();
+          const target = projection.containerPointFromCoords(
+            new window.kakao.maps.LatLng(coords.lat, coords.lng)
+          );
+          const dest = visibleCenterPoint();
+          const currentLevel = map.getLevel();
+
+          if (level === currentLevel) {
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+            map.panTo(projection.coordsFromContainerPoint(
+              new window.kakao.maps.Point(
+                width / 2 + target.x - dest.x,
+                height / 2 + target.y - dest.y
+              )
+            ));
             return;
           }
 
-          if (!window.kakao.maps.services || !window.kakao.maps.services.Geocoder) {
-            window.__notify({
-              type: 'locationAddress',
-              address: '주소 확인 실패: Kakao services Geocoder 로드 안 됨',
-            });
+          const scale = Math.pow(2, currentLevel - level);
+          const anchor = new window.kakao.maps.Point(
+            (dest.x - scale * target.x) / (1 - scale),
+            (dest.y - scale * target.y) / (1 - scale)
+          );
+          map.setLevel(level, {
+            animate: { duration: 300 },
+            anchor: projection.coordsFromContainerPoint(anchor),
+          });
+        }
+
+        function fitPoints(points, maxLevel) {
+          if (!points.length) return;
+          if (points.length === 1) {
+            moveView(points[0], Math.min(map.getLevel(), maxLevel || SELECT_LEVEL));
             return;
           }
 
-          const geocoder = new window.kakao.maps.services.Geocoder();
-          const coordText = coords.lat.toFixed(6) + ', ' + coords.lng.toFixed(6);
-
-          function notifyAddressFailure(reason) {
-            window.__notify({
-              type: 'locationAddress',
-              address: '주소 확인 실패: ' + reason + ' (' + coordText + ')',
-            });
-          }
-
-          function notifyLegalAddress(regionStatusText) {
-            geocoder.coord2Address(coords.lng, coords.lat, function(result, status) {
-              const resultCount = Array.isArray(result) ? result.length : 0;
-              if (status !== window.kakao.maps.services.Status.OK || !result.length) {
-                notifyAddressFailure(
-                  'region=' + regionStatusText + ', address=' + status + ', addressCount=' + resultCount
-                );
-                return;
-              }
-
-              const first = result[0];
-              const address =
-                (first.address && first.address.address_name) ||
-                (first.road_address && first.road_address.address_name);
-
-              if (address) {
-                window.__notify({ type: 'locationAddress', address: address });
-              } else {
-                notifyAddressFailure(
-                  '주소 결과는 있으나 address_name 없음, region=' + regionStatusText + ', address=' + status
-                );
-              }
-            });
-          }
-
-          geocoder.coord2RegionCode(coords.lng, coords.lat, function(result, status) {
-            const resultCount = Array.isArray(result) ? result.length : 0;
-            if (status !== window.kakao.maps.services.Status.OK || !result.length) {
-              notifyLegalAddress(status + ', regionCount=' + resultCount);
-              return;
-            }
-
-            const region = result.find(function(item) {
-              return item.region_type === 'H';
-            }) || result[0];
-            const address = region.address_name || [
-              region.region_1depth_name,
-              region.region_2depth_name,
-              region.region_3depth_name,
-            ].filter(Boolean).join(' ');
-
-            if (address) {
-              window.__notify({ type: 'locationAddress', address: address });
-            } else {
-              notifyLegalAddress(status + ', regionCount=' + resultCount + ', region address_name 없음');
-            }
+          const bounds = new window.kakao.maps.LatLngBounds();
+          points.forEach(function(point) {
+            bounds.extend(new window.kakao.maps.LatLng(point.lat, point.lng));
           });
+          const inset = Math.min(bottomInset, container.clientHeight * 0.85);
+          map.setBounds(bounds, FIT_PADDING, FIT_PADDING, FIT_PADDING + inset, FIT_PADDING);
+
+          // 지역이 넓어 한 층 아래가 안 보이는 레벨에 멈췄으면 그 층이 보일 때까지 들어간다.
+          if (maxLevel && map.getLevel() > maxLevel) {
+            const sw = bounds.getSouthWest();
+            const ne = bounds.getNorthEast();
+            moveView(
+              { lat: (sw.getLat() + ne.getLat()) / 2, lng: (sw.getLng() + ne.getLng()) / 2 },
+              maxLevel
+            );
+          }
         }
 
-        function clearOverlays() {
-          overlays.forEach(function(overlay) {
-            overlay.setMap(null);
-          });
-          overlays = [];
+        function buildRegionTrail(depth, regionId) {
+          const trail = [];
+          let current = summaryByKey[regionKey(depth, regionId)] || null;
+          while (current) {
+            trail.unshift({
+              depth: current.depth,
+              regionId: current.regionId,
+              name: regionName(current),
+            });
+            current = current.depth > 0 && current.parentId != null
+              ? summaryByKey[regionKey(current.depth - 1, current.parentId)] || null
+              : null;
+          }
+          return trail;
         }
 
-        function currentItems(level) {
-          if (level <= 6) return { kind: 'detail', items: details };
-          if (level <= 8) return { kind: 'summary', items: summaries.depth2 || [] };
-          if (level <= 10) return { kind: 'summary', items: summaries.depth1 || [] };
-          return { kind: 'summary', items: summaries.depth0 || [] };
+        function notifyRegionTrail(trail) {
+          regionTrail = trail;
+          window.__notify({ type: 'regionTrail', trail: trail });
+        }
+
+        function fitRegion(depth, regionId) {
+          const key = regionKey(depth, regionId);
+          const points = [];
+          details.forEach(function(entry) {
+            if ((placeRegionKeys[entry.item.placeId] || []).indexOf(key) !== -1) {
+              points.push(entry.coords);
+            }
+          });
+
+          const maxLevel = DRILL_LEVELS[depth];
+          if (points.length) {
+            fitPoints(points, maxLevel);
+          } else {
+            const summary = summaryByKey[key];
+            const coords = summary ? toLatLng(summary) : null;
+            if (coords) moveView(coords, Math.min(map.getLevel(), maxLevel));
+          }
+
+          // 이동이 끝난 idle 에서 기준점을 잡는다. 거기서 멀어지면 경로 칩을 걷는다.
+          trailAnchor = null;
+          pendingTrailAnchor = true;
+          notifyRegionTrail(buildRegionTrail(depth, regionId));
+        }
+
+        // 버블로 들어간 뒤 줌 아웃하거나 화면 절반 넘게 옮기면 경로가 더는 맞지 않으므로 지운다.
+        function updateRegionTrailOnIdle() {
+          if (!regionTrail.length) return;
+          if (pendingTrailAnchor) {
+            pendingTrailAnchor = false;
+            trailAnchor = { center: map.getCenter(), level: map.getLevel() };
+            return;
+          }
+          if (!trailAnchor) return;
+
+          const point = map.getProjection().containerPointFromCoords(trailAnchor.center);
+          const movedFar =
+            Math.abs(point.x - container.clientWidth / 2) > container.clientWidth / 2 ||
+            Math.abs(point.y - container.clientHeight / 2) > container.clientHeight / 2;
+          if (map.getLevel() > trailAnchor.level || movedFar) {
+            trailAnchor = null;
+            notifyRegionTrail([]);
+          }
+        }
+
+        function currentSummaryLayer(level) {
+          if (level <= DONG_MAX_LEVEL) return summaryLayers[2];
+          if (level <= GU_MAX_LEVEL) return summaryLayers[1];
+          return summaryLayers[0];
         }
 
         // getBounds 는 draw 한 번에 한 번만 읽는다. 항목마다 부르면 수천 번이 된다.
@@ -646,17 +874,6 @@ function buildMapHtml(
           );
         }
 
-        // 목록에 필요한 상세 정보는 RN 이 이미 갖고 있으므로 id 만 보낸다.
-        // 전체를 보내면 광역 줌에서 이동할 때마다 수백 KB 가 브리지를 건넌다.
-        function currentVisiblePlaceIds(box) {
-          const ids = [];
-          details.forEach(function(item) {
-            const coords = toLatLng(item);
-            if (coords && isInBounds(box, coords)) ids.push(item.placeId);
-          });
-          return ids;
-        }
-
         // 한 프레임 안에 여러 번 요청돼도(선택 + 이동 + idle) 한 번만 그린다.
         let drawScheduled = false;
         function scheduleDraw() {
@@ -668,77 +885,125 @@ function buildMapHtml(
           });
         }
 
-        window.__setMapData = function(payload) {
-          applyMapData(payload);
-          window.__selectedPlaceId = null;
+        window.__setMapData = function(payload, version) {
+          applyMapData(payload, version);
+          clearOverlayCache();
+          selectedPlaceId = null;
+          lastReadyKey = null;
+          pendingAutoFit = true;
           scheduleDraw();
         };
 
         window.__setUserLocation = function(location) {
           window.__USER_LOCATION__ = location;
           drawUserLocation();
-          notifyUserLocationAddress();
+        };
+
+        window.__setBottomInset = function(inset) {
+          bottomInset = Math.max(0, Number(inset) || 0);
         };
 
         window.__selectPlaceMarker = function(placeId) {
-          const selected = details.find(function(item) {
-            return String(item.placeId) === String(placeId);
+          const selected = details.find(function(entry) {
+            return String(entry.item.placeId) === String(placeId);
           });
           if (!selected) return;
 
-          const coords = toLatLng(selected);
-          if (!coords) return;
-
-          window.__selectedPlaceId = selected.placeId;
-          map.setLevel(6);
-          map.panTo(new window.kakao.maps.LatLng(coords.lat, coords.lng));
+          // 홈에서 넘어온 장소로 가는 중이면 결과 전체 맞춤이 그 이동을 덮지 않게 한다.
+          pendingAutoFit = false;
+          paintSelected(selected.item.placeId);
+          moveView(selected.coords, Math.min(map.getLevel(), SELECT_LEVEL));
           scheduleDraw();
         };
 
         window.__clearSelectedPlaceMarker = function() {
-          window.__selectedPlaceId = null;
-          scheduleDraw();
+          paintSelected(null);
+        };
+
+        window.__moveToUserLocation = function() {
+          const coords = getUserLocationCoords();
+          if (!coords) return;
+          moveView(coords, Math.min(map.getLevel(), SELECT_LEVEL));
+        };
+
+        window.__zoomBy = function(delta) {
+          const currentLevel = map.getLevel();
+          const nextLevel = Math.max(1, Math.min(14, currentLevel + delta));
+          if (nextLevel === currentLevel) return;
+          const point = visibleCenterPoint();
+          map.setLevel(nextLevel, {
+            animate: { duration: 200 },
+            anchor: map.getProjection().coordsFromContainerPoint(
+              new window.kakao.maps.Point(point.x, point.y)
+            ),
+          });
+        };
+
+        window.__fitRegion = function(depth, regionId) {
+          fitRegion(depth, regionId);
         };
 
         function draw() {
-          clearOverlays();
-
           const box = currentBoundsBox();
-          const mode = currentItems(map.getLevel());
-          let visibleCount = 0;
+          const level = map.getLevel();
+          const showDetails = level <= DETAIL_MAX_LEVEL;
+          const center = visibleCenterCoords();
+          const lngScale = Math.cos(center.lat * Math.PI / 180);
+          const nextShown = new Set();
+          const visible = [];
 
-          mode.items.forEach(function(item) {
-            const coords = toLatLng(item);
-            if (!coords) return;
-            if (!isInBounds(box, coords)) return;
-            visibleCount += 1;
-
-            const position = new window.kakao.maps.LatLng(coords.lat, coords.lng);
-            const overlay = mode.kind === 'detail'
-              ? createDetailOverlay(
-                  map,
-                  item,
-                  position,
-                  window.__selectedPlaceId,
-                  function(selectedItem) {
-                    window.__selectedPlaceId = selectedItem.placeId;
-                    window.__notify({
-                      type: 'marker',
-                      payload: normalizePlace(selectedItem),
-                    });
-                    scheduleDraw();
-                  }
-                )
-              : createSummaryOverlay(map, item, position);
-
-            overlays.push(overlay);
+          // 목록은 줌 층과 상관없이 화면 안의 장소를 보여 준다. 패널 위 가운데에서 가까운 순.
+          details.forEach(function(entry) {
+            if (!isInBounds(box, entry.coords)) return;
+            const dLat = entry.coords.lat - center.lat;
+            const dLng = (entry.coords.lng - center.lng) * lngScale;
+            visible.push({ placeId: entry.item.placeId, distance: dLat * dLat + dLng * dLng });
+            if (showDetails) nextShown.add(ensureDetailOverlay(entry));
           });
+
+          if (!showDetails) {
+            currentSummaryLayer(level).forEach(function(entry) {
+              if (isInBounds(box, entry.coords)) nextShown.add(ensureSummaryOverlay(entry));
+            });
+          }
+
+          // 화면 밖이나 다른 층으로 넘어간 것만 내리고, 새로 보이는 것만 올린다.
+          shownEntries.forEach(function(entry) {
+            if (!nextShown.has(entry)) setOverlayShown(entry, false);
+          });
+          nextShown.forEach(function(entry) {
+            setOverlayShown(entry, true);
+          });
+          shownEntries = nextShown;
+
+          if (pendingAutoFit) {
+            pendingAutoFit = false;
+            if (!visible.length && details.length) {
+              // 맞춘 뒤 idle 이 다시 와서 그린다.
+              fitPoints(details.map(function(entry) {
+                return entry.coords;
+              }));
+              return;
+            }
+          }
+
+          visible.sort(function(a, b) {
+            return a.distance - b.distance;
+          });
+          const visiblePlaceIds = visible.map(function(item) {
+            return item.placeId;
+          });
+          // 보이는 장소와 순서가 그대로면 RN 에 다시 보내지 않는다.
+          const readyKey = visiblePlaceIds.join(',');
+          if (readyKey === lastReadyKey) return;
+          lastReadyKey = readyKey;
 
           window.__notify({
             type: 'ready',
+            version: dataVersion,
             totalCount: details.length,
-            visibleCount: visibleCount,
-            visiblePlaceIds: currentVisiblePlaceIds(box),
+            visibleCount: visiblePlaceIds.length,
+            visiblePlaceIds: visiblePlaceIds,
           });
         }
 
@@ -755,13 +1020,13 @@ function buildMapHtml(
         }
 
         drawUserLocation();
-        notifyUserLocationAddress();
         draw();
         notifyViewport();
         // 줌이 끝나도 idle 이 오므로 zoom_changed 에는 따로 걸지 않는다(한 번 줌에 두 번 그리던 것).
         window.kakao.maps.event.addListener(map, 'idle', function() {
           scheduleDraw();
           notifyViewport();
+          updateRegionTrailOnIdle();
         });
       }
 
@@ -797,9 +1062,11 @@ const placeKeyExtractor = (place: SelectedPlace) => String(place.placeId);
 // 신고 폼 입력 등으로 MapScreen 이 다시 그려져도 목록 행은 그대로 두려고 memo 로 뺐다.
 const PlaceListItem = memo(function PlaceListItem({
   place,
+  distanceText,
   onPress,
 }: {
   place: SelectedPlace;
+  distanceText: string | null;
   onPress: (place: SelectedPlace) => void;
 }) {
   const { t } = useTranslation();
@@ -810,7 +1077,10 @@ const PlaceListItem = memo(function PlaceListItem({
 
   return (
     <PlaceItem onPress={() => onPress(place)}>
-      <PlaceName numberOfLines={1}>{place.name}</PlaceName>
+      <PlaceTitleRow>
+        <PlaceName numberOfLines={1}>{place.name}</PlaceName>
+        {distanceText ? <PlaceDistance>{distanceText}</PlaceDistance> : null}
+      </PlaceTitleRow>
       <PlaceAddress numberOfLines={1}>
         {place.address || '주소 정보 없음'}
       </PlaceAddress>
@@ -881,6 +1151,7 @@ export default function MapScreen() {
     body: mapRequestBody,
   });
   const mapData = useMapStore(state => state.map);
+  const isMapFetching = useMapStore(state => state.isFetching);
   // 지도는 보이는 장소의 id 만 보내므로, 목록에 그릴 정보는 여기서 찾는다.
   const placesById = useMemo(() => {
     const places = new Map<number, SelectedPlace>();
@@ -906,14 +1177,18 @@ export default function MapScreen() {
   const [mapError, setMapError] = useState('');
   const [panelReady, setPanelReady] = useState(false);
   const [mapFrameHeight, setMapFrameHeight] = useState(0);
+  const [regionTrail, setRegionTrail] = useState<RegionTrailItem[]>([]);
   const mapViewRef = useRef<MapViewState | null>(null);
   const webViewRef = useRef<WebView>(null);
   const pendingFocusPlaceIdRef = useRef<number | null>(null);
   const selectedPlaceIdRef = useRef<number | null>(null);
   // 같은 id 목록이 반복해서 오면(이동만 하고 보이는 장소는 그대로) 목록을 다시 그리지 않는다.
   const visiblePlaceKeyRef = useRef('');
+  // 홈에서 넘긴 포커스를 한 번만 쓴다. 안 그러면 필터를 바꿀 때마다 그 장소로 다시 튀었다.
+  const consumedFocusKeyRef = useRef('');
 
-  // 필터를 바꾼 순간과 새 데이터가 도착한 순간 모두 선택·목록을 비운다.
+  // 새 데이터가 도착하면 선택·목록을 비운다. 필터를 누른 순간에는 비우지 않는다.
+  // 그 사이 지도는 옛 데이터를 그대로 그리고 있으므로, 목록도 그것과 맞춰 둔다.
   useEffect(() => {
     selectedPlaceIdRef.current = null;
     pendingFocusPlaceIdRef.current = null;
@@ -921,7 +1196,19 @@ export default function MapScreen() {
     setSelectedPlace(null);
     setVisiblePlaces([]);
     setPanelReady(false);
-  }, [mapData, selectedAccessibility, selectedShelterTypes]);
+  }, [mapData]);
+
+  const expandedPanelHeight = Math.round(
+    (mapFrameHeight || screenHeight) * 0.9,
+  );
+  const collapsedPanelHeight = 42;
+  const panelRange = expandedPanelHeight - collapsedPanelHeight;
+  // 패널은 높이를 바꾸지 않고 아래로 밀어 숨긴다. 높이 애니메이션은 매 프레임 레이아웃을 다시 계산해 끊겼다.
+  const panelTranslateY = panelAnimation.interpolate({
+    inputRange: [0, 1],
+    outputRange: [panelRange, 0],
+  });
+  const bottomInset = isPanelExpanded ? expandedPanelHeight : collapsedPanelHeight;
 
   // 지도 페이지는 한 번만 읽는다. 데이터·현재 위치가 바뀌면 HTML 을 새로 만드는 대신
   // __setMapData / __setUserLocation 으로 주입한다. HTML 을 바꾸면 WebView 가 카카오 SDK 부터
@@ -930,10 +1217,14 @@ export default function MapScreen() {
   latestMapDataRef.current = mapData;
   const latestUserLocationRef = useRef(userLocation);
   latestUserLocationRef.current = userLocation;
+  const latestBottomInsetRef = useRef(bottomInset);
+  latestBottomInsetRef.current = bottomInset;
   // HTML 에 구워 넣은 값. WebView 가 스스로 다시 로드되면 페이지는 이 값으로 돌아간다.
-  const bakedRef = useRef({ mapData, userLocation });
+  const bakedRef = useRef({ mapData, userLocation, bottomInset: 0, version: 0 });
   // 지금 페이지가 갖고 있는 값. 이것과 최신 값이 다르면 주입한다.
-  const sentRef = useRef({ mapData, userLocation });
+  const sentRef = useRef({ ...bakedRef.current });
+  // 데이터를 넣을 때마다 올린다. ready 의 version 이 다르면 옛 데이터 기준 목록이라 버린다.
+  const mapDataVersionRef = useRef(0);
   const mapPageReadyRef = useRef(false);
 
   const mapHtml = useMemo(() => {
@@ -953,52 +1244,61 @@ export default function MapScreen() {
 
   const webViewSource = useMemo(() => ({ html: mapHtml }), [mapHtml]);
 
+  const injectMapScript = useCallback((script: string) => {
+    webViewRef.current?.injectJavaScript(`${script}\ntrue;`);
+  }, []);
+
   const syncMapPage = useCallback(() => {
     if (!mapPageReadyRef.current) return;
 
     const scripts: string[] = [];
-    const nextMapData = latestMapDataRef.current;
-    const nextUserLocation = latestUserLocationRef.current;
+    const next = { ...sentRef.current };
 
-    if (sentRef.current.mapData !== nextMapData) {
+    if (sentRef.current.mapData !== latestMapDataRef.current) {
+      mapDataVersionRef.current += 1;
+      next.mapData = latestMapDataRef.current;
+      next.version = mapDataVersionRef.current;
       scripts.push(
         `if (window.__setMapData) window.__setMapData(${JSON.stringify(
-          toMapPayload(nextMapData),
+          toMapPayload(next.mapData),
+        )}, ${next.version});`,
+      );
+    }
+    if (sentRef.current.userLocation !== latestUserLocationRef.current) {
+      next.userLocation = latestUserLocationRef.current;
+      scripts.push(
+        `if (window.__setUserLocation) window.__setUserLocation(${JSON.stringify(
+          next.userLocation ?? null,
         )});`,
       );
     }
-    if (sentRef.current.userLocation !== nextUserLocation) {
+    if (sentRef.current.bottomInset !== latestBottomInsetRef.current) {
+      next.bottomInset = latestBottomInsetRef.current;
       scripts.push(
-        `if (window.__setUserLocation) window.__setUserLocation(${JSON.stringify(
-          nextUserLocation ?? null,
-        )});`,
+        `if (window.__setBottomInset) window.__setBottomInset(${next.bottomInset});`,
       );
     }
     if (!scripts.length) return;
 
-    sentRef.current = { mapData: nextMapData, userLocation: nextUserLocation };
-    webViewRef.current?.injectJavaScript(`${scripts.join('\n')}\ntrue;`);
-  }, []);
+    sentRef.current = next;
+    injectMapScript(scripts.join('\n'));
+  }, [injectMapScript]);
 
   // 아래 포커스 effect 의 __selectPlaceMarker 보다 먼저 돌아야 새 데이터에서 찾는다.
   useEffect(() => {
     syncMapPage();
-  }, [mapData, userLocation, syncMapPage]);
+  }, [mapData, userLocation, bottomInset, syncMapPage]);
 
   const handleMapLoadStart = useCallback(() => {
     mapPageReadyRef.current = false;
     sentRef.current = { ...bakedRef.current };
+    setRegionTrail([]);
   }, []);
 
-  const expandedPanelHeight = Math.round(
-    (mapFrameHeight || screenHeight) * 0.9,
-  );
-  const collapsedPanelHeight = 42;
-  const panelRange = expandedPanelHeight - collapsedPanelHeight;
-  const panelHeight = panelAnimation.interpolate({
-    inputRange: [0, 1],
-    outputRange: [collapsedPanelHeight, expandedPanelHeight],
-  });
+  const isPanelExpandedRef = useRef(isPanelExpanded);
+  isPanelExpandedRef.current = isPanelExpanded;
+  const panelRangeRef = useRef(panelRange);
+  panelRangeRef.current = panelRange;
 
   const animatePanelTo = useCallback(
     (expanded: boolean) => {
@@ -1007,7 +1307,7 @@ export default function MapScreen() {
         toValue: expanded ? 1 : 0,
         duration: 280,
         easing: Easing.out(Easing.cubic),
-        useNativeDriver: false,
+        useNativeDriver: true,
       }).start();
     },
     [panelAnimation],
@@ -1020,15 +1320,28 @@ export default function MapScreen() {
     );
   };
 
+  const selectPlaceMarker = useCallback(
+    (placeId: number) => {
+      injectMapScript(
+        `if (window.__selectPlaceMarker) window.__selectPlaceMarker(${JSON.stringify(
+          placeId,
+        )});`,
+      );
+    },
+    [injectMapScript],
+  );
+
   const handleMessage = (event: MapMessageEvent) => {
     try {
       const parsed = JSON.parse(event.nativeEvent.data) as WebMessagePayload;
 
-      if (parsed.type === 'marker' && parsed.payload) {
+      if (parsed.type === 'marker' && parsed.placeId != null) {
+        const place = placesById.get(Number(parsed.placeId));
+        if (!place) return;
         pendingFocusPlaceIdRef.current = null;
-        selectedPlaceIdRef.current = parsed.payload.placeId;
+        selectedPlaceIdRef.current = place.placeId;
         setMapError('');
-        setSelectedPlace(parsed.payload);
+        setSelectedPlace(place);
         animatePanelTo(true);
         return;
       }
@@ -1038,17 +1351,20 @@ export default function MapScreen() {
         return;
       }
 
+      if (parsed.type === 'regionTrail') {
+        setRegionTrail(parsed.trail ?? []);
+        return;
+      }
+
       if (parsed.type === 'ready') {
         setMapError('');
         // 페이지가 막 뜬 경우, 로딩 중에 바뀐 데이터·위치를 지금 넣는다.
-        // 새 데이터를 넣었다면 이 메시지의 목록은 옛 데이터 기준이니 다음 ready 를 기다린다.
-        let staleList = false;
         if (!mapPageReadyRef.current) {
           mapPageReadyRef.current = true;
-          staleList = sentRef.current.mapData !== latestMapDataRef.current;
           syncMapPage();
         }
-        if (!staleList) {
+        // 새 데이터를 넣었다면 이 메시지의 목록은 옛 데이터 기준이니 다음 ready 를 기다린다.
+        if (parsed.version === sentRef.current.version) {
           const ids = parsed.visiblePlaceIds ?? [];
           const key = ids.join(',');
           if (key !== visiblePlaceKeyRef.current) {
@@ -1064,14 +1380,7 @@ export default function MapScreen() {
         if (pendingFocusPlaceIdRef.current) {
           const pendingFocusPlaceId = pendingFocusPlaceIdRef.current;
           pendingFocusPlaceIdRef.current = null;
-          webViewRef.current?.injectJavaScript(`
-            if (window.__selectPlaceMarker) {
-              window.__selectPlaceMarker(${JSON.stringify(
-                pendingFocusPlaceId,
-              )});
-            }
-            true;
-          `);
+          selectPlaceMarker(pendingFocusPlaceId);
         }
         return;
       }
@@ -1098,12 +1407,19 @@ export default function MapScreen() {
   };
 
   const handleMoveToUserLocation = () => {
-    webViewRef.current?.injectJavaScript(`
-      if (window.__moveToUserLocation) {
-        window.__moveToUserLocation();
-      }
-      true;
-    `);
+    injectMapScript('if (window.__moveToUserLocation) window.__moveToUserLocation();');
+  };
+
+  const handleZoom = (delta: 1 | -1) => {
+    injectMapScript(`if (window.__zoomBy) window.__zoomBy(${delta});`);
+  };
+
+  const handleRegionTrailPress = (item: RegionTrailItem) => {
+    injectMapScript(
+      `if (window.__fitRegion) window.__fitRegion(${item.depth}, ${JSON.stringify(
+        item.regionId,
+      )});`,
+    );
   };
 
   const handlePlacePress = useCallback(
@@ -1112,53 +1428,88 @@ export default function MapScreen() {
       selectedPlaceIdRef.current = place.placeId;
       setSelectedPlace(place);
       animatePanelTo(true);
-      webViewRef.current?.injectJavaScript(`
-        if (window.__selectPlaceMarker) {
-          window.__selectPlaceMarker(${JSON.stringify(place.placeId)});
-        }
-        true;
-      `);
+      selectPlaceMarker(place.placeId);
     },
-    [animatePanelTo],
+    [animatePanelTo, selectPlaceMarker],
   );
 
   useEffect(() => {
     const focusPlaceId = route.params?.focusPlaceId;
-    if (!focusPlaceId || !mapData?.details) return;
+    if (!focusPlaceId) return;
 
-    const detail = Object.values(mapData.details).find(
-      (item: any) => Number(item?.placeId) === Number(focusPlaceId),
-    );
-    if (!detail) return;
+    const focusKey = `${focusPlaceId}-${route.params?.focusNonce ?? ''}`;
+    if (consumedFocusKeyRef.current === focusKey) return;
+
+    // 데이터가 아직 없으면 도착했을 때 다시 시도한다.
+    const place = placesById.get(Number(focusPlaceId));
+    if (!place) return;
+    consumedFocusKeyRef.current = focusKey;
 
     pendingFocusPlaceIdRef.current = focusPlaceId;
     selectedPlaceIdRef.current = focusPlaceId;
-    setSelectedPlace(normalizeSelectedPlace(detail));
+    setSelectedPlace(place);
     animatePanelTo(true);
-    webViewRef.current?.injectJavaScript(`
-      if (window.__selectPlaceMarker) {
-        window.__selectPlaceMarker(${JSON.stringify(focusPlaceId)});
-      }
-      true;
-    `);
+    selectPlaceMarker(focusPlaceId);
   }, [
     animatePanelTo,
-    mapData,
+    placesById,
     route.params?.focusNonce,
     route.params?.focusPlaceId,
+    selectPlaceMarker,
   ]);
 
-  const handleBackToPlaceList = () => {
+  const handleBackToPlaceList = useCallback(() => {
     selectedPlaceIdRef.current = null;
     pendingFocusPlaceIdRef.current = null;
     setSelectedPlace(null);
-    webViewRef.current?.injectJavaScript(`
-      if (window.__clearSelectedPlaceMarker) {
-        window.__clearSelectedPlaceMarker();
-      }
-      true;
-    `);
-  };
+    injectMapScript(
+      'if (window.__clearSelectedPlaceMarker) window.__clearSelectedPlaceMarker();',
+    );
+  }, [injectMapScript]);
+
+  // 안드로이드 뒤로가기는 상세 → 목록, 접근성 안내 닫기 순으로 먼저 소비한다.
+  // 모달(신고·사진)은 각 Modal 의 onRequestClose 가 처리한다.
+  const backStateRef = useRef({ selectedPlace, isAccessibilityInfoVisible });
+  backStateRef.current = { selectedPlace, isAccessibilityInfoVisible };
+  useFocusEffect(
+    useCallback(() => {
+      const subscription = BackHandler.addEventListener(
+        'hardwareBackPress',
+        () => {
+          if (backStateRef.current.isAccessibilityInfoVisible) {
+            setIsAccessibilityInfoVisible(false);
+            return true;
+          }
+          if (backStateRef.current.selectedPlace) {
+            handleBackToPlaceList();
+            return true;
+          }
+          return false;
+        },
+      );
+      return () => subscription.remove();
+    }, [handleBackToPlaceList]),
+  );
+
+  // 내 위치가 대전 안일 때만 목록에 거리를 붙인다.
+  const distanceOrigin = useMemo(
+    () => (userLocation && isInDaejeon(userLocation) ? userLocation : null),
+    [userLocation],
+  );
+  const renderPlaceItem = useCallback(
+    ({ item }: { item: SelectedPlace }) => (
+      <PlaceListItem
+        place={item}
+        distanceText={
+          distanceOrigin && item.coords
+            ? formatDistance(getDistanceMeters(distanceOrigin, item.coords))
+            : null
+        }
+        onPress={handlePlacePress}
+      />
+    ),
+    [distanceOrigin, handlePlacePress],
+  );
 
   const handleChangeShelterImage = (
     shelterId: number,
@@ -1283,47 +1634,77 @@ export default function MapScreen() {
     setIsAccessibilityInfoVisible(false);
   };
 
-  const panelPanResponder = useMemo(
-    () =>
-      PanResponder.create({
-        onStartShouldSetPanResponder: () => true,
-        onStartShouldSetPanResponderCapture: () => true,
-        onMoveShouldSetPanResponder: (_, gestureState) =>
-          Math.abs(gestureState.dy) > 6 &&
-          Math.abs(gestureState.dy) > Math.abs(gestureState.dx),
-        onMoveShouldSetPanResponderCapture: (_, gestureState) =>
-          Math.abs(gestureState.dy) > 6 &&
-          Math.abs(gestureState.dy) > Math.abs(gestureState.dx),
-        onPanResponderGrant: () => {
-          panelDragStartRef.current = isPanelExpanded ? 1 : 0;
-        },
-        onPanResponderMove: (_, gestureState) => {
-          const nextValue =
-            panelDragStartRef.current - gestureState.dy / panelRange;
-          panelAnimation.setValue(Math.max(0, Math.min(1, nextValue)));
-        },
-        onPanResponderRelease: (_, gestureState) => {
-          if (
-            Math.abs(gestureState.dy) <= 6 &&
-            Math.abs(gestureState.dx) <= 6
-          ) {
-            animatePanelTo(!isPanelExpanded);
-            return;
-          }
+  // 펼침 상태·이동 범위는 ref 로 읽어서, 펼칠 때마다 PanResponder 를 새로 만들지 않는다.
+  const panelPanResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onStartShouldSetPanResponderCapture: () => true,
+      onMoveShouldSetPanResponder: (_, gestureState) =>
+        Math.abs(gestureState.dy) > 6 &&
+        Math.abs(gestureState.dy) > Math.abs(gestureState.dx),
+      onMoveShouldSetPanResponderCapture: (_, gestureState) =>
+        Math.abs(gestureState.dy) > 6 &&
+        Math.abs(gestureState.dy) > Math.abs(gestureState.dx),
+      onPanResponderGrant: () => {
+        panelDragStartRef.current = isPanelExpandedRef.current ? 1 : 0;
+      },
+      onPanResponderMove: (_, gestureState) => {
+        const nextValue =
+          panelDragStartRef.current - gestureState.dy / panelRangeRef.current;
+        panelAnimation.setValue(Math.max(0, Math.min(1, nextValue)));
+      },
+      onPanResponderRelease: (_, gestureState) => {
+        if (
+          Math.abs(gestureState.dy) <= 6 &&
+          Math.abs(gestureState.dx) <= 6
+        ) {
+          animatePanelTo(!isPanelExpandedRef.current);
+          return;
+        }
 
-          const shouldExpand =
-            gestureState.vy < -0.35 ||
-            (gestureState.vy <= 0.35 &&
-              panelDragStartRef.current - gestureState.dy / panelRange > 0.45);
-          animatePanelTo(shouldExpand);
-        },
-        onPanResponderTerminate: () => {
-          animatePanelTo(isPanelExpanded);
-        },
-        onShouldBlockNativeResponder: () => false,
-      }),
-    [animatePanelTo, isPanelExpanded, panelAnimation, panelRange],
+        const shouldExpand =
+          gestureState.vy < -0.35 ||
+          (gestureState.vy <= 0.35 &&
+            panelDragStartRef.current -
+              gestureState.dy / panelRangeRef.current >
+              0.45);
+        animatePanelTo(shouldExpand);
+      },
+      onPanResponderTerminate: () => {
+        animatePanelTo(isPanelExpandedRef.current);
+      },
+      onShouldBlockNativeResponder: () => false,
+    }),
+  ).current;
+
+  // 줌·내 위치 버튼은 패널 윗변을 따라 올라가고, 패널 위에 남은 자리가 모자라면 숨긴다.
+  const mapControlCount = userLocation ? 3 : 2;
+  const mapControlsHeight =
+    mapControlCount * MAP_CONTROL_SIZE + (mapControlCount - 1) * MAP_CONTROL_GAP;
+  const mapControlsTranslateY = panelAnimation.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, -panelRange],
+  });
+  const mapControlsHideAt = Math.min(
+    1,
+    Math.max(
+      0,
+      ((mapFrameHeight || screenHeight) -
+        collapsedPanelHeight -
+        mapControlsHeight -
+        MAP_CONTROL_MARGIN * 2) /
+        Math.max(1, panelRange),
+    ),
   );
+  const mapControlsOpacity = panelAnimation.interpolate({
+    inputRange:
+      mapControlsHideAt > 0.05
+        ? [0, mapControlsHideAt - 0.05, mapControlsHideAt]
+        : [0, 1],
+    outputRange: mapControlsHideAt > 0.05 ? [1, 1, 0] : [0, 0],
+    extrapolate: 'clamp',
+  });
+  const areMapControlsVisible = !isPanelExpanded && mapControlsHideAt > 0.05;
 
   return (
     <Screen edges={['top', 'left', 'right']}>
@@ -1347,6 +1728,8 @@ export default function MapScreen() {
             javaScriptEnabled
             domStorageEnabled
             startInLoadingState
+            // 지도 팬·줌을 GPU 레이어에서 합성한다. 기기에서 깜빡임이 보이면 이 줄을 뺀다.
+            androidLayerType="hardware"
             onError={() => setMapError('로드에 실패했습니다.')}
             renderLoading={() => (
               <LoadingBox>
@@ -1359,11 +1742,75 @@ export default function MapScreen() {
             카카오 지도 키가 없어 지도를 표시할 수 없습니다.
           </EmptyText>
         )}
+
+        {regionTrail.length ? (
+          <RegionTrailRow>
+            {regionTrail.map((item, index) => (
+              <RegionTrailItemView key={`${item.depth}-${item.regionId}`}>
+                {index > 0 ? (
+                  <ChevronRight color="#6b7280" size={14} strokeWidth={2.6} />
+                ) : null}
+                <RegionTrailChip
+                  $current={index === regionTrail.length - 1}
+                  onPress={() => handleRegionTrailPress(item)}
+                >
+                  <RegionTrailText $current={index === regionTrail.length - 1}>
+                    {item.name}
+                  </RegionTrailText>
+                </RegionTrailChip>
+              </RegionTrailItemView>
+            ))}
+          </RegionTrailRow>
+        ) : null}
+
+        {/* 필터를 바꾸는 동안 화면 전체를 덮지 않고 지도 귀퉁이에만 표시한다. */}
+        {isMapFetching ? (
+          <MapFetchingBadge>
+            <ActivityIndicator color="#2563eb" size="small" />
+          </MapFetchingBadge>
+        ) : null}
       </MapFrame>
 
       {mapError ? <ErrorText>{mapError}</ErrorText> : null}
 
-      <BottomPanel style={{ height: panelHeight }}>
+      {mapHtml ? (
+        <MapControls
+          pointerEvents={areMapControlsVisible ? 'box-none' : 'none'}
+          style={{
+            bottom: collapsedPanelHeight + MAP_CONTROL_MARGIN,
+            opacity: mapControlsOpacity,
+            transform: [{ translateY: mapControlsTranslateY }],
+          }}
+        >
+          <MapControlButton
+            accessibilityLabel="확대"
+            onPress={() => handleZoom(-1)}
+          >
+            <Plus color="#111827" size={20} strokeWidth={2.6} />
+          </MapControlButton>
+          <MapControlButton
+            accessibilityLabel="축소"
+            onPress={() => handleZoom(1)}
+          >
+            <Minus color="#111827" size={20} strokeWidth={2.6} />
+          </MapControlButton>
+          {userLocation ? (
+            <MapControlButton
+              accessibilityLabel={t('map.labels.nearbyLocation')}
+              onPress={handleMoveToUserLocation}
+            >
+              <LocateFixed color="#2563eb" size={20} strokeWidth={2.6} />
+            </MapControlButton>
+          ) : null}
+        </MapControls>
+      ) : null}
+
+      <BottomPanel
+        style={{
+          height: expandedPanelHeight,
+          transform: [{ translateY: panelTranslateY }],
+        }}
+      >
         <PanelHandleButton {...panelPanResponder.panHandlers}>
           <PanelHandleBar />
         </PanelHandleButton>
@@ -1553,9 +2000,7 @@ export default function MapScreen() {
                 style={placeListStyle}
                 data={visiblePlaces}
                 keyExtractor={placeKeyExtractor}
-                renderItem={({ item }) => (
-                  <PlaceListItem place={item} onPress={handlePlacePress} />
-                )}
+                renderItem={renderPlaceItem}
                 initialNumToRender={12}
                 windowSize={7}
                 showsVerticalScrollIndicator={false}
@@ -1886,6 +2331,7 @@ export default function MapScreen() {
 const Screen = styled(SafeAreaView)`
   flex: 1;
   position: relative;
+  overflow: hidden;
   background-color: #f4f7fb;
 `;
 
@@ -1920,6 +2366,77 @@ const ErrorText = styled.Text`
   color: #dc2626;
   font-size: 13px;
   font-weight: 600;
+`;
+
+const RegionTrailRow = styled.View`
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  right: 56px;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px;
+`;
+
+const RegionTrailItemView = styled.View`
+  flex-direction: row;
+  align-items: center;
+  gap: 2px;
+`;
+
+const RegionTrailChip = styled.TouchableOpacity<{ $current: boolean }>`
+  padding: 6px 10px;
+  border-radius: 999px;
+  background-color: ${({ $current }) => ($current ? '#2563eb' : '#ffffff')};
+  shadow-color: #111827;
+  shadow-opacity: 0.12;
+  shadow-radius: 6px;
+  shadow-offset: 0 2px;
+  elevation: 3;
+`;
+
+const RegionTrailText = styled.Text<{ $current: boolean }>`
+  color: ${({ $current }) => ($current ? '#ffffff' : '#111827')};
+  font-size: 12px;
+  font-weight: 700;
+`;
+
+const MapFetchingBadge = styled.View`
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 36px;
+  height: 36px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background-color: #ffffff;
+  elevation: 3;
+`;
+
+const MAP_CONTROL_SIZE = 40;
+const MAP_CONTROL_GAP = 8;
+const MAP_CONTROL_MARGIN = 12;
+
+const MapControls = styled(Animated.View)`
+  position: absolute;
+  right: 24px;
+  gap: ${MAP_CONTROL_GAP}px;
+`;
+
+const MapControlButton = styled.TouchableOpacity.attrs({ activeOpacity: 0.6 })`
+  width: ${MAP_CONTROL_SIZE}px;
+  height: ${MAP_CONTROL_SIZE}px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background-color: #ffffff;
+  shadow-color: #111827;
+  shadow-opacity: 0.14;
+  shadow-radius: 6px;
+  shadow-offset: 0 2px;
+  elevation: 4;
 `;
 
 const BottomPanel = styled(Animated.View)`
@@ -2102,10 +2619,23 @@ const PlaceItem = styled.Pressable`
   border-bottom-color: #eef2f7;
 `;
 
+const PlaceTitleRow = styled.View`
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+`;
+
 const PlaceName = styled.Text`
+  flex-shrink: 1;
   color: #111827;
   font-size: 15px;
   font-weight: 800;
+`;
+
+const PlaceDistance = styled.Text`
+  color: #2563eb;
+  font-size: 13px;
+  font-weight: 700;
 `;
 
 const PlaceAddress = styled.Text`
