@@ -20,12 +20,25 @@ const api = axios.create({
 // 동시에 여러 요청이 401을 맞아도 refresh는 한 번만 돌도록 공유하는 단일 Promise 락.
 let refreshing: Promise<string | null> | null = null;
 
+// 앱 시작 시 첫 화면이 이 호출을 기다리므로 짧게 끊는다. 실패하면 비로그인 상태로 진입한다.
+const REFRESH_TIMEOUT_MS = 5000;
+
 /**
  * Keychain의 refresh token으로 새 access token을 발급받아 세션에 반영한다.
  * 앱 부팅 시 세션 복원, 그리고 401 응답 시 자동 재발급 두 경로에서 쓰인다.
- * 인터셉터 재귀를 피하려고 raw axios로 호출한다.
+ * 두 경로가 겹쳐도 같은 refresh token으로 두 번 요청하지 않도록 락을 여기서 건다.
  */
-export async function refreshAccessToken(): Promise<string | null> {
+export function refreshAccessToken(): Promise<string | null> {
+  if (!refreshing) {
+    refreshing = requestRefresh().finally(() => {
+      refreshing = null;
+    });
+  }
+  return refreshing;
+}
+
+// 인터셉터 재귀를 피하려고 raw axios로 호출한다.
+async function requestRefresh(): Promise<string | null> {
   const rt = await getRefreshToken();
   if (!rt) return null;
 
@@ -33,6 +46,7 @@ export async function refreshAccessToken(): Promise<string | null> {
     const { data } = await axios.post<AuthResponse>('/api/refresh', null, {
       baseURL: api.defaults.baseURL,
       headers: { 'X-Refresh-Token': rt },
+      timeout: REFRESH_TIMEOUT_MS,
     });
     if (!data?.token) {
       await clearSession();
@@ -45,8 +59,6 @@ export async function refreshAccessToken(): Promise<string | null> {
       await clearSession();
     }
     return null;
-  } finally {
-    refreshing = null;
   }
 }
 
@@ -88,8 +100,7 @@ api.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    if (!refreshing) refreshing = refreshAccessToken();
-    const newToken = await refreshing;
+    const newToken = await refreshAccessToken();
     if (!newToken) return Promise.reject(error);
 
     // 재시도. Authorization은 요청 인터셉터가 새 토큰으로 다시 붙인다.

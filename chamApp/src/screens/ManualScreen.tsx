@@ -72,6 +72,12 @@ export default function ManualScreen() {
   const manualDetail = useManualStore(state => state.manualDetail);
   const clearManualDetail = useManualStore(state => state.clearManualDetail);
   const [page, setPage] = useState(1);
+  // source 객체가 렌더마다 새로 생기면 WebView 가 본문을 다시 읽는다.
+  const manualDetailContent = manualDetail?.content;
+  const manualDetailSource = useMemo(
+    () => ({ html: buildManualHtml(manualDetailContent) }),
+    [manualDetailContent],
+  );
 
   const totalPages = Math.max(1, Math.ceil(manuals.length / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
@@ -213,7 +219,7 @@ export default function ManualScreen() {
             <ManualWebViewFrame>
               <WebView
                 originWhitelist={['*']}
-                source={{ html: buildManualHtml(manualDetail?.content) }}
+                source={manualDetailSource}
                 javaScriptEnabled
                 domStorageEnabled
                 nestedScrollEnabled

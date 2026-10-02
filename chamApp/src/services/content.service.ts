@@ -31,20 +31,8 @@ export function useFetchContents() {
       () =>
         api
           .get('/api/contents/')
-          .then(res => {
-            const contents = res.data.data as Content[];
-            console.log('[contents] response', contents);
-            console.log(
-              '[contents] IN_APP_POPUP',
-              contents.filter(content => content.contentType === 'IN_APP_POPUP'),
-            );
-            return contents;
-          })
-          .then(withImageUrls)
-          .then(contents => {
-            console.log('[contents] with image urls', contents);
-            return contents;
-          }),
+          .then(res => res.data.data as Content[])
+          .then(withImageUrls),
       setContents,
       {
         ignoreErrorRedirect: true,

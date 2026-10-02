@@ -173,11 +173,13 @@ export default function MoreScreen() {
           if (!ignore) setReports(data);
         })
         .catch(error => {
-          console.log('[my-reports] fetch failed', {
-            status: error?.response?.status,
-            data: error?.response?.data,
-            message: error?.message,
-          });
+          if (__DEV__) {
+            console.log('[my-reports] fetch failed', {
+              status: error?.response?.status,
+              data: error?.response?.data,
+              message: error?.message,
+            });
+          }
         })
         .finally(() => {
           if (!ignore) setReportsLoading(false);
@@ -195,11 +197,13 @@ export default function MoreScreen() {
       const detail = await fetchMyShelterReportDetail(reportId);
       setSelectedReport(detail);
     } catch (error: any) {
-      console.log('[my-reports] detail failed', {
-        status: error?.response?.status,
-        data: error?.response?.data,
-        message: error?.message,
-      });
+      if (__DEV__) {
+        console.log('[my-reports] detail failed', {
+          status: error?.response?.status,
+          data: error?.response?.data,
+          message: error?.message,
+        });
+      }
       alert(error?.response?.data?.message ?? t('moreReports.detailFailed'));
     } finally {
       setReportDetailLoading(false);
@@ -341,11 +345,13 @@ export default function MoreScreen() {
       setIsFeedbackVisible(false);
       alert('피드백이 접수되었습니다.');
     } catch (error: any) {
-      console.log('[feedback] submit failed', {
-        status: error?.response?.status,
-        data: error?.response?.data,
-        message: error?.message,
-      });
+      if (__DEV__) {
+        console.log('[feedback] submit failed', {
+          status: error?.response?.status,
+          data: error?.response?.data,
+          message: error?.message,
+        });
+      }
       alert(error?.response?.data?.message ?? '피드백 제출에 실패했습니다.');
     } finally {
       setIsFeedbackSubmitting(false);

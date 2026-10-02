@@ -38,7 +38,6 @@ export default function MapSearchFilters({
     state => state.toggleAccessibility,
   );
   const openAccessibilityInfo = () => {
-    console.log('[accessibility-info] open pressed');
     onPressAccessibilityInfo?.();
   };
   const visibleAccessibilityOptions = useMemo(

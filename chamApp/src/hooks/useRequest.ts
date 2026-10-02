@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback } from 'react';
-import { AxiosError } from 'axios';
+import axios, { AxiosError } from 'axios';
 import { useLoadingStore } from '../store/loading';
 import { useDialogUtil } from '../utils/dialog';
 
@@ -28,6 +28,9 @@ export function useRequest() {
         onSuccess?.(data);
         return data;
       } catch (error) {
+        // 더 새로운 요청이 이 요청을 취소한 경우다. 오류가 아니므로 알리지 않는다.
+        if (axios.isCancel(error)) return undefined;
+
         const err = error as AxiosError<any>;
 
         if (options?.ignoreErrorRedirect) {
