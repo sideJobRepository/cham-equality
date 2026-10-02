@@ -8,3 +8,7 @@
 #   http://developer.android.com/guide/developing/tools/proguard.html
 
 # Add any project specific keep options here:
+
+# react-native-config 는 BuildConfig 필드를 리플렉션으로 읽는다.
+# 이 규칙이 없으면 R8 이 필드를 지워 릴리스 빌드에서만 .env 값이 비어 버린다.
+-keep class kr.or.cham.equality.BuildConfig { *; }

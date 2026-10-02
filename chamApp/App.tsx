@@ -5,6 +5,7 @@ import styled from 'styled-components/native';
 import AppNavigator from './src/navigation/AppNavigator';
 import { refreshAccessToken } from './src/lib/axiosInstance';
 import { DialogProvider } from './src/utils/dialog';
+import { useInAppUpdate } from './src/hooks/useInAppUpdate';
 
 function App() {
   const [sessionRestored, setSessionRestored] = useState(false);
@@ -20,6 +21,7 @@ function App() {
     <SafeAreaProvider>
       <StatusBar backgroundColor="#ffffff" barStyle="dark-content" />
       <DialogProvider>
+        <InAppUpdateChecker />
         {sessionRestored ? (
           <AppNavigator />
         ) : (
@@ -30,6 +32,12 @@ function App() {
       </DialogProvider>
     </SafeAreaProvider>
   );
+}
+
+// 업데이트 안내는 공통 다이얼로그를 쓰므로 DialogProvider 안쪽에서 돌아야 한다.
+function InAppUpdateChecker() {
+  useInAppUpdate();
+  return null;
 }
 
 export default App;

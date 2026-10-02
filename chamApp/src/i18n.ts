@@ -10,6 +10,10 @@ const resources = {
         cancel: '취소',
         close: '닫기',
       },
+      update: {
+        readyTitle: '업데이트 준비 완료',
+        readyDescription: '새 버전을 받아 두었습니다. 지금 다시 시작해 적용할까요?',
+      },
       tabs: {
         home: '홈',
         map: '지도',
@@ -145,6 +149,10 @@ const resources = {
         ok: 'OK',
         cancel: 'Cancel',
         close: 'Close',
+      },
+      update: {
+        readyTitle: 'Update ready',
+        readyDescription: 'A new version has been downloaded. Restart now to apply it?',
       },
       tabs: {
         home: 'Home',
@@ -283,6 +291,10 @@ const resources = {
         cancel: '取消',
         close: '关闭',
       },
+      update: {
+        readyTitle: '更新已就绪',
+        readyDescription: '新版本已下载完成。现在重启以应用更新吗？',
+      },
       tabs: {
         home: '首页',
         map: '地图',
@@ -417,6 +429,10 @@ const resources = {
         ok: '確認',
         cancel: 'キャンセル',
         close: '閉じる',
+      },
+      update: {
+        readyTitle: 'アップデートの準備完了',
+        readyDescription: '新しいバージョンをダウンロードしました。今すぐ再起動して適用しますか？',
       },
       tabs: {
         home: 'ホーム',
@@ -554,6 +570,10 @@ const resources = {
         ok: 'OK',
         cancel: 'Hủy',
         close: 'Đóng',
+      },
+      update: {
+        readyTitle: 'Bản cập nhật đã sẵn sàng',
+        readyDescription: 'Phiên bản mới đã được tải xuống. Khởi động lại ngay để áp dụng?',
       },
       tabs: {
         home: 'Trang chủ',
