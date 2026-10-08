@@ -8,7 +8,7 @@ import com.facebook.react.uimanager.ViewManager
 @Suppress("OVERRIDE_DEPRECATION")
 class ChamLocationPackage : ReactPackage {
   override fun createNativeModules(reactContext: ReactApplicationContext): List<NativeModule> =
-    listOf(ChamLocationModule(reactContext))
+    listOf(ChamLocationModule(reactContext), ChamSplashModule(reactContext))
 
   override fun createViewManagers(reactContext: ReactApplicationContext): List<ViewManager<*, *>> =
     emptyList()

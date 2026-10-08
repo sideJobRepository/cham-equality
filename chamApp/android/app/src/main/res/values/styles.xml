@@ -6,4 +6,12 @@
         <item name="android:editTextBackground">@drawable/rn_edit_text_material</item>
     </style>
 
+    <!-- 앱을 켤 때 JS 가 뜨기 전까지 보이는 스플래시. 연한 하늘색 배경 + 앱 로고·"모두의 안전"을 합친 이미지.
+         JS 쪽 SplashOverlay 가 같은 자리에 같은 이미지를 그린 뒤 이어받는다. (하단 단체 로고는 values-v31) -->
+    <style name="Theme.App.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/splash_background</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_icon</item>
+        <item name="postSplashScreenTheme">@style/AppTheme</item>
+    </style>
+
 </resources>

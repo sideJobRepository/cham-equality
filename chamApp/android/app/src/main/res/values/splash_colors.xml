@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- JS 의 SplashOverlay(SPLASH_BACKGROUND) 와 같은 값이어야 넘어갈 때 색이 튀지 않는다 -->
+<resources>
+    <color name="splash_background">#EAF4FF</color>
+</resources>

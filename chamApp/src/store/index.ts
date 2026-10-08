@@ -10,3 +10,4 @@ export * from './nearestShelter';
 export * from './shelterReport';
 export * from './manual';
 export * from './content';
+export * from './splash';

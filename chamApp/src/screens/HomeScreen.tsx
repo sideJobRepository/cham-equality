@@ -23,6 +23,7 @@ import {
   useDisasterStore,
   useNearestShelterStore,
   useSMSStore,
+  useSplashStore,
 } from '../store';
 import type { NearestShelter } from '../store/nearestShelter.ts';
 import {
@@ -117,6 +118,7 @@ export default function HomeScreen() {
   const contents = useContentStore(state => state.contents);
   const disasterData = useDisasterStore(state => state.disaster);
   const nearestShelter = useNearestShelterStore(state => state.nearestShelter);
+  const splashDone = useSplashStore(state => state.done);
   const popupContent =
     contents.find(content => content.contentType === 'IN_APP_POPUP') ?? null;
   const disasterSummary = disasterData?.summary?.slice(0, 3) ?? [];
@@ -162,9 +164,11 @@ export default function HomeScreen() {
   };
 
   useEffect(() => {
+    // 스플래시가 걷히기 전에 띄우면 스플래시 위로 팝업이 먼저 튀어나온다.
+    if (!splashDone) return;
     if (!popupContent || dismissedNoticeId === popupContent.id) return;
     setIsNoticeModalVisible(true);
-  }, [dismissedNoticeId, popupContent]);
+  }, [dismissedNoticeId, popupContent, splashDone]);
 
   return (
     <Screen edges={['top', 'left', 'right']}>
