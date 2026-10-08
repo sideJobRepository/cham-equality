@@ -95,7 +95,9 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         // CI에서 -PappVersionCode=<github.run_number>로 넘겨 자동 증가시킨다(중복 방지). 로컬은 1.
         versionCode (project.hasProperty('appVersionCode') ? project.property('appVersionCode').toInteger() : 1)
-        versionName "1.0"
+        // 사용자에게 보이는 버전. 큰 변경 때만 앞자리("1.0")를 직접 올리고, CI 빌드는 뒤에 versionCode 를 붙여
+        // Play 콘솔·피드백(appVersion)에서 어느 빌드인지 바로 구분되게 한다. 로컬은 "1.0".
+        versionName "1.0" + (project.hasProperty('appVersionCode') ? "." + project.property('appVersionCode') : "")
 
         // 카카오 URL scheme — AuthCodeHandlerActivity의 intent-filter에서 사용
         def kakaoAppKey = project.env.get("KAKAO_NATIVE_APP_KEY") ?: ""
