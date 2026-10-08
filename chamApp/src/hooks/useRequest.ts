@@ -4,10 +4,13 @@ import { useCallback } from 'react';
 import axios, { AxiosError } from 'axios';
 import { useLoadingStore } from '../store/loading';
 import { useDialogUtil } from '../utils/dialog';
+import i18n from '../i18n';
 
 interface RequestOptions {
   ignoreErrorRedirect?: boolean;
   disableLoading?: boolean;
+  // 화면에서 오류를 직접 보여주는 호출은 공통 알림을 끈다(같은 오류가 두 번 뜨지 않게).
+  disableAlert?: boolean;
 }
 
 export function useRequest() {
@@ -33,7 +36,7 @@ export function useRequest() {
 
         const err = error as AxiosError<any>;
 
-        if (options?.ignoreErrorRedirect) {
+        if (options?.ignoreErrorRedirect && !options?.disableAlert) {
           const errData = err.response?.data;
 
           //벨리데이터 형식 에러 검증
@@ -43,7 +46,7 @@ export function useRequest() {
               .join('\n');
             alert(messages, undefined, { tone: 'error' });
           } else {
-            alert(err.response?.data?.message ?? '오류가 발생했습니다.', undefined, {
+            alert(err.response?.data?.message ?? i18n.t('common.error'), undefined, {
               tone: 'error',
             });
           }

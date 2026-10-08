@@ -25,7 +25,8 @@ export default function CurrentLocationBar({
       ? address || t('map.location.addressChecking')
       : status === 'denied'
       ? t('map.location.permissionRequired')
-      : errorMessage || t('map.location.unavailable');
+      : // errorMessage 는 번역 키다(useCurrentLocation 참고).
+        t(errorMessage || 'map.location.unavailable');
 
   return (
     <HeaderRow>

@@ -6,6 +6,7 @@ import {
   Platform,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import i18nInstance from '../i18n';
 import { fetchReverseGeocoding } from '../services/geocoding.service.ts';
 import {
   type UserLocation,
@@ -42,38 +43,91 @@ function scheduleIdleTask(task: () => void) {
   return () => clearTimeout(timeout);
 }
 
-async function requestLocationPermission() {
-  if (Platform.OS !== 'android') return true;
+type PermissionResult = 'granted' | 'denied' | 'blocked' | null;
+
+async function requestLocationPermission(): Promise<PermissionResult> {
+  if (Platform.OS !== 'android') return 'granted';
 
   try {
     const hasPermission = await PermissionsAndroid.check(
       PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
     );
-    if (hasPermission) return true;
+    if (hasPermission) return 'granted';
 
     const result = await PermissionsAndroid.request(
       PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
       {
-        title: '위치 권한 필요',
-        message: '현재 위치 주변 대피소를 보여주기 위해 위치 권한이 필요합니다.',
-        buttonPositive: '허용',
-        buttonNegative: '거부',
+        title: i18nInstance.t('map.location.permissionDialogTitle'),
+        message: i18nInstance.t('map.location.permissionDialogMessage'),
+        buttonPositive: i18nInstance.t('map.location.allow'),
+        buttonNegative: i18nInstance.t('map.location.deny'),
       },
     );
 
-    return result === PermissionsAndroid.RESULTS.GRANTED;
+    if (result === PermissionsAndroid.RESULTS.GRANTED) return 'granted';
+    // '다시 묻지 않음'이면 시스템 창이 안 뜨므로 설정 화면으로 안내해야 한다.
+    if (result === PermissionsAndroid.RESULTS.NEVER_ASK_AGAIN) return 'blocked';
+    return 'denied';
   } catch {
     return null;
+  }
+}
+
+export type LocationLoadResult = 'granted' | 'denied' | 'blocked' | 'unavailable';
+
+// 권한 확인부터 좌표 저장까지. 홈 탭 포커스 때만 돌던 것을 지도 '내 위치' 버튼에서도 다시 부른다.
+export async function loadCurrentLocation(
+  isCancelled: () => boolean = () => false,
+): Promise<LocationLoadResult> {
+  const { setChecking, setDenied, setUnavailable, setLocation } =
+    useLocationStore.getState();
+  const permission = await requestLocationPermission();
+  if (isCancelled()) return 'unavailable';
+
+  // 오류 문구는 번역 키로 저장한다. CurrentLocationBar 가 t() 로 풀어서 언어를 바꿔도 따라간다.
+  if (permission === null) {
+    setUnavailable('map.location.permissionRetry');
+    return 'unavailable';
+  }
+
+  if (permission !== 'granted') {
+    setDenied();
+    return permission;
+  }
+
+  setChecking();
+
+  if (!ChamLocation) {
+    setUnavailable('');
+    return 'unavailable';
+  }
+
+  try {
+    const nativeLocation = await ChamLocation.getCurrentLocation();
+    if (isCancelled()) return 'unavailable';
+
+    if (!isKoreaLocation(nativeLocation)) {
+      setUnavailable('map.location.outsideKorea');
+      return 'unavailable';
+    }
+
+    setLocation(nativeLocation);
+    return 'granted';
+  } catch (error) {
+    // 네이티브 모듈 메시지는 한국어 고정이라 쓰지 않고 code 로만 나눈다(빈 값이면 기본 문구).
+    const code = (error as { code?: string } | null)?.code;
+    if (!isCancelled()) {
+      setUnavailable(
+        code === 'LOCATION_PROVIDER_DISABLED' ? 'map.location.providerDisabled' : '',
+      );
+    }
+    return 'unavailable';
   }
 }
 
 export function useCurrentLocation() {
   const { i18n } = useTranslation();
   const currentLocation = useLocationStore(state => state.location);
-  const setChecking = useLocationStore(state => state.setChecking);
-  const setDenied = useLocationStore(state => state.setDenied);
-  const setUnavailable = useLocationStore(state => state.setUnavailable);
-  const setLocation = useLocationStore(state => state.setLocation);
   const setAddress = useLocationStore(state => state.setAddress);
 
   useFocusEffect(
@@ -83,47 +137,7 @@ export function useCurrentLocation() {
       let cancelled = false;
 
       async function loadLocation() {
-        const granted = await requestLocationPermission();
-        if (cancelled) return;
-
-        if (granted === null) {
-          setUnavailable('위치 권한 요청을 다시 시도해 주세요');
-          return;
-        }
-
-        if (!granted) {
-          setDenied();
-          return;
-        }
-
-        setChecking();
-
-        if (!ChamLocation) {
-          setUnavailable('위치 모듈을 사용할 수 없습니다');
-          return;
-        }
-
-        try {
-          const nativeLocation = await ChamLocation.getCurrentLocation();
-          if (cancelled) return;
-
-          if (!isKoreaLocation(nativeLocation)) {
-            setUnavailable(
-              `현재 위치 좌표가 한국 범위 밖입니다 (${nativeLocation.lat.toFixed(
-                4,
-              )}, ${nativeLocation.lng.toFixed(4)})`,
-            );
-            return;
-          }
-
-          setLocation(nativeLocation);
-        } catch (error) {
-          const message =
-            error instanceof Error
-              ? error.message
-              : '현재 위치를 확인할 수 없습니다';
-          if (!cancelled) setUnavailable(message);
-        }
+        await loadCurrentLocation(() => cancelled);
       }
 
       const cancelIdleTask = scheduleIdleTask(() => {
@@ -134,13 +148,7 @@ export function useCurrentLocation() {
         cancelled = true;
         cancelIdleTask();
       };
-    }, [
-      currentLocation,
-      setChecking,
-      setDenied,
-      setLocation,
-      setUnavailable,
-    ]),
+    }, [currentLocation]),
   );
 
   useEffect(() => {

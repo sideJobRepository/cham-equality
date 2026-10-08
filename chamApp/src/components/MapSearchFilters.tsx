@@ -56,6 +56,10 @@ export default function MapSearchFilters({
                 key={item}
                 $selected={selectedShelterTypes.includes(item)}
                 $selectedColor={SHELTER_SELECTED_COLOR}
+                accessibilityRole="button"
+                accessibilityState={{
+                  selected: selectedShelterTypes.includes(item),
+                }}
                 onPress={() => toggleShelterType(item)}
               >
                 <FilterChipText $selected={selectedShelterTypes.includes(item)}>
@@ -71,6 +75,7 @@ export default function MapSearchFilters({
         <AccessibilityRow>
           {showAccessibilityAll ? (
             <InfoChip
+              accessibilityRole="button"
               onPress={openAccessibilityInfo}
               accessibilityLabel={t('map.accessibilityInfo.label')}
               hitSlop={8}
@@ -88,6 +93,8 @@ export default function MapSearchFilters({
                 key={item}
                 $selected={selected}
                 $selectedColor={ACCESSIBILITY_SELECTED_COLOR}
+                accessibilityRole="button"
+                accessibilityState={{ selected }}
                 onPress={() => toggleAccessibility(item)}
               >
                 <FilterChipText $selected={selected}>

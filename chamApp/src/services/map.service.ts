@@ -28,6 +28,7 @@ export function useFetchMap(options?: UseFetchMapOptions) {
   const { i18n } = useTranslation();
   const setMap = useMapStore(state => state.setMap);
   const setFetching = useMapStore(state => state.setFetching);
+  const setFetchError = useMapStore(state => state.setFetchError);
   const abortRef = useRef<AbortController | null>(null);
   const isFirstFetchRef = useRef(true);
 
@@ -37,6 +38,7 @@ export function useFetchMap(options?: UseFetchMapOptions) {
     const controller = new AbortController();
     abortRef.current = controller;
     setFetching(true);
+    setFetchError(false);
 
     request(
       () =>
@@ -51,16 +53,19 @@ export function useFetchMap(options?: UseFetchMapOptions) {
         ignoreErrorRedirect: true,
         // 필터 칩을 누를 때마다 화면 전체 로딩이 덮지 않게 한다. 지도 귀퉁이에 따로 표시한다.
         disableLoading: true,
+        // 실패는 지도 패널에 오류와 다시 시도 버튼으로 보여준다. 알림까지 띄우면 중복이다.
+        disableAlert: true,
       },
     )
       .catch(() => {
-        // 알림은 useRequest 가 띄운다.
+        // 취소된 요청은 useRequest 가 걸러 여기로 오지 않는다. 최신 요청의 실패만 표시한다.
+        if (abortRef.current === controller) setFetchError(true);
       })
       .finally(() => {
         // 더 새로운 요청이 이어받았으면 그 요청이 끝날 때 끈다.
         if (abortRef.current === controller) setFetching(false);
       });
-  }, [i18n.language, options?.body, request, setFetching, setMap]);
+  }, [i18n.language, options?.body, request, setFetchError, setFetching, setMap]);
 
   useEffect(() => {
     // 첫 진입은 바로, 이후 필터 변경은 잠깐 모아서 요청한다.
