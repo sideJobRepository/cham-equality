@@ -34,3 +34,11 @@
 # (매핑 파일은 AAB 에 자동 포함되어 Play 가 역난독화한다)
 -keepattributes SourceFile,LineNumberTable
 -renamesourcefileattribute SourceFile
+
+# 난독화된 클래스를 전부 루트 패키지 하나로 모아 DEX 를 더 줄인다. (Play Console "클래스 리패키징" 항목)
+# keep 규칙에 걸린 클래스는 원래 이름·패키지를 그대로 유지하므로 리플렉션 대상에는 영향이 없다.
+-repackageclasses
+
+# react-native-device-info 가 Install Referrer 클라이언트를 리플렉션으로 연다.
+# 난독화되면 시작 시 NoSuchMethodException 경고가 뜨므로 라이브러리 README 권장 규칙을 둔다.
+-keep class com.android.installreferrer.api.** { *; }
