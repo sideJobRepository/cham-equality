@@ -22,7 +22,6 @@ import {
 } from 'lucide-react-native';
 import { launchImageLibrary, type Asset } from 'react-native-image-picker';
 import LinearGradient from 'react-native-linear-gradient';
-import { getKeyHashAndroid } from '@react-native-kakao/core';
 import { useUserStore } from '../store/user';
 import {
   useKakaoLogin,
@@ -204,41 +203,31 @@ export default function MoreScreen() {
           message: error?.message,
         });
       }
-      alert(error?.response?.data?.message ?? t('moreReports.detailFailed'));
+      alert(
+        error?.response?.data?.message ?? t('moreReports.detailFailed'),
+        undefined,
+        { tone: 'error' },
+      );
     } finally {
       setReportDetailLoading(false);
     }
   };
 
   const onKakao = async () => {
-    const keyHash =
-      Platform.OS === 'android'
-        ? await getKeyHashAndroid().catch(error =>
-            error instanceof Error
-              ? `조회 실패: ${error.message}`
-              : '조회 실패',
-          )
-        : undefined;
-
     try {
       await kakaoLogin();
-      alert(t('auth.loginDone'));
+      alert(t('auth.loginDone'), undefined, { tone: 'success' });
     } catch (error) {
-      let message =
-        error instanceof Error
-          ? error.message
-          : '카카오 로그인에 실패했습니다.';
-      if (Platform.OS === 'android') {
-        message = `${message}\n\nAndroid key hash:\n${keyHash || '값 없음'}`;
-      }
-      alert(message);
+      const message =
+        error instanceof Error ? error.message : t('auth.kakaoLoginFailed');
+      alert(message, undefined, { tone: 'error' });
     }
   };
 
   const onNaver = async () => {
     try {
       await naverLogin();
-      alert(t('auth.loginDone'));
+      alert(t('auth.loginDone'), undefined, { tone: 'success' });
     } catch (error) {
       if (error instanceof Error && error.message === 'NAVER_LOGIN_CANCELLED') {
         return;
@@ -246,38 +235,39 @@ export default function MoreScreen() {
       const message =
         error instanceof Error
           ? error.message
-          : '네이버 로그인에 실패했습니다.';
-      alert(message);
+          : t('auth.naverLoginFailed');
+      alert(message, undefined, { tone: 'error' });
     }
   };
 
   const onApple = async () => {
     try {
       await appleLogin();
-      alert(t('auth.loginDone'));
+      alert(t('auth.loginDone'), undefined, { tone: 'success' });
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : 'Apple 로그인에 실패했습니다.';
-      alert(message);
+        error instanceof Error ? error.message : t('auth.appleLoginFailed');
+      alert(message, undefined, { tone: 'error' });
     }
   };
 
   const onLogout = async () => {
     await logout();
-    alert(t('auth.logoutDone'));
+    alert(t('auth.logoutDone'), undefined, { tone: 'success' });
   };
 
   const onWithdraw = async () => {
     const ok = await confirm(
       t('auth.withdrawConfirmTitle'),
       t('auth.withdrawConfirmDesc'),
+      { tone: 'warning', destructive: true },
     );
     if (!ok) return;
     try {
       await withdraw();
-      alert(t('auth.withdrawDone'));
+      alert(t('auth.withdrawDone'), undefined, { tone: 'success' });
     } catch {
-      alert(t('auth.withdrawFailed'));
+      alert(t('auth.withdrawFailed'), undefined, { tone: 'error' });
     }
   };
 
@@ -295,7 +285,7 @@ export default function MoreScreen() {
 
   const addFeedbackImages = async () => {
     if (feedbackImages.length >= 5) {
-      alert('사진은 최대 5장까지 첨부할 수 있습니다.');
+      alert(t('feedback.maxImages'), undefined, { tone: 'warning' });
       return;
     }
 
@@ -322,11 +312,11 @@ export default function MoreScreen() {
     const contact = feedbackContact.trim();
 
     if (!content) {
-      alert('피드백 내용을 입력해주세요.');
+      alert(t('feedback.contentRequired'), undefined, { tone: 'warning' });
       return;
     }
     if (content.length > 2000) {
-      alert('피드백 내용은 2000자까지 입력할 수 있습니다.');
+      alert(t('feedback.contentTooLong'), undefined, { tone: 'warning' });
       return;
     }
 
@@ -343,7 +333,7 @@ export default function MoreScreen() {
       });
       resetFeedbackForm();
       setIsFeedbackVisible(false);
-      alert('피드백이 접수되었습니다.');
+      alert(t('feedback.submitted'), undefined, { tone: 'success' });
     } catch (error: any) {
       if (__DEV__) {
         console.log('[feedback] submit failed', {
@@ -352,7 +342,11 @@ export default function MoreScreen() {
           message: error?.message,
         });
       }
-      alert(error?.response?.data?.message ?? '피드백 제출에 실패했습니다.');
+      alert(
+        error?.response?.data?.message ?? t('feedback.submitFailed'),
+        undefined,
+        { tone: 'error' },
+      );
     } finally {
       setIsFeedbackSubmitting(false);
     }

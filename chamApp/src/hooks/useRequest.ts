@@ -41,9 +41,11 @@ export function useRequest() {
             const messages = errData.validation
               .map((v: any) => Object.values(v).join('\n'))
               .join('\n');
-            alert(messages);
+            alert(messages, undefined, { tone: 'error' });
           } else {
-            alert(err.response?.data?.message ?? '오류가 발생했습니다.');
+            alert(err.response?.data?.message ?? '오류가 발생했습니다.', undefined, {
+              tone: 'error',
+            });
           }
         }
         throw error;

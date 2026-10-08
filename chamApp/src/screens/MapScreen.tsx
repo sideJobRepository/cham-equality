@@ -1557,7 +1557,7 @@ export default function MapScreen() {
 
     if (result.didCancel) return;
     if (result.errorMessage) {
-      alert(result.errorMessage);
+      alert(result.errorMessage, undefined, { tone: 'warning' });
       return;
     }
 
@@ -1614,7 +1614,7 @@ export default function MapScreen() {
         })),
       });
       setReportShelter(null);
-      alert(t('map.report.success'));
+      alert(t('map.report.success'), undefined, { tone: 'success' });
     } catch (error: any) {
       if (__DEV__) {
         console.log('[report-submit] failed', {
@@ -1623,7 +1623,9 @@ export default function MapScreen() {
           data: error?.response?.data,
         });
       }
-      alert(error?.response?.data?.message ?? t('map.report.failed'));
+      alert(error?.response?.data?.message ?? t('map.report.failed'), undefined, {
+        tone: 'error',
+      });
     }
   };
 
