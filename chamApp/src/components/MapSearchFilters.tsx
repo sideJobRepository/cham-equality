@@ -13,12 +13,15 @@ import {
   useMapFilterStore,
 } from '../store/mapFilters.ts';
 import { colors } from '../theme/index.ts';
+import MapFilterBar from './MapFilterBar.tsx';
 
 interface MapSearchFiltersProps {
   horizontalPadding?: number;
   showShelterTypes?: boolean;
   showAccessibilityAll?: boolean;
   onPressAccessibilityInfo?: () => void;
+  /** 지도처럼 세로 공간이 귀한 곳은 칩 대신 필터 버튼 한 줄 + 하단 시트로 접는다 */
+  compact?: boolean;
 }
 
 export default function MapSearchFilters({
@@ -26,7 +29,28 @@ export default function MapSearchFilters({
   showShelterTypes = true,
   showAccessibilityAll = true,
   onPressAccessibilityInfo,
+  compact = false,
 }: MapSearchFiltersProps) {
+  if (compact) {
+    return <MapFilterBar onPressAccessibilityInfo={onPressAccessibilityInfo} />;
+  }
+  return (
+    <ChipFilters
+      horizontalPadding={horizontalPadding}
+      showShelterTypes={showShelterTypes}
+      showAccessibilityAll={showAccessibilityAll}
+      onPressAccessibilityInfo={onPressAccessibilityInfo}
+    />
+  );
+}
+
+function ChipFilters({
+  horizontalPadding,
+  showShelterTypes,
+  showAccessibilityAll,
+  onPressAccessibilityInfo,
+}: Required<Omit<MapSearchFiltersProps, 'onPressAccessibilityInfo' | 'compact'>> &
+  Pick<MapSearchFiltersProps, 'onPressAccessibilityInfo'>) {
   const { t } = useTranslation();
   const selectedShelterTypes = useMapFilterStore(
     state => state.selectedShelterTypes,

@@ -1,7 +1,7 @@
 import { Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import styled from 'styled-components/native';
-import { colors, fontSize } from '../theme/index.ts';
+import { colors, fontSize, spacing } from '../theme/index.ts';
 import { SHELTER_SELECTED_COLOR } from '../store/mapFilters.ts';
 import {
   MAP_CONTROL_SIZE,
@@ -16,8 +16,9 @@ export const Screen = styled(SafeAreaView)`
   background-color: #f4f7fb;
 `;
 
+// 필터를 한 줄로 접은 만큼 위아래 여백도 줄여 상단 전체를 120dp 안팎으로 맞춘다
 export const Header = styled.View`
-  padding: 20px 20px 12px;
+  padding: ${spacing.lg}px ${spacing.xxl}px ${spacing.md}px;
 `;
 
 export const MapFrame = styled.View`

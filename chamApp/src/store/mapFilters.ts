@@ -71,56 +71,49 @@ export const shelterTypeTranslationKeys: Record<string, string> = {
   DISASTER_TEMPORARY_HOUSING: 'map.filters.disasterTemporaryHousing',
 };
 
+// '전체'를 고르면 나머지가 풀리고, 마지막 하나를 풀면 '전체'로 돌아간다.
+// 지도 필터 시트는 적용 전까지 임시 선택을 따로 들고 있어 스토어 밖에서도 같은 규칙을 쓴다.
+export function toggleWithAll(list: string[], item: string, allLabel: string) {
+  if (item === allLabel) return [allLabel];
+
+  const next = list.filter(value => value !== allLabel);
+  if (next.includes(item)) {
+    const filtered = next.filter(value => value !== item);
+    return filtered.length ? filtered : [allLabel];
+  }
+  return [...next, item];
+}
+
 interface MapFilterStore {
   selectedShelterTypes: string[];
   selectedAccessibility: string[];
   toggleShelterType: (item: string) => void;
   toggleAccessibility: (item: string) => void;
+  applyFilters: (shelterTypes: string[], accessibility: string[]) => void;
 }
 
 export const useMapFilterStore = create<MapFilterStore>(set => ({
   selectedShelterTypes: [SHELTER_ALL_LABEL],
   selectedAccessibility: [ACCESSIBILITY_ALL_LABEL],
   toggleShelterType: item =>
-    set(state => {
-      if (item === SHELTER_ALL_LABEL) {
-        return { selectedShelterTypes: [SHELTER_ALL_LABEL] };
-      }
-
-      const next = state.selectedShelterTypes.filter(
-        value => value !== SHELTER_ALL_LABEL,
-      );
-
-      if (next.includes(item)) {
-        const filtered = next.filter(value => value !== item);
-        return {
-          selectedShelterTypes: filtered.length
-            ? filtered
-            : [SHELTER_ALL_LABEL],
-        };
-      }
-
-      return { selectedShelterTypes: [...next, item] };
-    }),
+    set(state => ({
+      selectedShelterTypes: toggleWithAll(
+        state.selectedShelterTypes,
+        item,
+        SHELTER_ALL_LABEL,
+      ),
+    })),
   toggleAccessibility: item =>
-    set(state => {
-      if (item === ACCESSIBILITY_ALL_LABEL) {
-        return { selectedAccessibility: [ACCESSIBILITY_ALL_LABEL] };
-      }
-
-      const next = state.selectedAccessibility.filter(
-        value => value !== ACCESSIBILITY_ALL_LABEL,
-      );
-
-      if (next.includes(item)) {
-        const filtered = next.filter(value => value !== item);
-        return {
-          selectedAccessibility: filtered.length
-            ? filtered
-            : [ACCESSIBILITY_ALL_LABEL],
-        };
-      }
-
-      return { selectedAccessibility: [...next, item] };
+    set(state => ({
+      selectedAccessibility: toggleWithAll(
+        state.selectedAccessibility,
+        item,
+        ACCESSIBILITY_ALL_LABEL,
+      ),
+    })),
+  applyFilters: (shelterTypes, accessibility) =>
+    set({
+      selectedShelterTypes: shelterTypes,
+      selectedAccessibility: accessibility,
     }),
 }));

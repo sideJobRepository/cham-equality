@@ -2691,7 +2691,10 @@ export default function MapScreen() {
         />
       </Header>
 
-      <MapSearchFilters onPressAccessibilityInfo={openAccessibilityInfo} />
+      <MapSearchFilters
+        compact
+        onPressAccessibilityInfo={openAccessibilityInfo}
+      />
 
       <MapFrame onLayout={handleMapFrameLayout}>
         {mapHtml ? (
