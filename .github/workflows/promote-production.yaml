@@ -67,7 +67,9 @@ jobs:
           case "$ACTION" in
             promote)
               # 승격 시 alpha 릴리스의 출시 노트도 함께 넘어간다.
-              fastlane run supply $COMMON track:alpha track_promote_to:production rollout:"$ROLLOUT" release_status:inProgress $VERSION_ARG
+              # release_status 는 '옮길 alpha 릴리스'를 고르는 필터다(alpha 는 completed 상태). 프로덕션 쪽 상태는
+              # rollout 이 0~1 사이면 inProgress(단계적), 1 이면 track_promote_release_status(completed)로 정해진다.
+              fastlane run supply $COMMON track:alpha track_promote_to:production rollout:"$ROLLOUT" release_status:completed $VERSION_ARG
               ;;
             rollout)
               fastlane run supply $COMMON track:production rollout:"$ROLLOUT" release_status:inProgress $VERSION_ARG
