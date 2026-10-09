@@ -144,24 +144,9 @@ export const TypeChipText = styled.Text`
 `;
 
 export const LanguageRow = styled.View`
-  display: flex;
   flex-direction: row;
   justify-content: flex-end;
-  gap: 8px;
-  padding-top: 8px;
-`;
-
-export const LanguageButton = styled.Pressable<{ $active: boolean }>`
-  padding: 6px 10px;
-  border-radius: 8px;
-  background-color: ${({ $active }) =>
-    $active ? colors.inverse : colors.surfaceMuted};
-`;
-
-export const LanguageText = styled.Text<{ $active: boolean }>`
-  color: ${({ $active }) => ($active ? colors.textOnColor : colors.textMuted)};
-  font-size: 13px;
-  font-weight: 700;
+  padding-top: ${spacing.md}px;
 `;
 
 export const MessageBox = styled.Pressable`

@@ -26,6 +26,7 @@ export const colors = {
   borderStrong: '#d1d5db',
   inverse: '#1d1d1f',
   shadow: '#111827',
+  overlay: 'rgba(15,23,42,0.45)',
   imageViewerBackdrop: 'rgba(0,0,0,0.86)',
   imageViewerControl: 'rgba(17,24,39,0.62)',
   alert: {

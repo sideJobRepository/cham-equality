@@ -19,6 +19,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import CurrentLocationBar from '../components/CurrentLocationBar.tsx';
+import LanguageButton from '../components/LanguageButton.tsx';
 import MapSearchFilters from '../components/MapSearchFilters.tsx';
 import FullscreenImageViewer from '../components/ui/FullscreenImageViewer.tsx';
 import Button from '../components/ui/Button.tsx';
@@ -68,8 +69,6 @@ import {
   TypeChip,
   TypeChipText,
   LanguageRow,
-  LanguageButton,
-  LanguageText,
   MessageBox,
   MessageStepBar,
   MessageTextBox,
@@ -110,14 +109,6 @@ import {
   SMSPagerText,
   SMSActions,
 } from './HomeScreen.styles.ts';
-
-const languageOptions = [
-  { code: 'KO', label: '한국어' },
-  { code: 'EN', label: 'English' },
-  { code: 'ZH', label: '中文' },
-  { code: 'JA', label: '日本語' },
-  { code: 'VI', label: 'Tiếng Việt' },
-];
 
 function getShelterTypeLabel(type?: string) {
   if (!type) return 'map.labels.unknownType';
@@ -210,7 +201,7 @@ function formatSMSDateTime(dateString?: string) {
 }
 
 export default function HomeScreen() {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const navigation = useNavigation<BottomTabNavigationProp<RootTabParamList>>();
   useCurrentLocation();
   useFetchSMS();
@@ -305,17 +296,7 @@ export default function HomeScreen() {
       <HomeScroll showsVerticalScrollIndicator={false}>
         <TopSection>
           <LanguageRow>
-            {languageOptions.map(item => (
-              <LanguageButton
-                key={item.code}
-                $active={i18n.language === item.code}
-                onPress={() => i18n.changeLanguage(item.code)}
-              >
-                <LanguageText $active={i18n.language === item.code}>
-                  {item.label}
-                </LanguageText>
-              </LanguageButton>
-            ))}
+            <LanguageButton />
           </LanguageRow>
 
           {latestSMS ? (

@@ -130,7 +130,8 @@ export const LanguageRow = styled.View`
 `;
 
 export const LanguageButton = styled.Pressable<{ $active: boolean }>`
-  padding: 6px 10px;
+  min-height: ${size.touchMin}px;
+  padding: 6px 12px;
   align-items: center;
   justify-content: center;
   border-radius: 8px;

@@ -45,6 +45,7 @@ import {
   type LocalFeedbackImage,
 } from '../services/feedback.service';
 import { useDialogUtil } from '../utils/dialog';
+import { LANGUAGE_OPTIONS } from '../utils/language.ts';
 import ImageAttachButton from '../components/ui/ImageAttachButton.tsx';
 import SubmitButton from '../components/ui/SubmitButton.tsx';
 import Button from '../components/ui/Button.tsx';
@@ -140,14 +141,6 @@ const kakaoIcon = require('../assets/icons/kakao.png');
 const appleIcon = require('../assets/icons/apple.png');
 const foodMapLogo = require('../assets/icons/logo.png');
 const chamLogo = require('../assets/icons/logo2.png');
-
-const languageOptions = [
-  { code: 'KO', label: '한국어' },
-  { code: 'EN', label: 'English' },
-  { code: 'ZH', label: '中文' },
-  { code: 'JA', label: '日本語' },
-  { code: 'VI', label: 'Tiếng Việt' },
-];
 
 const citizenServices = [
   {
@@ -522,17 +515,21 @@ export default function MoreScreen() {
           <SectionTitle>{t('more.appSettings')}</SectionTitle>
           <SettingBlock>
             <LanguageRow>
-              {languageOptions.map(item => (
-                <LanguageButton
-                  key={item.code}
-                  $active={i18n.language === item.code}
-                  onPress={() => i18n.changeLanguage(item.code)}
-                >
-                  <LanguageText $active={i18n.language === item.code}>
-                    {item.label}
-                  </LanguageText>
-                </LanguageButton>
-              ))}
+              {LANGUAGE_OPTIONS.map(item => {
+                const active = i18n.language === item.code;
+                return (
+                  <LanguageButton
+                    key={item.code}
+                    accessibilityRole="radio"
+                    accessibilityState={{ selected: active, checked: active }}
+                    accessibilityLanguage={item.locale}
+                    $active={active}
+                    onPress={() => i18n.changeLanguage(item.code)}
+                  >
+                    <LanguageText $active={active}>{item.label}</LanguageText>
+                  </LanguageButton>
+                );
+              })}
             </LanguageRow>
           </SettingBlock>
         </Section>
