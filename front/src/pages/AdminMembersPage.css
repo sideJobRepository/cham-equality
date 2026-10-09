@@ -1,0 +1,133 @@
+/* ──────────────────────────────────────────────────────────────────────
+   회원 페이지 — 표/페이지네이션은 AdminReportsPage.css, 모달 골격은
+   AdminReportDetailModal.css를 그대로 쓰고 검색창·푸시 버튼·발송 폼만 추가한다.
+   See front/DESIGN.md.
+   ────────────────────────────────────────────────────────────────────── */
+.admin-members-page .search-bar {
+  margin: 0 0 20px;
+  position: relative;
+  max-width: 480px;
+}
+
+.admin-members-page .search-bar input {
+  width: 100%;
+  padding: 14px 44px 14px 20px;
+  background: var(--ab-canvas);
+  border: 1px solid var(--ab-hairline);
+  border-radius: var(--ab-radius-full);
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--ab-ink);
+  box-sizing: border-box;
+}
+
+.admin-members-page .search-bar input::placeholder {
+  color: var(--ab-muted);
+}
+
+.admin-members-page .search-bar input:focus {
+  outline: none;
+  border-color: var(--ab-ink);
+  box-shadow: var(--ab-shadow-card);
+}
+
+.admin-members-page .search-clear {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 28px;
+  height: 28px;
+  background: var(--ab-surface-strong);
+  border: none;
+  border-radius: var(--ab-radius-full);
+  color: var(--ab-ink);
+  cursor: pointer;
+}
+
+.admin-members-page .flash {
+  margin: 0 0 16px;
+  padding: 12px 16px;
+  border-radius: var(--ab-radius-sm);
+  background: var(--ab-surface-strong);
+  color: var(--ab-ink);
+  font-size: 14px;
+}
+
+.admin-members-page .push-btn {
+  padding: 6px 12px;
+  border: 1px solid var(--ab-ink);
+  border-radius: var(--ab-radius-full);
+  background: var(--ab-canvas);
+  color: var(--ab-ink);
+  font-family: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.admin-members-page .push-btn:hover:not(:disabled) {
+  background: var(--ab-ink);
+  color: var(--ab-on-primary);
+}
+
+.admin-members-page .push-btn:disabled {
+  border-color: var(--ab-hairline);
+  color: var(--ab-muted);
+  cursor: not-allowed;
+}
+
+/* 발송 모달 폼 */
+.member-push-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.member-push-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--ab-muted);
+}
+
+.member-push-form .label-row {
+  display: flex;
+  justify-content: space-between;
+}
+
+.member-push-form .counter {
+  font-variant-numeric: tabular-nums;
+}
+
+.member-push-form input,
+.member-push-form textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--ab-hairline);
+  border-radius: var(--ab-radius-sm);
+  background: var(--ab-canvas);
+  color: var(--ab-ink);
+  font-family: inherit;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+.member-push-form textarea {
+  min-height: 120px;
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.member-push-form input:focus,
+.member-push-form textarea:focus {
+  outline: none;
+  border-color: var(--ab-border-strong);
+}
+
+.member-push-form .hint {
+  margin: 0;
+  font-size: 12px;
+  color: var(--ab-muted);
+}

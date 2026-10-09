@@ -37,6 +37,11 @@ const BRANDING_HEIGHT = 80;
 const BRANDING_BOTTOM = 60;
 // 너무 빨리 사라지면 깜빡임처럼 보여서 최소 노출 시간을 둔다.
 const MIN_VISIBLE_MS = 1300;
+// 뒤로가기로 나갔다 다시 켤 때(프로세스는 살아 있음)는 페이드아웃까지 합쳐 1초쯤만 보여준다.
+const RELAUNCH_MIN_VISIBLE_MS = 700;
+
+// JS 는 화면(Activity)이 다시 만들어져도 살아 있으므로, 두 번째 마운트부터는 재실행으로 본다.
+let launchedBefore = false;
 const DECOR_FADE_IN_MS = 400;
 const FADE_OUT_MS = 300;
 
@@ -51,6 +56,12 @@ export default function SplashOverlay({ ready, onFinish }: SplashOverlayProps) {
   // 네이티브 스플래시엔 없는 꾸밈(하늘 그라데이션·부제·일러스트)은 이어받은 뒤 살며시 띄운다.
   const decorOpacity = useRef(new Animated.Value(0)).current;
   const [minTimePassed, setMinTimePassed] = useState(false);
+  const [minVisibleMs] = useState(() =>
+    launchedBefore ? RELAUNCH_MIN_VISIBLE_MS : MIN_VISIBLE_MS,
+  );
+  useEffect(() => {
+    launchedBefore = true;
+  }, []);
   // RN 루트 뷰의 실제 높이. 이걸 재야 네이티브 스플래시와 같은 자리를 계산할 수 있다.
   const [rootHeight, setRootHeight] = useState<number | null>(null);
 
@@ -67,9 +78,9 @@ export default function SplashOverlay({ ready, onFinish }: SplashOverlayProps) {
       duration: DECOR_FADE_IN_MS,
       useNativeDriver: true,
     }).start();
-    const timer = setTimeout(() => setMinTimePassed(true), MIN_VISIBLE_MS);
+    const timer = setTimeout(() => setMinTimePassed(true), minVisibleMs);
     return () => clearTimeout(timer);
-  }, [rootHeight, decorOpacity]);
+  }, [rootHeight, decorOpacity, minVisibleMs]);
 
   useEffect(() => {
     if (!ready || !minTimePassed) return;

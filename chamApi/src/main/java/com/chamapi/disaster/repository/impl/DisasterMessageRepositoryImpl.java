@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 import static com.chamapi.disaster.entity.QDisasterMessage.disasterMessage;
@@ -34,5 +35,22 @@ public class DisasterMessageRepositoryImpl implements DisasterMessageQueryReposi
                 .orderBy(disasterMessage.issuedAt.desc())
                 .limit(limit)
                 .fetch();
+    }
+
+    @Override
+    public List<DisasterMessage> findPushPending() {
+        return queryFactory
+                .selectFrom(disasterMessage)
+                .where(disasterMessage.pushWhether.isFalse())
+                .fetch();
+    }
+
+    @Override
+    public Optional<DisasterMessage> findLatestOne() {
+        return Optional.ofNullable(queryFactory
+                .selectFrom(disasterMessage)
+                .orderBy(disasterMessage.issuedAt.desc())
+                .limit(1)
+                .fetchOne());
     }
 }

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 상태바 알림 아이콘. OS가 알파 채널만 써서 흰 실루엣이어야 한다(컬러 런처 아이콘을 쓰면 흰 네모로 보임).
+     앱 아이콘과 같은 방패 + 가운데 느낌표. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:fillType="evenOdd"
+        android:pathData="M12,2L4,5v6c0,5.05 3.41,9.76 8,11c4.59,-1.24 8,-5.95 8,-11V5L12,2zM11,7h2v6h-2V7zM11,15h2v2h-2v-2z" />
+</vector>

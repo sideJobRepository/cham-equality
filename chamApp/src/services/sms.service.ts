@@ -5,6 +5,14 @@ import { useSMSStore } from '../store';
 import { useRequest } from '../hooks/useRequest.ts';
 import { useRefreshOnFocus } from '../hooks/useRefreshOnFocus.ts';
 
+/** 화면 포커스와 무관하게 최신 재난문자를 다시 받는다(푸시 수신·알림 탭 직후). */
+export async function refreshSMS(language: string) {
+  const res = await api.get('/api/disaster-messages/latest', {
+    params: { lang: language },
+  });
+  useSMSStore.getState().setSMS(res.data.data);
+}
+
 export function useFetchSMS() {
   const setSms = useSMSStore(state => state.setSMS);
   const { request } = useRequest();

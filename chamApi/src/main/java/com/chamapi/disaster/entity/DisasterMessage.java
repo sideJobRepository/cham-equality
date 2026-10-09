@@ -48,6 +48,10 @@ public class DisasterMessage extends DateSuperClass {
     @Column(name = "TRANSLATION_WHETHER", nullable = false)
     private boolean translationWhether;
 
+    // 푸시 발송 처리 여부. 적재 시 0으로 시작, 발송했거나 너무 오래돼 건너뛰기로 한 뒤 true 로 마킹.
+    @Column(name = "PUSH_WHETHER", nullable = false)
+    private boolean pushWhether;
+
     @Builder
     public DisasterMessage(Long id, Long sn, String content, String regionName, EmergencyStep emergencyStep, String category, LocalDateTime issuedAt) {
         this.id = id;
@@ -62,5 +66,10 @@ public class DisasterMessage extends DateSuperClass {
     /** 번역 저장을 마친 뒤 호출 — 다음 재시도 대상에서 빠진다. */
     public void markTranslated() {
         this.translationWhether = true;
+    }
+
+    /** 푸시 처리를 마친 뒤 호출 — 다음 발송 대상에서 빠진다. */
+    public void markPushed() {
+        this.pushWhether = true;
     }
 }

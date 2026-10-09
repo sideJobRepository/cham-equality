@@ -31,6 +31,13 @@ azure:
     region: ${AZURE_TRANSLATOR_REGION}
     endpoint: ${AZURE_TRANSLATOR_ENDPOINT:https://api.cognitive.microsofttranslator.com}
 
+vworld:
+  key: ${VWORLD_KEY:}            # 연속지적도(장소 부지 경계) 조회. 비면 경계 채우기 비활성
+  domain: cham-monimap.com       # 키 발급 시 등록한 서비스 도메인. 요청마다 같이 보내야 통과한다
+
+firebase:
+  service-account-base64: ${FIREBASE_SERVICE_ACCOUNT_BASE64:}   # FCM 발송용 서비스 계정 JSON(base64). 비면 푸시 비활성
+
 apple:
   client-id: ${APPLE_CLIENT_ID:}          # identityToken aud 검증값 (iOS Bundle ID) — .env에 설정
   issuer: https://appleid.apple.com

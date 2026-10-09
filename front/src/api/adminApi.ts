@@ -283,3 +283,38 @@ export async function bulkCreateAdminShelters(file: File): Promise<number[]> {
   })
   return data.data
 }
+
+// ===== 회원(관리자) =====
+// 회원 조회 + 회원 지정 앱 푸시. 푸시는 그 회원으로 앱에 로그인해 알림을 등록한 기기에만 간다.
+
+export type AdminMember = {
+  id: number
+  name: string | null
+  email: string | null
+  socialType: 'KAKAO' | 'NAVER' | 'APPLE' | null
+  createDate: string
+  /** 알림 받을 기기 수. 0이면 푸시를 보낼 수 없다. */
+  pushDeviceCount: number
+}
+
+export async function fetchMembers(
+  keyword: string,
+  page: number,
+  size: number,
+): Promise<PageResponse<AdminMember>> {
+  const params: Record<string, string | number> = { page, size }
+  if (keyword.trim()) params.keyword = keyword.trim()
+  const { data } = await http.get<ApiResponse<PageResponse<AdminMember>>>('/admin/members', {
+    params,
+  })
+  return data.data
+}
+
+/** 회원의 모든 기기에 알림 발송. 실제로 보낸 기기 수를 돌려준다. */
+export async function sendMemberPush(
+  memberId: number,
+  body: { title: string; body: string },
+): Promise<number> {
+  const { data } = await http.post<ApiResponse<number>>(`/admin/members/${memberId}/push`, body)
+  return data.data
+}

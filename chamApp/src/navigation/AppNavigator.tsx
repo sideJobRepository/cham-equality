@@ -1,4 +1,7 @@
-import { NavigationContainer } from '@react-navigation/native';
+import {
+  NavigationContainer,
+  createNavigationContainerRef,
+} from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import type { BottomTabBarButtonProps } from '@react-navigation/bottom-tabs';
 import { PlatformPressable } from '@react-navigation/elements';
@@ -31,6 +34,9 @@ export type RootTabParamList = {
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
 
+// 화면 밖(푸시 알림 탭 처리 등)에서 탭을 옮길 때 쓴다.
+export const navigationRef = createNavigationContainerRef<RootTabParamList>();
+
 function TabBarButton(props: BottomTabBarButtonProps) {
   return (
     <PlatformPressable
@@ -54,7 +60,7 @@ export default function AppNavigator() {
   const tabBarBottomPadding = Math.max(insets.bottom, 8);
 
   return (
-    <NavigationContainer>
+    <NavigationContainer ref={navigationRef}>
       <Tab.Navigator
         screenOptions={({ route }) => ({
           headerShown: false,

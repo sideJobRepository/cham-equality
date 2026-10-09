@@ -36,6 +36,14 @@ class MainActivity : ReactActivity() {
     super.onCreate(savedInstanceState)
   }
 
+  // JS 쪽 뒤로가기 처리(모달 닫기·탭 이동 등)가 아무것도 안 했을 때 불린다.
+  // 기본 동작(Android 12+)은 화면을 살려 둔 채 뒤로 숨겨서 다시 켜면 스플래시 없이 그대로 돌아온다.
+  // 사용자가 앱을 "닫은" 것으로 보고 화면을 정리해, 다시 켤 때 스플래시가 다시 돌게 한다(배민 등과 같은 동작).
+  // 프로세스·JS 는 살아 있어 처음 실행보다 빠르다. 홈 버튼·앱 전환은 이 경로를 타지 않는다.
+  override fun invokeDefaultOnBackPressed() {
+    finish()
+  }
+
   /**
    * Returns the name of the main component registered from JavaScript. This is used to schedule
    * rendering of the component.

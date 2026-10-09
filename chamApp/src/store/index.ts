@@ -11,3 +11,4 @@ export * from './shelterReport';
 export * from './manual';
 export * from './content';
 export * from './splash';
+export * from './push';

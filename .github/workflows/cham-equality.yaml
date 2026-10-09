@@ -95,6 +95,8 @@ jobs:
             NCP_GEOCODING_PATH='${{ secrets.NCP_GEOCODING_PATH }}' \
             NCP_REVERSE_GEOCODING_PATH='${{ secrets.NCP_REVERSE_GEOCODING_PATH }}' \
             KAKAO_APP_ID='${{ secrets.KAKAO_APP_ID }}' \
+            VWORLD_KEY='${{ secrets.VWORLD_KEY }}' \
+            FIREBASE_SERVICE_ACCOUNT_BASE64='${{ secrets.FIREBASE_SERVICE_ACCOUNT_BASE64 }}' \
             nohup java \
             -Dspring.profiles.active=real \
             -Dserver.port=8081 \
@@ -183,6 +185,9 @@ jobs:
 
       - name: 업로드 keystore 복원
         run: echo "${{ secrets.UPLOAD_KEYSTORE_BASE64 }}" | base64 -d > chamApp/android/app/upload-keystore.jks
+
+      - name: google-services.json 복원 (FCM 푸시)
+        run: echo "${{ secrets.GOOGLE_SERVICES_JSON_BASE64 }}" | base64 -d > chamApp/android/app/google-services.json
 
       - name: keystore.properties 생성
         run: |

@@ -7,11 +7,18 @@ import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import {
   ChevronLeft,
   ChevronRight,
+  Clock,
+  Info,
+  MapPin,
+  Siren,
   Square,
+  TriangleAlert,
   Users,
   X,
+  type LucideIcon,
 } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import CurrentLocationBar from '../components/CurrentLocationBar.tsx';
 import MapSearchFilters from '../components/MapSearchFilters.tsx';
 import { useCurrentLocation } from '../hooks/useCurrentLocation.ts';
@@ -22,6 +29,7 @@ import {
   useContentStore,
   useDisasterStore,
   useNearestShelterStore,
+  usePushStore,
   useSMSStore,
   useSplashStore,
 } from '../store';
@@ -92,6 +100,47 @@ function formatDisasterDate(dateString?: string) {
   return `${month}.${day}`;
 }
 
+type SMSStepKey = 'CRITICAL' | 'EMERGENCY' | 'ADVISORY' | 'ETC';
+
+// 긴급단계별 색·아이콘. 정부 재난문자 체계(위급 > 긴급 > 안전안내)의 심각도를 한눈에 구분하게 한다.
+const SMS_STEPS: Record<SMSStepKey, { color: string; Icon: LucideIcon }> = {
+  CRITICAL: { color: '#dc2626', Icon: Siren },
+  EMERGENCY: { color: '#ea580c', Icon: TriangleAlert },
+  ADVISORY: { color: '#093a6e', Icon: Info },
+  ETC: { color: '#475569', Icon: Info },
+};
+
+function toSMSStepKey(step?: string): SMSStepKey {
+  return step === 'CRITICAL' || step === 'EMERGENCY' || step === 'ADVISORY'
+    ? step
+    : 'ETC';
+}
+
+/** "12분 전" 같은 상대 시각. 재난문자는 얼마나 최근인지가 중요하다. */
+function formatSMSAgo(dateString: string, t: TFunction) {
+  const time = new Date(dateString).getTime();
+  if (Number.isNaN(time)) return '';
+  const minutes = Math.max(0, Math.floor((Date.now() - time) / 60000));
+  if (minutes < 1) return t('home.smsJustNow');
+  if (minutes < 60) return t('home.smsMinutesAgo', { count: minutes });
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return t('home.smsHoursAgo', { count: hours });
+  return t('home.smsDaysAgo', { count: Math.floor(hours / 24) });
+}
+
+/** 여러 지역에 함께 발송된 문자는 콤마로 이어져 온다. 첫 지역 + "외 N곳"으로 줄인다. */
+function formatSMSRegion(regionName: string, t: TFunction) {
+  const regions = regionName
+    .split(',')
+    .map(region => region.trim())
+    .filter(Boolean);
+  if (regions.length <= 1) return regions[0] ?? regionName;
+  return t('home.smsRegionMore', {
+    region: regions[0],
+    count: regions.length - 1,
+  });
+}
+
 function formatSMSDateTime(dateString?: string) {
   if (!dateString) return '';
 
@@ -135,6 +184,8 @@ export default function HomeScreen() {
     index: number;
   } | null>(null);
   const selectedSMS = smsData[selectedSMSIndex];
+  const smsStepKey = toSMSStepKey(selectedSMS?.emergencyStep);
+  const smsStep = SMS_STEPS[smsStepKey];
   const nearestShelterImages = nearestShelter
     ? getNearestShelterImageSources(nearestShelter)
     : [];
@@ -162,6 +213,18 @@ export default function HomeScreen() {
     if (!popupContent?.url) return;
     Linking.openURL(popupContent.url);
   };
+
+  // 재난문자 푸시를 눌러 들어오면 그 문자의 상세를 연다.
+  // 목록(최신 5건)에 없으면 가장 최근 문자로 대신 연다.
+  const openMessageId = usePushStore(state => state.openMessageId);
+  const clearOpenMessage = usePushStore(state => state.clearOpen);
+  useEffect(() => {
+    if (openMessageId == null || !splashDone || smsData.length === 0) return;
+    const index = smsData.findIndex(item => item.id === openMessageId);
+    setSelectedSMSIndex(Math.max(index, 0));
+    setIsSMSModalVisible(true);
+    clearOpenMessage();
+  }, [clearOpenMessage, openMessageId, smsData, splashDone]);
 
   useEffect(() => {
     // 스플래시가 걷히기 전에 띄우면 스플래시 위로 팝업이 먼저 튀어나온다.
@@ -391,54 +454,115 @@ export default function HomeScreen() {
         onRequestClose={() => setIsSMSModalVisible(false)}
       >
         <ModalOverlay onPress={() => setIsSMSModalVisible(false)}>
-          <ModalCard onPress={e => e.stopPropagation()}>
-            <ModalHeader>
-              <IconButton
-                disabled={selectedSMSIndex === 0}
-                onPress={() =>
-                  setSelectedSMSIndex(index => Math.max(index - 1, 0))
-                }
+          <SMSCard onPress={e => e.stopPropagation()}>
+            <SMSHeader style={{ backgroundColor: smsStep.color }}>
+              <smsStep.Icon color="#ffffff" size={22} strokeWidth={2.4} />
+              <SMSStepText>{t(`home.smsStep.${smsStepKey}`)}</SMSStepText>
+              {selectedSMS?.category ? (
+                <SMSCategoryChip>
+                  <SMSCategoryText numberOfLines={1}>
+                    {selectedSMS.category}
+                  </SMSCategoryText>
+                </SMSCategoryChip>
+              ) : null}
+              <SMSHeaderSpacer />
+              <SMSCloseButton
+                accessibilityRole="button"
+                accessibilityLabel={t('common.close')}
+                onPress={() => setIsSMSModalVisible(false)}
               >
-                <ChevronLeft
-                  color={selectedSMSIndex === 0 ? '#d1d5db' : '#111827'}
-                  size={24}
-                  strokeWidth={2.5}
-                />
-              </IconButton>
-              <ModalCategory>
-                {selectedSMS?.category ?? '재난문자'}
-              </ModalCategory>
-              <IconButton
-                disabled={selectedSMSIndex >= smsData.length - 1}
-                onPress={() =>
-                  setSelectedSMSIndex(index =>
-                    Math.min(index + 1, smsData.length - 1),
-                  )
-                }
-              >
-                <ChevronRight
-                  color={
-                    selectedSMSIndex >= smsData.length - 1
-                      ? '#d1d5db'
-                      : '#111827'
-                  }
-                  size={24}
-                  strokeWidth={2.5}
-                />
-              </IconButton>
-            </ModalHeader>
-            {selectedSMS?.issuedAt ? (
-              <SMSDateTime>
-                {formatSMSDateTime(selectedSMS.issuedAt)}
-              </SMSDateTime>
-            ) : null}
-            <ModalContent>
-              {selectedSMS?.content ?? t('home.noSms')}
-            </ModalContent>
-            <ModalButton onPress={() => setIsSMSModalVisible(false)}>
-              <ModalButtonText>{t('common.close')}</ModalButtonText>
-            </ModalButton>
-          </ModalCard>
+                <X color="#ffffff" size={22} strokeWidth={2.4} />
+              </SMSCloseButton>
+            </SMSHeader>
+
+            <SMSBody>
+              {selectedSMS?.regionName ? (
+                <SMSMetaRow>
+                  <MapPin color="#6b7280" size={16} strokeWidth={2.2} />
+                  <SMSMetaText numberOfLines={1}>
+                    {formatSMSRegion(selectedSMS.regionName, t)}
+                  </SMSMetaText>
+                </SMSMetaRow>
+              ) : null}
+              {selectedSMS?.issuedAt ? (
+                <SMSMetaRow>
+                  <Clock color="#6b7280" size={16} strokeWidth={2.2} />
+                  <SMSMetaText>
+                    {formatSMSAgo(selectedSMS.issuedAt, t)} ·{' '}
+                    {formatSMSDateTime(selectedSMS.issuedAt)}
+                  </SMSMetaText>
+                </SMSMetaRow>
+              ) : null}
+              <SMSContentBox style={{ borderLeftColor: smsStep.color }}>
+                <SMSContentScroll>
+                  <SMSContentText>
+                    {selectedSMS?.content ?? t('home.noSms')}
+                  </SMSContentText>
+                </SMSContentScroll>
+              </SMSContentBox>
+
+              {smsData.length > 1 ? (
+                <SMSPager>
+                  <IconButton
+                    accessibilityRole="button"
+                    accessibilityLabel={t('home.smsPrev')}
+                    disabled={selectedSMSIndex === 0}
+                    onPress={() =>
+                      setSelectedSMSIndex(index => Math.max(index - 1, 0))
+                    }
+                  >
+                    <ChevronLeft
+                      color={selectedSMSIndex === 0 ? '#d1d5db' : '#111827'}
+                      size={22}
+                      strokeWidth={2.5}
+                    />
+                  </IconButton>
+                  <SMSPagerText>
+                    {selectedSMSIndex + 1} / {smsData.length}
+                  </SMSPagerText>
+                  <IconButton
+                    accessibilityRole="button"
+                    accessibilityLabel={t('home.smsNext')}
+                    disabled={selectedSMSIndex >= smsData.length - 1}
+                    onPress={() =>
+                      setSelectedSMSIndex(index =>
+                        Math.min(index + 1, smsData.length - 1),
+                      )
+                    }
+                  >
+                    <ChevronRight
+                      color={
+                        selectedSMSIndex >= smsData.length - 1
+                          ? '#d1d5db'
+                          : '#111827'
+                      }
+                      size={22}
+                      strokeWidth={2.5}
+                    />
+                  </IconButton>
+                </SMSPager>
+              ) : null}
+
+              <SMSActions>
+                <SMSPrimaryButton
+                  accessibilityRole="button"
+                  onPress={() => {
+                    setIsSMSModalVisible(false);
+                    if (nearestShelter) handlePressNearestShelter();
+                    else navigation.navigate('Map');
+                  }}
+                >
+                  <SMSPrimaryText>{t('home.smsFindShelter')}</SMSPrimaryText>
+                </SMSPrimaryButton>
+                <SMSSecondaryButton
+                  accessibilityRole="button"
+                  onPress={() => setIsSMSModalVisible(false)}
+                >
+                  <SMSSecondaryText>{t('common.close')}</SMSSecondaryText>
+                </SMSSecondaryButton>
+              </SMSActions>
+            </SMSBody>
+          </SMSCard>
         </ModalOverlay>
       </Modal>
       <Modal
@@ -907,51 +1031,146 @@ const NoticePrimaryButtonText = styled.Text`
   font-weight: 800;
 `;
 
-const ModalHeader = styled.View`
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-`;
-
 const IconButton = styled.Pressable`
-  width: 36px;
-  height: 36px;
+  width: 44px;
+  height: 44px;
   align-items: center;
   justify-content: center;
-`;
-
-const ModalCategory = styled.Text`
-  flex: 1;
-  text-align: center;
-  color: #dc2626;
-  font-size: 18px;
-  font-weight: 800;
-`;
-
-const SMSDateTime = styled.Text`
-  align-self: flex-end;
-  //color: #a3a7ac;
-  font-size: 14px;
-`;
-
-const ModalContent = styled.Text`
-  color: #111827;
-  font-size: 15px;
-  line-height: 24px;
-  font-weight: 500;
-`;
-
-const ModalButton = styled.Pressable`
-  align-self: flex-end;
-  padding: 10px 14px;
-  border-radius: 10px;
-  background-color: #f3f4f6;
 `;
 
 const ModalButtonText = styled.Text`
   color: #111827;
   font-size: 14px;
+  font-weight: 700;
+`;
+
+const SMSCard = styled.Pressable`
+  overflow: hidden;
+  border-radius: 20px;
+  background-color: #ffffff;
+`;
+
+const SMSHeader = styled.View`
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 12px 14px 18px;
+`;
+
+const SMSStepText = styled.Text`
+  color: #ffffff;
+  font-size: 18px;
+  font-weight: 800;
+`;
+
+const SMSCategoryChip = styled.View`
+  flex-shrink: 1;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background-color: rgba(255, 255, 255, 0.22);
+`;
+
+const SMSCategoryText = styled.Text`
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 700;
+`;
+
+const SMSHeaderSpacer = styled.View`
+  flex: 1;
+`;
+
+const SMSCloseButton = styled.Pressable`
+  width: 44px;
+  height: 44px;
+  align-items: center;
+  justify-content: center;
+`;
+
+const SMSBody = styled.View`
+  gap: 10px;
+  padding: 16px 18px 18px;
+`;
+
+const SMSMetaRow = styled.View`
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+`;
+
+const SMSMetaText = styled.Text`
+  flex-shrink: 1;
+  color: #4b5563;
+  font-size: 14px;
+  font-weight: 500;
+`;
+
+const SMSContentBox = styled.View`
+  margin-top: 4px;
+  max-height: 320px;
+  border-left-width: 4px;
+  border-radius: 12px;
+  background-color: #f8fafc;
+`;
+
+const SMSContentScroll = styled.ScrollView`
+  padding: 14px 16px;
+`;
+
+const SMSContentText = styled.Text`
+  color: #111827;
+  font-size: 16px;
+  line-height: 26px;
+  font-weight: 500;
+`;
+
+const SMSPager = styled.View`
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+`;
+
+const SMSPagerText = styled.Text`
+  min-width: 48px;
+  color: #374151;
+  font-size: 14px;
+  font-weight: 700;
+  text-align: center;
+`;
+
+const SMSActions = styled.View`
+  flex-direction: row;
+  gap: 8px;
+  margin-top: 4px;
+`;
+
+const SMSPrimaryButton = styled.Pressable`
+  flex: 1;
+  min-height: 48px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background-color: #093a6e;
+`;
+
+const SMSPrimaryText = styled.Text`
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 800;
+`;
+
+const SMSSecondaryButton = styled.Pressable`
+  min-width: 80px;
+  min-height: 48px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background-color: #f3f4f6;
+`;
+
+const SMSSecondaryText = styled.Text`
+  color: #111827;
+  font-size: 15px;
   font-weight: 700;
 `;

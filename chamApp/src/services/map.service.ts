@@ -140,3 +140,12 @@ export function useFetchNearestShelter() {
 
   return fetchNearestShelter;
 }
+
+/**
+ * 장소 부지 경계(GeoJSON geometry 문자열). 경계가 없으면 null.
+ * 지도 목록 응답을 가볍게 두려고 선택한 장소만 따로 받는다.
+ */
+export async function fetchPlaceBoundary(placeId: number): Promise<string | null> {
+  const res = await api.get(`/api/places/${placeId}/boundary`);
+  return res.data.data?.geoJson ?? null;
+}

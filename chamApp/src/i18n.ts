@@ -1,5 +1,6 @@
 ﻿import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getDeviceLanguage } from './utils/language';
 
 const resources = {
@@ -27,6 +28,15 @@ const resources = {
         notice: '공지사항',
         noticeDetail: '자세히 보기',
         noSms: '표시할 재난문자가 없습니다.',
+        smsStep: { CRITICAL: '위급재난', EMERGENCY: '긴급재난', ADVISORY: '안전안내', ETC: '재난문자' },
+        smsJustNow: '방금 전',
+        smsMinutesAgo: '{{count}}분 전',
+        smsHoursAgo: '{{count}}시간 전',
+        smsDaysAgo: '{{count}}일 전',
+        smsRegionMore: '{{region}} 외 {{count}}곳',
+        smsFindShelter: '주변 대피소 보기',
+        smsPrev: '이전 문자',
+        smsNext: '다음 문자',
         noScaleInfo: '규모 정보 없음',
         noManagingAuthority: '관리기관 정보 없음',
       },
@@ -71,6 +81,15 @@ const resources = {
         foodMap: '대전참여자치시민연대 맛집지도',
         chamSite: '대전참여자치시민연대',
         appSettings: '언어 설정',
+        notifications: {
+          title: '알림 설정',
+          disaster: '재난문자 알림',
+          disasterDescription: '대전 긴급재난문자를 선택한 언어로 받아요.',
+          personal: '개인 알림',
+          personalDescription: '제보 처리 결과, 관리자 안내 등 (로그인 필요)',
+          permissionOff: '휴대폰 설정에서 이 앱의 알림이 꺼져 있어요. 알림을 받으려면 켜 주세요.',
+          openSettings: '설정 열기',
+        },
         languageSettings: '언어 설정',
         login: '로그인',
       },
@@ -234,6 +253,15 @@ const resources = {
         notice: 'Notice',
         noticeDetail: 'View Details',
         noSms: 'No emergency message to display.',
+        smsStep: { CRITICAL: 'Critical Alert', EMERGENCY: 'Emergency Alert', ADVISORY: 'Safety Notice', ETC: 'Disaster Message' },
+        smsJustNow: 'Just now',
+        smsMinutesAgo: '{{count}} min ago',
+        smsHoursAgo: '{{count}}h ago',
+        smsDaysAgo: '{{count}}d ago',
+        smsRegionMore: '{{region}} +{{count}} more',
+        smsFindShelter: 'Find nearby shelters',
+        smsPrev: 'Previous message',
+        smsNext: 'Next message',
         noScaleInfo: 'No scale information',
         noManagingAuthority: 'No managing authority information',
       },
@@ -278,6 +306,15 @@ const resources = {
         foodMap: 'Daejeon PSPD Food Map',
         chamSite: 'Daejeon PSPD',
         appSettings: 'Language Settings',
+        notifications: {
+          title: 'Notifications',
+          disaster: 'Emergency alerts',
+          disasterDescription: 'Get Daejeon emergency messages in your chosen language.',
+          personal: 'Personal notifications',
+          personalDescription: 'Report results and notices from administrators (login required).',
+          permissionOff: 'Notifications are turned off in your phone settings. Turn them on to receive alerts.',
+          openSettings: 'Open settings',
+        },
         languageSettings: 'Language Settings',
         login: 'Login',
       },
@@ -442,6 +479,15 @@ const resources = {
         notice: '公告',
         noticeDetail: '查看详情',
         noSms: '没有可显示的灾害短信。',
+        smsStep: { CRITICAL: '危急灾害', EMERGENCY: '紧急灾害', ADVISORY: '安全提示', ETC: '灾害短信' },
+        smsJustNow: '刚刚',
+        smsMinutesAgo: '{{count}}分钟前',
+        smsHoursAgo: '{{count}}小时前',
+        smsDaysAgo: '{{count}}天前',
+        smsRegionMore: '{{region}} 等{{count}}处',
+        smsFindShelter: '查看附近避难所',
+        smsPrev: '上一条',
+        smsNext: '下一条',
         noScaleInfo: '无规模信息',
         noManagingAuthority: '无管理机构信息',
       },
@@ -485,6 +531,15 @@ const resources = {
         foodMap: '大田参与自治市民联盟美食地图',
         chamSite: '大田参与自治市民联盟',
         appSettings: '语言设置',
+        notifications: {
+          title: '通知',
+          disaster: '灾害短信',
+          disasterDescription: '以您选择的语言接收大田的紧急灾害短信。',
+          personal: '个人通知',
+          personalDescription: '报告结果及管理员通知（需要登录）。',
+          permissionOff: '手机设置中已关闭通知。请开启通知以接收消息。',
+          openSettings: '打开设置',
+        },
         languageSettings: '语言设置',
         login: '登录',
       },
@@ -648,6 +703,15 @@ const resources = {
         notice: 'お知らせ',
         noticeDetail: '詳しく見る',
         noSms: '表示する災害メッセージはありません。',
+        smsStep: { CRITICAL: '危急災害', EMERGENCY: '緊急災害', ADVISORY: '安全案内', ETC: '災害メッセージ' },
+        smsJustNow: 'たった今',
+        smsMinutesAgo: '{{count}}分前',
+        smsHoursAgo: '{{count}}時間前',
+        smsDaysAgo: '{{count}}日前',
+        smsRegionMore: '{{region}} 他{{count}}か所',
+        smsFindShelter: '近くの避難所を見る',
+        smsPrev: '前のメッセージ',
+        smsNext: '次のメッセージ',
         noScaleInfo: '規模情報なし',
         noManagingAuthority: '管理機関情報なし',
       },
@@ -692,6 +756,15 @@ const resources = {
         foodMap: '大田参与自治市民連帯グルメマップ',
         chamSite: '大田参与自治市民連帯',
         appSettings: '言語設定',
+        notifications: {
+          title: '通知',
+          disaster: '災害メール',
+          disasterDescription: '大田の緊急災害メールを、選んだ言語で受け取ります。',
+          personal: '個人のお知らせ',
+          personalDescription: '報告の結果や管理者からのお知らせ（ログインが必要）。',
+          permissionOff: '端末の設定で通知がオフになっています。受け取るには通知をオンにしてください。',
+          openSettings: '設定を開く',
+        },
         languageSettings: '言語設定',
         login: 'ログイン',
       },
@@ -856,6 +929,15 @@ const resources = {
         notice: 'Thông báo',
         noticeDetail: 'Xem chi tiết',
         noSms: 'Không có tin nhắn khẩn cấp để hiển thị.',
+        smsStep: { CRITICAL: 'Thảm họa nguy cấp', EMERGENCY: 'Thảm họa khẩn cấp', ADVISORY: 'Thông báo an toàn', ETC: 'Tin nhắn thiên tai' },
+        smsJustNow: 'Vừa xong',
+        smsMinutesAgo: '{{count}} phút trước',
+        smsHoursAgo: '{{count}} giờ trước',
+        smsDaysAgo: '{{count}} ngày trước',
+        smsRegionMore: '{{region}} và {{count}} nơi khác',
+        smsFindShelter: 'Xem nơi trú ẩn gần đây',
+        smsPrev: 'Tin nhắn trước',
+        smsNext: 'Tin nhắn sau',
         noScaleInfo: 'Không có thông tin quy mô',
         noManagingAuthority: 'Không có thông tin cơ quan quản lý',
       },
@@ -900,6 +982,15 @@ const resources = {
         foodMap: 'Bản đồ quán ăn Daejeon PSPD',
         chamSite: 'Daejeon PSPD',
         appSettings: 'Cài đặt ngôn ngữ',
+        notifications: {
+          title: 'Thông báo',
+          disaster: 'Tin nhắn thiên tai',
+          disasterDescription: 'Nhận tin nhắn khẩn cấp về thiên tai tại Daejeon theo ngôn ngữ của bạn.',
+          personal: 'Thông báo cá nhân',
+          personalDescription: 'Kết quả báo cáo và thông báo từ quản trị viên (cần đăng nhập).',
+          permissionOff: 'Thông báo đang bị tắt trong cài đặt của điện thoại. Hãy bật để nhận thông báo.',
+          openSettings: 'Mở cài đặt',
+        },
         languageSettings: 'Cài đặt ngôn ngữ',
         login: 'Đăng nhập',
       },
@@ -1050,5 +1141,31 @@ i18n.use(initReactI18next).init({
     escapeValue: false,
   },
 });
+
+const LANGUAGE_STORAGE_KEY = 'app.language';
+// 뒤로가기 후 재실행이면 App 이 다시 마운트돼 이 함수가 또 불린다. 저장 리스너는 한 번만 단다.
+let saveListenerAttached = false;
+
+/**
+ * 사용자가 고른 언어를 되살리고, 이후 바꿀 때마다 저장한다. 앱 시작 시 한 번 부른다.
+ * 저장값이 없으면(처음 설치) 기기 언어를 그대로 쓴다. 기기 언어는 저장하지 않아서,
+ * 직접 고른 적이 없으면 기기 언어를 바꿨을 때 앱도 따라간다.
+ * 스플래시가 이 작업을 기다리므로 처음부터 고른 언어로 그려진다(푸시 토큰도 이 언어로 등록).
+ */
+export async function restoreSavedLanguage() {
+  try {
+    const saved = await AsyncStorage.getItem(LANGUAGE_STORAGE_KEY);
+    if (saved && saved in resources && saved !== i18n.language) {
+      await i18n.changeLanguage(saved);
+    }
+  } catch {
+    // 저장소를 못 읽어도 기기 언어로 계속 쓴다.
+  }
+  if (saveListenerAttached) return;
+  saveListenerAttached = true;
+  i18n.on('languageChanged', language => {
+    AsyncStorage.setItem(LANGUAGE_STORAGE_KEY, language).catch(() => {});
+  });
+}
 
 export default i18n;

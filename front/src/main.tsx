@@ -7,6 +7,7 @@ import AdminLoginPage from '@/pages/AdminLoginPage'
 import AdminReportsPage from '@/pages/AdminReportsPage'
 import AdminAppReportsPage from '@/pages/AdminAppReportsPage'
 import AdminFeedbacksPage from '@/pages/AdminFeedbacksPage'
+import AdminMembersPage from '@/pages/AdminMembersPage'
 import AdminSheltersPage from '@/pages/AdminSheltersPage'
 import AdminContentsPage from '@/pages/AdminContentsPage'
 import AdminManualsPage from '@/pages/AdminManualsPage'
@@ -22,6 +23,7 @@ createRoot(document.getElementById('root')!).render(
         <Route path="/admin/reports" element={<AdminReportsPage />} />
         <Route path="/admin/app-reports" element={<AdminAppReportsPage />} />
         <Route path="/admin/feedbacks" element={<AdminFeedbacksPage />} />
+        <Route path="/admin/members" element={<AdminMembersPage />} />
         <Route path="/admin/shelters" element={<AdminSheltersPage />} />
         <Route path="/admin/contents" element={<AdminContentsPage />} />
         <Route path="/admin/manuals" element={<AdminManualsPage />} />

@@ -1,8 +1,11 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <!-- 재난문자 푸시. Android 13+ 는 런타임에 따로 허락받는다(push.service.ts). -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <!-- 길찾기에서 카카오맵·네이버지도 앱을 먼저 연다. Android 11+ 는 여기 적은 스킴만 앱을 찾을 수 있다. -->
     <queries>
@@ -26,6 +29,19 @@
       android:usesCleartextTraffic="${usesCleartextTraffic}"
       android:networkSecurityConfig="@xml/network_security_config"
       android:supportsRtl="true">
+
+      <!-- 앱이 꺼져 있을 때 OS가 직접 띄우는 FCM 알림의 채널·아이콘. 채널은 MainApplication 에서 만든다. -->
+      <meta-data
+        android:name="com.google.firebase.messaging.default_notification_channel_id"
+        android:value="disaster"
+        tools:replace="android:value" />
+      <meta-data
+        android:name="com.google.firebase.messaging.default_notification_icon"
+        android:resource="@drawable/ic_notification" />
+      <meta-data
+        android:name="com.google.firebase.messaging.default_notification_color"
+        android:resource="@color/notification_color"
+        tools:replace="android:resource" />
 
       <activity
         android:name=".MainActivity"

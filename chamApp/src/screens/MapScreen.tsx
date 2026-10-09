@@ -60,7 +60,7 @@ import i18nInstance from '../i18n';
 import CurrentLocationBar from '../components/CurrentLocationBar.tsx';
 import MapSearchFilters from '../components/MapSearchFilters.tsx';
 import { loadCurrentLocation } from '../hooks/useCurrentLocation.ts';
-import { useFetchMap } from '../services/map.service.ts';
+import { fetchPlaceBoundary, useFetchMap } from '../services/map.service.ts';
 import type { ShelterImageCategory } from '../services/report.service.ts';
 import { useMapStore } from '../store/map.ts';
 import { useLocationStore } from '../store/location.ts';
@@ -1062,6 +1062,42 @@ function buildMapHtml(
           scheduleDraw();
         };
 
+        // 고른 장소의 부지 경계(필지)를 파란 면으로 칠한다. RN 이 GeoJSON geometry 문자열을 넘기고, null 이면 지운다.
+        // 클릭은 받지 않아(기본값) 면 위를 눌러도 지도 탭(선택 해제)이 그대로 동작한다.
+        let boundaryPolygons = [];
+        window.__setBoundary = function(geoJsonText) {
+          for (let i = 0; i < boundaryPolygons.length; i += 1) boundaryPolygons[i].setMap(null);
+          boundaryPolygons = [];
+          if (!geoJsonText) return;
+          let geometry = null;
+          try {
+            geometry = JSON.parse(geoJsonText);
+          } catch (e) {
+            return;
+          }
+          const shapes =
+            geometry.type === 'Polygon' ? [geometry.coordinates]
+            : geometry.type === 'MultiPolygon' ? geometry.coordinates
+            : [];
+          shapes.forEach(function(rings) {
+            const path = rings.map(function(ring) {
+              return ring.map(function(point) {
+                return new window.kakao.maps.LatLng(point[1], point[0]);
+              });
+            });
+            boundaryPolygons.push(new window.kakao.maps.Polygon({
+              map: map,
+              path: path,
+              strokeWeight: 2,
+              strokeColor: '#2563eb',
+              strokeOpacity: 0.9,
+              fillColor: '#2563eb',
+              fillOpacity: 0.18,
+              zIndex: 1,
+            }));
+          });
+        };
+
         window.__clearSelectedPlaceMarker = function() {
           paintSelected(null);
         };
@@ -1833,6 +1869,37 @@ export default function MapScreen() {
       Math.abs(current - nextHeight) > 1 ? nextHeight : current,
     );
   };
+
+  // 미리보기·상세로 고른 장소의 부지 경계를 지도에 칠한다. 한 번 받은 경계는 화면이 살아 있는 동안 재사용한다.
+  const boundaryPlaceId = selectedPlace?.placeId ?? previewPlace?.placeId ?? null;
+  const boundaryCacheRef = useRef(new Map<number, string | null>());
+  useEffect(() => {
+    const apply = (geoJson: string | null) =>
+      injectMapScript(
+        `if (window.__setBoundary) window.__setBoundary(${JSON.stringify(geoJson)});`,
+      );
+    if (boundaryPlaceId == null) {
+      apply(null);
+      return;
+    }
+    const cache = boundaryCacheRef.current;
+    if (cache.has(boundaryPlaceId)) {
+      apply(cache.get(boundaryPlaceId) ?? null);
+      return;
+    }
+    // 다른 장소의 경계가 남아 있지 않게 먼저 지우고 받는다.
+    apply(null);
+    let cancelled = false;
+    fetchPlaceBoundary(boundaryPlaceId)
+      .then(geoJson => {
+        cache.set(boundaryPlaceId, geoJson);
+        if (!cancelled) apply(geoJson);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [boundaryPlaceId, injectMapScript]);
 
   const selectPlaceMarker = useCallback(
     (placeId: number) => {

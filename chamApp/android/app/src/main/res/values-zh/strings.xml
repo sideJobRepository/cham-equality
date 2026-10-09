@@ -1,0 +1,3 @@
+<resources>
+    <string name="notification_channel_disaster">灾难短信通知</string>
+</resources>

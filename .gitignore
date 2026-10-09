@@ -32,6 +32,9 @@ chamApp/.env
 chamApp/android/app/upload-keystore.jks
 chamApp/android/keystore.properties
 
+# Firebase 앱 설정 — CI에서 GOOGLE_SERVICES_JSON_BASE64 시크릿으로 복원
+chamApp/android/app/google-services.json
+
 CLAUDE.local.md
 **/CLAUDE.local.md
 

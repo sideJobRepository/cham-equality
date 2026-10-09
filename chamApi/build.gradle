@@ -84,6 +84,9 @@ dependencies {
     // 엑셀 업로드
     implementation 'org.apache.poi:poi-ooxml:5.5.1'
 
+    // 푸시 알림 (FCM 발송)
+    implementation 'com.google.firebase:firebase-admin:9.4.3'
+
 }
 
 tasks.named('test') {

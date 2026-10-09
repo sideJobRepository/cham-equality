@@ -1,6 +1,8 @@
 apply plugin: "com.android.application"
 apply plugin: "org.jetbrains.kotlin.android"
 apply plugin: "com.facebook.react"
+// FCM 푸시: android/app/google-services.json 필요(gitignore, CI에서 시크릿으로 복원)
+apply plugin: "com.google.gms.google-services"
 
 // react-native-config: chamApp/.env 로드 (project.env.get(...) 사용 가능하게)
 apply from: "../../node_modules/react-native-config/android/dotenv.gradle"

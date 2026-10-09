@@ -22,7 +22,9 @@ import com.chamapi.shelter.enums.ShelterSurveyStatus;
 import com.chamapi.shelter.repository.ShelterImageRepository;
 import com.chamapi.shelter.repository.ShelterInfoAppReportRepository;
 import com.chamapi.shelter.repository.ShelterRepository;
+import com.chamapi.shelter.event.AppReportDecidedEvent;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -52,6 +54,7 @@ public class ShelterInfoAppReportService {
     private final CommonFileRepository commonFileRepository;
     private final ShelterRepository shelterRepository;
     private final S3FileService s3FileService;
+    private final ApplicationEventPublisher eventPublisher;
 
     /**
      * 앱 제보 생성. 대피소 surveyStatus 게이트를 통과하면 PENDING으로 저장하고 첨부 이미지를 연결한다.
@@ -278,12 +281,14 @@ public class ShelterInfoAppReportService {
         shelter.applyAppReport(report);
         report.approve();
         approveImagesOf(report);
+        publishDecided(report, shelter, AppReportDecidedEvent.Result.APPROVED);
 
         List<ShelterInfoAppReport> others = shelterInfoAppReportRepository
                 .findAllByShelterIdAndRequestStatusOrderByCreateDateDesc(report.getShelterId(), ShelterInfoReportStatus.PENDING);
         for (ShelterInfoAppReport other : others) {
             if (other.getId().equals(reportId)) continue;
             rejectInternal(other);
+            publishDecided(other, shelter, AppReportDecidedEvent.Result.REJECTED_OTHER_APPROVED);
         }
     }
 
@@ -293,6 +298,14 @@ public class ShelterInfoAppReportService {
         ShelterInfoAppReport report = shelterInfoAppReportRepository.findById(reportId)
                 .orElseThrow(() -> new BadRequestException("존재하지 않는 앱 제보 ID: " + reportId));
         rejectInternal(report);
+        Shelter shelter = shelterRepository.findById(report.getShelterId()).orElse(null);
+        publishDecided(report, shelter, AppReportDecidedEvent.Result.REJECTED);
+    }
+
+    /** 제보한 회원에게 결과를 알리도록 이벤트만 남긴다. 실제 발송은 커밋 뒤 푸시 모듈이 한다. */
+    private void publishDecided(ShelterInfoAppReport report, Shelter shelter, AppReportDecidedEvent.Result result) {
+        eventPublisher.publishEvent(new AppReportDecidedEvent(
+                report.getMemberId(), report.getId(), shelter != null ? shelter.getName() : null, result));
     }
 
     /**

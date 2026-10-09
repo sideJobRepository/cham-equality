@@ -61,6 +61,14 @@ public class Place extends DateSuperClass {
     @Column(name = "PLACE_LONGITUDE", precision = 11, scale = 8)
     private BigDecimal longitude;
 
+    // 장소 부지 경계(GeoJSON Polygon/MultiPolygon, WGS84 [경도, 위도]). 지도에 면으로 칠할 때 쓴다.
+    @Column(name = "PLACE_AREA_GEOJSON", columnDefinition = "MEDIUMTEXT")
+    private String areaGeoJson;
+
+    // 경계를 가져온 필지 고유번호(VWorld PNU). 조회했지만 쓸 필지가 없으면 AREA_NOT_FOUND.
+    @Column(name = "PLACE_AREA_PNU")
+    private String areaPnu;
+
     // 장소에 속한 대피소 목록
     @OneToMany(mappedBy = "place", fetch = FetchType.LAZY)
     private List<Shelter> shelters = new ArrayList<>();
@@ -128,5 +136,20 @@ public class Place extends DateSuperClass {
             return oldAddress;
 
         return null;
+    }
+
+    /** 조회했지만 쓸 필지가 없을 때 PNU 자리에 남기는 표시. 다음 일괄 채우기에서 다시 조회하지 않는다. */
+    public static final String AREA_NOT_FOUND = "NOT_FOUND";
+
+    /** VWorld 에서 받은 필지 경계를 저장한다. */
+    public void updateArea(String geoJson, String pnu) {
+        this.areaGeoJson = geoJson;
+        this.areaPnu = pnu;
+    }
+
+    /** 경계를 찾지 못했음을 기록한다(좌표가 도로·하천 위이거나 필지가 없음). */
+    public void markAreaNotFound() {
+        this.areaGeoJson = null;
+        this.areaPnu = AREA_NOT_FOUND;
     }
 }

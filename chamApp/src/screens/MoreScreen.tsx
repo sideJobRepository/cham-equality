@@ -1,10 +1,11 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Linking,
   Modal,
   Platform,
+  Switch,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import styled from 'styled-components/native';
@@ -23,6 +24,11 @@ import {
 import { launchImageLibrary, type Asset } from 'react-native-image-picker';
 import LinearGradient from 'react-native-linear-gradient';
 import { useUserStore } from '../store/user';
+import { usePushStore } from '../store/push';
+import {
+  hasNotificationPermission,
+  updatePushPreferences,
+} from '../services/push.service';
 import {
   useKakaoLogin,
   useNaverLogin,
@@ -190,6 +196,28 @@ export default function MoreScreen() {
     }, [user]),
   );
 
+  // 알림 설정. OS 알림 권한이 꺼져 있으면 앱 토글을 켜도 안 오므로 설정으로 안내한다.
+  const disasterEnabled = usePushStore(state => state.disasterEnabled);
+  const personalEnabled = usePushStore(state => state.personalEnabled);
+  const [notificationAllowed, setNotificationAllowed] = useState(true);
+  useFocusEffect(
+    useCallback(() => {
+      let ignore = false;
+      hasNotificationPermission()
+        .then(allowed => {
+          if (!ignore) setNotificationAllowed(allowed);
+        })
+        .catch(() => {});
+      return () => {
+        ignore = true;
+      };
+    }, []),
+  );
+
+  // 제보 결과 알림을 눌러 들어오면 그 제보 상세를 연다.
+  const openReportId = usePushStore(state => state.openReportId);
+  const clearOpenReport = usePushStore(state => state.clearOpenReport);
+
   const openReportDetail = async (reportId: number) => {
     setReportDetailLoading(true);
     try {
@@ -212,6 +240,14 @@ export default function MoreScreen() {
       setReportDetailLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (openReportId == null || !user) return;
+    clearOpenReport();
+    openReportDetail(openReportId);
+    // openReportDetail 은 매 렌더 새로 만들어지지만 openReportId 를 바로 비우므로 한 번만 돈다.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [openReportId, user, clearOpenReport]);
 
   const onKakao = async () => {
     try {
@@ -411,6 +447,66 @@ export default function MoreScreen() {
                 </LanguageButton>
               ))}
             </LanguageRow>
+          </SettingBlock>
+        </Section>
+
+        <Section>
+          <SectionTitle>{t('more.notifications.title')}</SectionTitle>
+          <SettingBlock>
+            <NotificationRow>
+              <NotificationTextBox>
+                <NotificationLabel>
+                  {t('more.notifications.disaster')}
+                </NotificationLabel>
+                <NotificationDescription>
+                  {t('more.notifications.disasterDescription')}
+                </NotificationDescription>
+              </NotificationTextBox>
+              <Switch
+                accessibilityLabel={t('more.notifications.disaster')}
+                value={disasterEnabled}
+                onValueChange={value =>
+                  updatePushPreferences({ disasterEnabled: value })
+                }
+                trackColor={{ false: '#d1d5db', true: '#93c5fd' }}
+                thumbColor={disasterEnabled ? '#2563eb' : '#f9fafb'}
+              />
+            </NotificationRow>
+            <NotificationDivider />
+            <NotificationRow>
+              <NotificationTextBox>
+                <NotificationLabel>
+                  {t('more.notifications.personal')}
+                </NotificationLabel>
+                <NotificationDescription>
+                  {t('more.notifications.personalDescription')}
+                </NotificationDescription>
+              </NotificationTextBox>
+              <Switch
+                accessibilityLabel={t('more.notifications.personal')}
+                value={personalEnabled}
+                onValueChange={value =>
+                  updatePushPreferences({ personalEnabled: value })
+                }
+                trackColor={{ false: '#d1d5db', true: '#93c5fd' }}
+                thumbColor={personalEnabled ? '#2563eb' : '#f9fafb'}
+              />
+            </NotificationRow>
+            {!notificationAllowed ? (
+              <NotificationPermissionBox>
+                <NotificationPermissionText>
+                  {t('more.notifications.permissionOff')}
+                </NotificationPermissionText>
+                <NotificationSettingsButton
+                  accessibilityRole="button"
+                  onPress={() => Linking.openSettings()}
+                >
+                  <NotificationSettingsText>
+                    {t('more.notifications.openSettings')}
+                  </NotificationSettingsText>
+                </NotificationSettingsButton>
+              </NotificationPermissionBox>
+            ) : null}
           </SettingBlock>
         </Section>
 
@@ -1342,4 +1438,61 @@ const ReportDetailImageDescription = styled.Text`
   font-size: 12px;
   line-height: 18px;
   font-weight: 600;
+`;
+
+const NotificationRow = styled.View`
+  min-height: 48px;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+`;
+
+const NotificationTextBox = styled.View`
+  flex: 1;
+  gap: 2px;
+`;
+
+const NotificationLabel = styled.Text`
+  color: #111827;
+  font-size: 15px;
+  font-weight: 700;
+`;
+
+const NotificationDescription = styled.Text`
+  color: #6b7280;
+  font-size: 13px;
+  line-height: 18px;
+`;
+
+const NotificationDivider = styled.View`
+  height: 1px;
+  background-color: #f3f4f6;
+`;
+
+const NotificationPermissionBox = styled.View`
+  gap: 8px;
+  padding: 12px;
+  border-radius: 8px;
+  background-color: #fff7ed;
+`;
+
+const NotificationPermissionText = styled.Text`
+  color: #9a3412;
+  font-size: 13px;
+  line-height: 19px;
+`;
+
+const NotificationSettingsButton = styled.Pressable`
+  align-self: flex-start;
+  min-height: 44px;
+  justify-content: center;
+  padding: 0 14px;
+  border-radius: 8px;
+  background-color: #ea580c;
+`;
+
+const NotificationSettingsText = styled.Text`
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 700;
 `;
