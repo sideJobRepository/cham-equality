@@ -30,14 +30,28 @@ export interface NearestShelter {
   images: NearestShelterImage[];
 }
 
+// 카드가 비어 있을 때 로딩·주변 없음·오류를 구분해 보여주려고 둔다.
+// 'empty' 는 조건(접근성 필터)에 맞는 대피소가 없다는 서버 응답(400)이다.
+export type NearestShelterStatus =
+  | 'idle'
+  | 'loading'
+  | 'ready'
+  | 'empty'
+  | 'error';
+
 interface NearestShelterStore {
   nearestShelter: NearestShelter | null;
+  status: NearestShelterStatus;
   setNearestShelter: (nearestShelter: NearestShelter) => void;
-  clearNearestShelter: () => void;
+  setStatus: (status: NearestShelterStatus) => void;
+  clearNearestShelter: (status?: NearestShelterStatus) => void;
 }
 
 export const useNearestShelterStore = create<NearestShelterStore>(set => ({
   nearestShelter: null,
-  setNearestShelter: nearestShelter => set({ nearestShelter }),
-  clearNearestShelter: () => set({ nearestShelter: null }),
+  status: 'idle',
+  setNearestShelter: nearestShelter => set({ nearestShelter, status: 'ready' }),
+  setStatus: status => set({ status }),
+  clearNearestShelter: (status = 'idle') =>
+    set({ nearestShelter: null, status }),
 }));

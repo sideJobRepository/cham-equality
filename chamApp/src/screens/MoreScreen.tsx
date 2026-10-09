@@ -12,6 +12,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import {
   ChevronRight,
   ClipboardList,
+  CloudOff,
   Image as ImageIcon,
   MessageSquare,
   Trash2,
@@ -50,6 +51,7 @@ import ImageAttachButton from '../components/ui/ImageAttachButton.tsx';
 import SubmitButton from '../components/ui/SubmitButton.tsx';
 import Button from '../components/ui/Button.tsx';
 import IconButton from '../components/ui/IconButton.tsx';
+import StatusMessage from '../components/ui/StatusMessage.tsx';
 import { colors } from '../theme/index.ts';
 import {
   Screen,
@@ -98,7 +100,6 @@ import {
   FeedbackImagePreview,
   FeedbackImageName,
   ReportListBlock,
-  ReportLoadingRow,
   ReportListButton,
   ReportListIconBox,
   ReportListBody,
@@ -229,6 +230,8 @@ export default function MoreScreen() {
   const withdraw = useWithdraw();
   const [reports, setReports] = useState<ShelterReportListItem[]>([]);
   const [reportsLoading, setReportsLoading] = useState(false);
+  // 불러오기 실패를 '제보 없음'과 구분해 다시 시도를 보여준다.
+  const [reportsFailed, setReportsFailed] = useState(false);
   const [selectedReport, setSelectedReport] =
     useState<ShelterReportDetail | null>(null);
   const [reportDetailLoading, setReportDetailLoading] = useState(false);
@@ -242,37 +245,39 @@ export default function MoreScreen() {
   );
   const [isFeedbackSubmitting, setIsFeedbackSubmitting] = useState(false);
 
-  useFocusEffect(
-    useCallback(() => {
-      if (!user) {
-        setReports([]);
-        return;
-      }
+  // 다시 시도 버튼도 같은 함수를 부르려고 포커스 effect 밖으로 뺐다.
+  const loadReports = useCallback(() => {
+    if (!user) {
+      setReports([]);
+      return;
+    }
 
-      let ignore = false;
-      setReportsLoading(true);
-      fetchMyShelterReports()
-        .then(data => {
-          if (!ignore) setReports(data);
-        })
-        .catch(error => {
-          if (__DEV__) {
-            console.log('[my-reports] fetch failed', {
-              status: error?.response?.status,
-              data: error?.response?.data,
-              message: error?.message,
-            });
-          }
-        })
-        .finally(() => {
-          if (!ignore) setReportsLoading(false);
-        });
+    let ignore = false;
+    setReportsLoading(true);
+    setReportsFailed(false);
+    fetchMyShelterReports()
+      .then(data => {
+        if (!ignore) setReports(data);
+      })
+      .catch(error => {
+        if (!ignore) setReportsFailed(true);
+        if (__DEV__) {
+          console.log('[my-reports] fetch failed', {
+            status: error?.response?.status,
+            data: error?.response?.data,
+            message: error?.message,
+          });
+        }
+      })
+      .finally(() => {
+        if (!ignore) setReportsLoading(false);
+      });
 
-      return () => {
-        ignore = true;
-      };
-    }, [user]),
-  );
+    return () => {
+      ignore = true;
+    };
+  }, [user]);
+  useFocusEffect(loadReports);
 
   // 알림 설정. OS 알림 권한이 꺼져 있으면 앱 토글을 켜도 안 오므로 설정으로 안내한다.
   const disasterEnabled = usePushStore(state => state.disasterEnabled);
@@ -627,9 +632,20 @@ export default function MoreScreen() {
             <SectionTitle>{t('moreReports.title')}</SectionTitle>
             <ReportListBlock>
               {reportsLoading ? (
-                <ReportLoadingRow>
-                  <ActivityIndicator color={colors.primary} />
-                </ReportLoadingRow>
+                <StatusMessage
+                  compact
+                  loading
+                  message={t('moreReports.loading')}
+                />
+              ) : reportsFailed ? (
+                <StatusMessage
+                  compact
+                  tone="error"
+                  icon={CloudOff}
+                  message={t('moreReports.loadFailed')}
+                  actionLabel={t('common.retry')}
+                  onAction={loadReports}
+                />
               ) : reports.length ? (
                 reports.map(report => (
                   <ReportListButton
@@ -660,7 +676,9 @@ export default function MoreScreen() {
                   </ReportListButton>
                 ))
               ) : (
-                <ReportEmptyText>{t('moreReports.empty')}</ReportEmptyText>
+                <ReportEmptyText accessibilityLiveRegion="polite">
+                  {t('moreReports.empty')}
+                </ReportEmptyText>
               )}
             </ReportListBlock>
           </Section>

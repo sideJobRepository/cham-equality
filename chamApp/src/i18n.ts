@@ -16,6 +16,7 @@ const resources = {
         prevPage: '이전 페이지',
         nextPage: '다음 페이지',
         error: '오류가 발생했습니다.',
+        retry: '다시 시도',
       },
       update: {
         readyTitle: '업데이트 준비 완료',
@@ -48,6 +49,13 @@ const resources = {
         noScaleInfo: '규모 정보 없음',
         noManagingAuthority: '관리기관 정보 없음',
         noActiveDisaster: '현재 발령된 재난이 없습니다.',
+        shelterLoading: '가까운 대피소를 찾고 있습니다.',
+        locationDenied: '위치 권한을 허용하면 가까운 대피소를 알려드려요.',
+        allowLocation: '위치 권한 허용',
+        locationUnavailable: '현재 위치를 확인할 수 없어 가까운 대피소를 찾지 못했습니다.',
+        noNearbyShelter: '조건에 맞는 가까운 대피소가 없습니다.',
+        viewMap: '지도에서 보기',
+        shelterLoadFailed: '가까운 대피소를 불러오지 못했습니다.',
       },
       manual: {
         title: '재난 행동요령',
@@ -60,6 +68,8 @@ const resources = {
         goToMap: '대피소 지도 보기',
         search: '검색',
         clearSearch: '검색어 지우기',
+        loading: '행동요령을 불러오고 있습니다.',
+        loadFailed: '행동요령을 불러오지 못했습니다.',
       },
       auth: {
         loginTitle: '로그인하고 제보를 시작하세요',
@@ -128,6 +138,8 @@ const resources = {
         unknownShelter: '대피소 정보 없음',
         noImages: '첨부된 사진이 없습니다.',
         detailFailed: '제보 상세를 불러오지 못했습니다.',
+        loading: '제보 목록을 불러오고 있습니다.',
+        loadFailed: '제보 목록을 불러오지 못했습니다.',
         status: {
           PENDING: '검토 대기',
           APPROVED: '승인',
@@ -281,6 +293,7 @@ const resources = {
         prevPage: 'Previous page',
         nextPage: 'Next page',
         error: 'Something went wrong.',
+        retry: 'Try again',
       },
       update: {
         readyTitle: 'Update ready',
@@ -313,6 +326,13 @@ const resources = {
         noScaleInfo: 'No scale information',
         noManagingAuthority: 'No managing authority information',
         noActiveDisaster: 'No disaster alerts are currently in effect.',
+        shelterLoading: 'Finding the nearest shelter.',
+        locationDenied: 'Allow location access to see the nearest shelter.',
+        allowLocation: 'Allow location',
+        locationUnavailable: 'Could not find your location, so the nearest shelter cannot be shown.',
+        noNearbyShelter: 'No nearby shelter matches your filters.',
+        viewMap: 'View on map',
+        shelterLoadFailed: 'Could not load the nearest shelter.',
       },
       manual: {
         title: 'Disaster Safety Guide',
@@ -325,6 +345,8 @@ const resources = {
         goToMap: 'View Shelter Map',
         search: 'Search',
         clearSearch: 'Clear search',
+        loading: 'Loading safety guides.',
+        loadFailed: 'Could not load safety guides.',
       },
       auth: {
         loginTitle: 'Log in to start reporting',
@@ -393,6 +415,8 @@ const resources = {
         unknownShelter: 'Unknown shelter',
         noImages: 'No attached photos.',
         detailFailed: 'Failed to load report detail.',
+        loading: 'Loading your reports.',
+        loadFailed: 'Could not load your reports.',
         status: {
           PENDING: 'Pending',
           APPROVED: 'Approved',
@@ -547,6 +571,7 @@ const resources = {
         prevPage: '上一页',
         nextPage: '下一页',
         error: '发生错误。',
+        retry: '重试',
       },
       update: {
         readyTitle: '更新已就绪',
@@ -579,6 +604,13 @@ const resources = {
         noScaleInfo: '无规模信息',
         noManagingAuthority: '无管理机构信息',
         noActiveDisaster: '目前没有发布中的灾害。',
+        shelterLoading: '正在查找附近的避难所。',
+        locationDenied: '允许位置权限后即可查看附近的避难所。',
+        allowLocation: '允许位置权限',
+        locationUnavailable: '无法确认当前位置，未能找到附近的避难所。',
+        noNearbyShelter: '没有符合条件的附近避难所。',
+        viewMap: '在地图上查看',
+        shelterLoadFailed: '无法加载附近的避难所。',
       },
       manual: {
         title: '灾害行动指南',
@@ -591,6 +623,8 @@ const resources = {
         goToMap: '查看避难所地图',
         search: '搜索',
         clearSearch: '清除搜索内容',
+        loading: '正在加载行动指南。',
+        loadFailed: '无法加载行动指南。',
       },
       auth: {
         loginTitle: '登录后开始举报',
@@ -658,6 +692,8 @@ const resources = {
         unknownShelter: '无避难所信息',
         noImages: '没有附加照片。',
         detailFailed: '无法加载举报详情。',
+        loading: '正在加载举报列表。',
+        loadFailed: '无法加载举报列表。',
         status: {
           PENDING: '待审核',
           APPROVED: '已批准',
@@ -811,6 +847,7 @@ const resources = {
         prevPage: '前のページ',
         nextPage: '次のページ',
         error: 'エラーが発生しました。',
+        retry: '再試行',
       },
       update: {
         readyTitle: 'アップデートの準備完了',
@@ -843,6 +880,13 @@ const resources = {
         noScaleInfo: '規模情報なし',
         noManagingAuthority: '管理機関情報なし',
         noActiveDisaster: '現在発令中の災害はありません。',
+        shelterLoading: '近くの避難所を探しています。',
+        locationDenied: '位置情報を許可すると、近くの避難所をお知らせします。',
+        allowLocation: '位置情報を許可',
+        locationUnavailable: '現在地を確認できず、近くの避難所を見つけられませんでした。',
+        noNearbyShelter: '条件に合う近くの避難所がありません。',
+        viewMap: '地図で見る',
+        shelterLoadFailed: '近くの避難所を読み込めませんでした。',
       },
       manual: {
         title: '災害時行動ガイド',
@@ -855,6 +899,8 @@ const resources = {
         goToMap: '避難所マップを見る',
         search: '検索',
         clearSearch: '検索語を消去',
+        loading: '行動要領を読み込んでいます。',
+        loadFailed: '行動要領を読み込めませんでした。',
       },
       auth: {
         loginTitle: 'ログインして提報を始める',
@@ -923,6 +969,8 @@ const resources = {
         unknownShelter: '避難所情報なし',
         noImages: '添付写真はありません。',
         detailFailed: '提報詳細を読み込めませんでした。',
+        loading: '提報一覧を読み込んでいます。',
+        loadFailed: '提報一覧を読み込めませんでした。',
         status: {
           PENDING: '確認待ち',
           APPROVED: '承認',
@@ -1077,6 +1125,7 @@ const resources = {
         prevPage: 'Trang trước',
         nextPage: 'Trang sau',
         error: 'Đã xảy ra lỗi.',
+        retry: 'Thử lại',
       },
       update: {
         readyTitle: 'Bản cập nhật đã sẵn sàng',
@@ -1109,6 +1158,13 @@ const resources = {
         noScaleInfo: 'Không có thông tin quy mô',
         noManagingAuthority: 'Không có thông tin cơ quan quản lý',
         noActiveDisaster: 'Hiện không có thảm họa nào đang được cảnh báo.',
+        shelterLoading: 'Đang tìm nơi trú ẩn gần nhất.',
+        locationDenied: 'Cho phép truy cập vị trí để xem nơi trú ẩn gần nhất.',
+        allowLocation: 'Cho phép vị trí',
+        locationUnavailable: 'Không xác định được vị trí hiện tại nên chưa tìm được nơi trú ẩn gần nhất.',
+        noNearbyShelter: 'Không có nơi trú ẩn gần đây phù hợp với điều kiện.',
+        viewMap: 'Xem trên bản đồ',
+        shelterLoadFailed: 'Không thể tải nơi trú ẩn gần nhất.',
       },
       manual: {
         title: 'Hướng dẫn ứng phó thiên tai',
@@ -1121,6 +1177,8 @@ const resources = {
         goToMap: 'Xem bản đồ nơi trú ẩn',
         search: 'Tìm kiếm',
         clearSearch: 'Xóa từ khóa',
+        loading: 'Đang tải hướng dẫn ứng phó.',
+        loadFailed: 'Không thể tải hướng dẫn ứng phó.',
       },
       auth: {
         loginTitle: 'Đăng nhập để bắt đầu báo cáo',
@@ -1189,6 +1247,8 @@ const resources = {
         unknownShelter: 'Không có thông tin nơi trú ẩn',
         noImages: 'Không có ảnh đính kèm.',
         detailFailed: 'Không thể tải chi tiết báo cáo.',
+        loading: 'Đang tải danh sách báo cáo.',
+        loadFailed: 'Không thể tải danh sách báo cáo.',
         status: {
           PENDING: 'Chờ duyệt',
           APPROVED: 'Đã duyệt',

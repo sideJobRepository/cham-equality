@@ -6,8 +6,11 @@ import {
   ChevronLeft,
   ChevronRight,
   Clock,
+  CloudOff,
   Info,
   MapPin,
+  MapPinOff,
+  SearchX,
   ShieldCheck,
   Siren,
   Square,
@@ -24,14 +27,19 @@ import MapSearchFilters from '../components/MapSearchFilters.tsx';
 import FullscreenImageViewer from '../components/ui/FullscreenImageViewer.tsx';
 import Button from '../components/ui/Button.tsx';
 import IconButton from '../components/ui/IconButton.tsx';
+import StatusMessage from '../components/ui/StatusMessage.tsx';
 import AccessibilityChip from '../components/shelter/AccessibilityChip.tsx';
 import ShelterNoPhotoBanner from '../components/shelter/ShelterNoPhotoBanner.tsx';
-import { useCurrentLocation } from '../hooks/useCurrentLocation.ts';
+import {
+  loadCurrentLocation,
+  useCurrentLocation,
+} from '../hooks/useCurrentLocation.ts';
 import { useFetchSMS } from '../services/sms.service.ts';
 import { useFetchNearestShelter } from '../services/map.service.ts';
 import {
   useContentStore,
   useDisasterStore,
+  useLocationStore,
   useNearestShelterStore,
   usePushStore,
   useSMSStore,
@@ -53,6 +61,7 @@ import {
   TopSection,
   MiddleSection,
   ShelterItem,
+  ShelterStatusBox,
   ShelterImageFrame,
   ShelterImage,
   ImageNavButton,
@@ -206,12 +215,14 @@ export default function HomeScreen() {
   useCurrentLocation();
   useFetchSMS();
   useFetchDisaster();
-  useFetchNearestShelter();
+  const fetchNearestShelter = useFetchNearestShelter();
   useFetchContents();
   const smsData = useSMSStore(state => state.sms);
   const contents = useContentStore(state => state.contents);
   const disasterData = useDisasterStore(state => state.disaster);
   const nearestShelter = useNearestShelterStore(state => state.nearestShelter);
+  const nearestShelterStatus = useNearestShelterStore(state => state.status);
+  const locationStatus = useLocationStore(state => state.status);
   const splashDone = useSplashStore(state => state.done);
   const popupContent =
     contents.find(content => content.contentType === 'IN_APP_POPUP') ?? null;
@@ -262,6 +273,62 @@ export default function HomeScreen() {
       focusShelterId: nearestShelter.shelterId,
       focusNonce: Date.now(),
     });
+  };
+  const handleRequestLocation = async () => {
+    const result = await loadCurrentLocation();
+    // '다시 묻지 않음'이면 권한 창이 안 뜨므로 설정 화면으로 보낸다.
+    if (result === 'blocked') Linking.openSettings().catch(() => undefined);
+  };
+  const renderNearestShelterStatus = () => {
+    if (locationStatus === 'denied') {
+      return (
+        <StatusMessage
+          compact
+          icon={MapPinOff}
+          message={t('home.locationDenied')}
+          actionLabel={t('home.allowLocation')}
+          onAction={handleRequestLocation}
+        />
+      );
+    }
+    if (locationStatus === 'unavailable') {
+      return (
+        <StatusMessage
+          compact
+          icon={MapPinOff}
+          message={t('home.locationUnavailable')}
+          actionLabel={t('common.retry')}
+          onAction={handleRequestLocation}
+        />
+      );
+    }
+    if (nearestShelterStatus === 'empty') {
+      return (
+        <StatusMessage
+          compact
+          icon={SearchX}
+          message={t('home.noNearbyShelter')}
+          actionLabel={t('home.viewMap')}
+          onAction={() => navigation.navigate('Map')}
+        />
+      );
+    }
+    if (nearestShelterStatus === 'error') {
+      return (
+        <StatusMessage
+          compact
+          tone="error"
+          icon={CloudOff}
+          message={t('home.shelterLoadFailed')}
+          actionLabel={t('common.retry')}
+          onAction={fetchNearestShelter}
+        />
+      );
+    }
+    // 위치 확인 중이거나 첫 요청 전·요청 중
+    return (
+      <StatusMessage compact loading message={t('home.shelterLoading')} />
+    );
   };
   const closeNoticeModal = () => {
     if (popupContent) setDismissedNoticeId(popupContent.id);
@@ -506,7 +573,9 @@ export default function HomeScreen() {
                 ))}
               </ChipRow>
             </ShelterItem>
-          ) : null}
+          ) : (
+            <ShelterStatusBox>{renderNearestShelterStatus()}</ShelterStatusBox>
+          )}
         </MiddleSection>
       </HomeScroll>
       <Modal

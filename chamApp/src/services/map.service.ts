@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef } from 'react';
+import axios from 'axios';
 import { useTranslation } from 'react-i18next';
 import { useRefreshOnFocus } from '../hooks/useRefreshOnFocus.ts';
 import { useRequest } from '../hooks/useRequest.ts';
@@ -95,8 +96,14 @@ export function useFetchNearestShelter() {
   const clearNearestShelter = useNearestShelterStore(
     state => state.clearNearestShelter,
   );
+  const setNearestShelterStatus = useNearestShelterStore(
+    state => state.setStatus,
+  );
+  // 필터를 연달아 바꾸면 늦게 온 옛 응답이 상태를 덮어쓰므로 마지막 요청만 반영한다.
+  const requestSeqRef = useRef(0);
 
   const fetchNearestShelter = useCallback(() => {
+    const seq = ++requestSeqRef.current;
     if (!location) {
       clearNearestShelter();
       return;
@@ -107,6 +114,7 @@ export function useFetchNearestShelter() {
       .map(item => accessibilityValueMap[item])
       .filter(Boolean);
 
+    setNearestShelterStatus('loading');
     request(
       () =>
         api
@@ -122,11 +130,25 @@ export function useFetchNearestShelter() {
             },
           )
           .then(res => res.data.data),
-      setNearestShelter,
+      data => {
+        if (seq !== requestSeqRef.current) return;
+        if (data) setNearestShelter(data);
+        else clearNearestShelter('empty');
+      },
       {
         ignoreErrorRedirect: true,
+        // 홈 카드 자리에 상태를 직접 보여주므로 공통 오류 알림은 띄우지 않는다.
+        disableAlert: true,
       },
-    );
+    ).catch(error => {
+      if (seq !== requestSeqRef.current) return;
+      // 서버는 조건에 맞는 대피소가 없으면 400 을 준다. 그 외(네트워크·5xx)는 다시 시도할 오류다.
+      clearNearestShelter(
+        axios.isAxiosError(error) && error.response?.status === 400
+          ? 'empty'
+          : 'error',
+      );
+    });
   }, [
     clearNearestShelter,
     i18n.language,
@@ -134,6 +156,7 @@ export function useFetchNearestShelter() {
     request,
     selectedAccessibility,
     setNearestShelter,
+    setNearestShelterStatus,
   ]);
 
   useRefreshOnFocus(fetchNearestShelter);

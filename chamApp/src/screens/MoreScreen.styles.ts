@@ -370,12 +370,6 @@ export const ReportListBlock = styled.View`
   background-color: ${colors.surface};
 `;
 
-export const ReportLoadingRow = styled.View`
-  min-height: 72px;
-  align-items: center;
-  justify-content: center;
-`;
-
 export const ReportListButton = styled.Pressable`
   min-height: 64px;
   flex-direction: row;

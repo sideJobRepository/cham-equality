@@ -46,6 +46,17 @@ export const ShelterItem = styled.Pressable`
   border-color: ${colors.border};
 `;
 
+// 카드가 없을 때 같은 자리·같은 테두리로 상태를 보여줘 화면이 비어 보이지 않게 한다
+export const ShelterStatusBox = styled.View`
+  margin-top: 2px;
+  min-height: 140px;
+  justify-content: center;
+  border-radius: 12px;
+  background-color: #f8fafc;
+  border-width: 1px;
+  border-color: ${colors.border};
+`;
+
 export const ShelterImageFrame = styled.Pressable`
   position: relative;
   width: 100%;

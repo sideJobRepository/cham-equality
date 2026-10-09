@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { Modal, type ImageSourcePropType } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
-import { ChevronLeft, ChevronRight, Search, X } from 'lucide-react-native';
+import { ChevronLeft, ChevronRight, CloudOff, Search, X } from 'lucide-react-native';
 import { WebView } from 'react-native-webview';
 import { useTranslation } from 'react-i18next';
 import {
@@ -12,6 +12,7 @@ import {
 import { useManualStore } from '../store/manual.ts';
 import type { RootTabParamList } from '../navigation/AppNavigator.tsx';
 import IconButton from '../components/ui/IconButton.tsx';
+import StatusMessage from '../components/ui/StatusMessage.tsx';
 import { colors, radius } from '../theme/index.ts';
 import {
   manualStyles,
@@ -97,7 +98,7 @@ export default function ManualScreen() {
   const navigation = useNavigation<BottomTabNavigationProp<RootTabParamList>>();
   const [searchText, setSearchText] = useState('');
   const [query, setQuery] = useState('');
-  useFetchManuals(query);
+  const { fetchManuals, status: manualsStatus } = useFetchManuals(query);
   const fetchManualDetail = useFetchManualDetail();
   const manuals = useManualStore(state => state.manuals);
   const manualDetail = useManualStore(state => state.manualDetail);
@@ -184,7 +185,15 @@ export default function ManualScreen() {
           <HeaderDate>{t('manual.createdAt')}</HeaderDate>
         </BoardHeader>
 
-        {pagedManuals.length ? (
+        {manualsStatus === 'error' ? (
+          <StatusMessage
+            tone="error"
+            icon={CloudOff}
+            message={t('manual.loadFailed')}
+            actionLabel={t('common.retry')}
+            onAction={fetchManuals}
+          />
+        ) : pagedManuals.length ? (
           pagedManuals.map(manual => (
             <ManualRow
               key={manual.id}
@@ -196,8 +205,10 @@ export default function ManualScreen() {
               <ManualDate>{formatManualDate(manual.createDate)}</ManualDate>
             </ManualRow>
           ))
+        ) : manualsStatus === 'loading' ? (
+          <StatusMessage loading message={t('manual.loading')} />
         ) : (
-          <EmptyBox>
+          <EmptyBox accessibilityLiveRegion="polite">
             <EmptyText>
               {query ? t('manual.searchEmpty') : t('manual.empty')}
             </EmptyText>
