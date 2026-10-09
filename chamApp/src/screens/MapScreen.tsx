@@ -17,7 +17,6 @@ import {
   type ImageSourcePropType,
 } from 'react-native';
 import Config from 'react-native-config';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   useFocusEffect,
   useNavigation,
@@ -54,7 +53,6 @@ import {
   launchImageLibrary,
   type Asset,
 } from 'react-native-image-picker';
-import styled from 'styled-components/native';
 import { useTranslation } from 'react-i18next';
 import i18nInstance from '../i18n';
 import CurrentLocationBar from '../components/CurrentLocationBar.tsx';
@@ -75,9 +73,7 @@ import {
 } from '../utils/accessibilityMatch';
 import {
   ACCESSIBILITY_ALL_LABEL,
-  ACCESSIBILITY_SELECTED_COLOR,
   SHELTER_ALL_LABEL,
-  SHELTER_SELECTED_COLOR,
   accessibilityFilterLabelKeys,
   accessibilityValueMap,
   shelterTypeLabelMap,
@@ -86,6 +82,151 @@ import {
   useMapFilterStore,
 } from '../store/mapFilters.ts';
 import type { RootTabParamList } from '../navigation/AppNavigator.tsx';
+import { colors } from '../theme/index.ts';
+import {
+  MAP_CONTROL_SIZE,
+  MAP_CONTROL_GAP,
+  MAP_CONTROL_MARGIN,
+  PREVIEW_STRIP_GAP,
+  PREVIEW_STRIP_SPACE,
+} from './MapScreen.constants.ts';
+import {
+  Screen,
+  Header,
+  MapFrame,
+  LoadingBox,
+  EmptyText,
+  ErrorText,
+  MapErrorOverlay,
+  MapErrorCard,
+  RetryButton,
+  RetryButtonText,
+  PanelErrorRow,
+  PanelErrorText,
+  RegionTrailRow,
+  RegionTrailItemView,
+  RegionTrailChip,
+  RegionTrailText,
+  MapFetchingBadge,
+  MapControls,
+  MapControlButton,
+  BottomPanel,
+  AccessibilityInfoOverlay,
+  AccessibilityInfoCard,
+  AccessibilityInfoHeader,
+  AccessibilityInfoTitle,
+  AccessibilityInfoCloseButton,
+  AccessibilityInfoDescription,
+  AccessibilityInfoList,
+  AccessibilityInfoText,
+  AccessibilityLegendList,
+  AccessibilityLegendRow,
+  AccessibilityLegendDot,
+  AccessibilityLegendText,
+  AccessibilityInfoButton,
+  AccessibilityInfoButtonText,
+  PanelHandleButton,
+  PanelHandleBar,
+  PanelHeader,
+  PanelTitle,
+  PanelCount,
+  BackButton,
+  PanelScroll,
+  PanelBody,
+  PanelLayer,
+  DetailLayer,
+  UnlocatedToggle,
+  UnlocatedToggleText,
+  PanelLoading,
+  PanelLoadingText,
+  PlaceItem,
+  PlaceTitleRow,
+  PlaceName,
+  MatchBadge,
+  MatchBadgeText,
+  PlaceDistance,
+  PlaceAddress,
+  DetailAddress,
+  DetailDescription,
+  DetailMeta,
+  ShelterItem,
+  ShelterImageFrame,
+  ShelterImage,
+  ImageNavButton,
+  ImageCounter,
+  ImageCounterText,
+  ImageModalOverlay,
+  ImageModalContent,
+  ImageModalImage,
+  ImageCloseButton,
+  ModalImageNavButton,
+  ModalImageCounter,
+  ShelterTitleRow,
+  ShelterName,
+  ShelterMetaRow,
+  ShelterMetaIconText,
+  ShelterMetaText,
+  ShelterMeta,
+  ChipRow,
+  TypeChip,
+  TypeChipText,
+  TypeCountChip,
+  TypeCountText,
+  AccessChip,
+  AccessChipText,
+  ReportButton,
+  ReportButtonText,
+  ReportDoneBadge,
+  ReportDoneBadgeText,
+  ReportLoginButton,
+  ReportLoginButtonText,
+  DirectionsButton,
+  DirectionsButtonText,
+  DetailActionRow,
+  SecondaryActionButton,
+  SecondaryActionButtonText,
+  PreviewStrip,
+  PreviewCard,
+  PreviewOpenButton,
+  PreviewBody,
+  PreviewMeta,
+  PreviewMore,
+  PreviewMoreText,
+  PreviewCloseButton,
+  ShelterContactRow,
+  PhoneButton,
+  PhoneButtonText,
+  ReportModalOverlay,
+  ReportModalCard,
+  ReportModalHeader,
+  ReportModalTitle,
+  ReportCloseButton,
+  ReportShelterName,
+  ReportModalScroll,
+  ReportField,
+  ReportEtcField,
+  ReportLabel,
+  ReportTextArea,
+  ReportToggleGrid,
+  ReportToggle,
+  ReportToggleText,
+  AddImageButton,
+  AddImageButtonText,
+  ReportImageItem,
+  ReportImagePreview,
+  ReportImageBody,
+  ReportImageTopRow,
+  ReportImageName,
+  ReportImageRemoveButton,
+  ReportCategoryRow,
+  ReportCategoryChip,
+  ReportCategoryText,
+  ReportImageDescriptionInput,
+  ReportSubmitButton,
+  ReportSubmitText,
+  EmptyList,
+  EmptyPanelText,
+} from './MapScreen.styles.ts';
 
 const defaultShelterImage = require('../assets/images/shelter.png') as ImageSourcePropType;
 const reportModalScrollContentStyle = { flexGrow: 1 };
@@ -1322,10 +1463,6 @@ const PANEL_DRAG_SLOP = 6;
 // 렌더러가 이 시간 안에 이 횟수보다 많이 죽으면 재마운트를 멈추고 실패 카드를 띄운다.
 const RENDER_CRASH_WINDOW_MS = 30000;
 const RENDER_CRASH_MAX_REMOUNTS = 2;
-// 핀 미리보기 띠. 높이를 고정해야 지도에 넘기는 inset 이 실제와 맞는다.
-const PREVIEW_STRIP_HEIGHT = 84;
-const PREVIEW_STRIP_GAP = 6;
-const PREVIEW_STRIP_SPACE = PREVIEW_STRIP_HEIGHT + PREVIEW_STRIP_GAP;
 
 // 핸들 누르기·스크린리더 activate: 접힘 → 반 → 전체 → 접힘.
 function getNextPanelStopOnTap(stop: PanelStop): PanelStop {
@@ -1361,9 +1498,9 @@ const matchBadges: Record<
   string,
   { labelKey: string; color: string; Icon: typeof Check }
 > = {
-  ACCESSIBLE: { labelKey: 'map.detail.matchAccessible', color: '#15803d', Icon: Check },
-  PARTIAL: { labelKey: 'map.detail.matchPartial', color: '#b45309', Icon: Minus },
-  INACCESSIBLE: { labelKey: 'map.detail.matchInaccessible', color: '#dc2626', Icon: X },
+  ACCESSIBLE: { labelKey: 'map.detail.matchAccessible', color: colors.a11yMatch.accessible, Icon: Check },
+  PARTIAL: { labelKey: 'map.detail.matchPartial', color: colors.a11yMatch.partial, Icon: Minus },
+  INACCESSIBLE: { labelKey: 'map.detail.matchInaccessible', color: colors.a11yMatch.inaccessible, Icon: X },
 };
 
 function getMatchBadge(status?: string) {
@@ -2259,9 +2396,9 @@ export default function MapScreen() {
               })}
             </UnlocatedToggleText>
             {isUnlocatedExpanded ? (
-              <ChevronUp color="#4b5563" size={18} strokeWidth={2.6} />
+              <ChevronUp color={colors.textTertiary} size={18} strokeWidth={2.6} />
             ) : (
-              <ChevronDown color="#4b5563" size={18} strokeWidth={2.6} />
+              <ChevronDown color={colors.textTertiary} size={18} strokeWidth={2.6} />
             )}
           </UnlocatedToggle>
         );
@@ -2599,7 +2736,7 @@ export default function MapScreen() {
             onOpenWindow={handleOpenWindow}
             renderLoading={() => (
               <LoadingBox>
-                <ActivityIndicator color="#2563eb" />
+                <ActivityIndicator color={colors.primary} />
               </LoadingBox>
             )}
           />
@@ -2612,7 +2749,7 @@ export default function MapScreen() {
             {regionTrail.map((item, index) => (
               <RegionTrailItemView key={`${item.depth}-${item.regionId}`}>
                 {index > 0 ? (
-                  <ChevronRight color="#6b7280" size={14} strokeWidth={2.6} />
+                  <ChevronRight color={colors.textMuted} size={14} strokeWidth={2.6} />
                 ) : null}
                 <RegionTrailChip
                   $current={index === regionTrail.length - 1}
@@ -2634,7 +2771,7 @@ export default function MapScreen() {
         {/* 필터를 바꾸는 동안 화면 전체를 덮지 않고 지도 귀퉁이에만 표시한다. */}
         {isMapFetching ? (
           <MapFetchingBadge>
-            <ActivityIndicator color="#2563eb" size="small" />
+            <ActivityIndicator color={colors.primary} size="small" />
           </MapFetchingBadge>
         ) : null}
 
@@ -2665,14 +2802,14 @@ export default function MapScreen() {
             accessibilityLabel={t('map.a11y.zoomIn')}
             onPress={() => handleZoom(-1)}
           >
-            <Plus color="#111827" size={20} strokeWidth={2.6} />
+            <Plus color={colors.text} size={20} strokeWidth={2.6} />
           </MapControlButton>
           <MapControlButton
             accessibilityRole="button"
             accessibilityLabel={t('map.a11y.zoomOut')}
             onPress={() => handleZoom(1)}
           >
-            <Minus color="#111827" size={20} strokeWidth={2.6} />
+            <Minus color={colors.text} size={20} strokeWidth={2.6} />
           </MapControlButton>
           {/* 위치가 없어도 보여 준다. 누르면 권한 재요청·안내로 이어진다. */}
           <MapControlButton
@@ -2681,7 +2818,7 @@ export default function MapScreen() {
             onPress={handleMoveToUserLocation}
           >
             <LocateFixed
-              color={userLocation ? '#2563eb' : '#9ca3af'}
+              color={userLocation ? colors.primary : colors.textDisabled}
               size={20}
               strokeWidth={2.6}
             />
@@ -2734,7 +2871,7 @@ export default function MapScreen() {
               </PreviewBody>
               <PreviewMore>
                 <PreviewMoreText>{t('map.detail.more')}</PreviewMoreText>
-                <ChevronRight color="#ffffff" size={14} strokeWidth={2.8} />
+                <ChevronRight color={colors.textOnColor} size={14} strokeWidth={2.8} />
               </PreviewMore>
             </PreviewOpenButton>
             <PreviewCloseButton
@@ -2742,7 +2879,7 @@ export default function MapScreen() {
               accessibilityLabel={t('map.a11y.closePreview')}
               onPress={handleClosePreview}
             >
-              <X color="#6b7280" size={20} strokeWidth={2.6} />
+              <X color={colors.textMuted} size={20} strokeWidth={2.6} />
             </PreviewCloseButton>
           </PreviewCard>
         </PreviewStrip>
@@ -2808,7 +2945,7 @@ export default function MapScreen() {
               </PanelLoading>
             ) : !mapData || !panelReady ? (
               <PanelLoading style={panelHiddenPadStyle}>
-                <ActivityIndicator color="#2563eb" />
+                <ActivityIndicator color={colors.primary} />
                 <PanelLoadingText>
                   {t('map.labels.loadingShelters')}
                 </PanelLoadingText>
@@ -2836,7 +2973,7 @@ export default function MapScreen() {
                   hitSlop={12}
                   onPress={handleBackToPlaceList}
                 >
-                  <ChevronLeft color="#111827" size={20} strokeWidth={2.8} />
+                  <ChevronLeft color={colors.text} size={20} strokeWidth={2.8} />
                 </BackButton>
                 <PanelTitle numberOfLines={1}>{selectedPlace.name}</PanelTitle>
               </PanelHeader>
@@ -2856,7 +2993,7 @@ export default function MapScreen() {
                       )}`}
                       onPress={() => handleOpenKakaoMap(selectedPlace)}
                     >
-                      <Navigation color="#ffffff" size={14} strokeWidth={2.6} />
+                      <Navigation color={colors.textOnColor} size={14} strokeWidth={2.6} />
                       <DirectionsButtonText>
                         {t('map.detail.kakaoMap')}
                       </DirectionsButtonText>
@@ -2869,7 +3006,7 @@ export default function MapScreen() {
                       )}`}
                       onPress={() => handleOpenNaverMap(selectedPlace)}
                     >
-                      <Navigation color="#093a6e" size={14} strokeWidth={2.6} />
+                      <Navigation color={colors.brand} size={14} strokeWidth={2.6} />
                       <SecondaryActionButtonText>
                         {t('map.detail.naverMap')}
                       </SecondaryActionButtonText>
@@ -2881,7 +3018,7 @@ export default function MapScreen() {
                   accessibilityRole="button"
                   onPress={() => handleSharePlace(selectedPlace)}
                 >
-                  <Share2 color="#093a6e" size={14} strokeWidth={2.6} />
+                  <Share2 color={colors.brand} size={14} strokeWidth={2.6} />
                   <SecondaryActionButtonText>
                     {t('map.detail.share')}
                   </SecondaryActionButtonText>
@@ -2943,7 +3080,7 @@ export default function MapScreen() {
                                 }
                               >
                                 <ChevronLeft
-                                  color="#ffffff"
+                                  color={colors.textOnColor}
                                   size={18}
                                   strokeWidth={2.8}
                                 />
@@ -2962,7 +3099,7 @@ export default function MapScreen() {
                                 }
                               >
                                 <ChevronRight
-                                  color="#ffffff"
+                                  color={colors.textOnColor}
                                   size={18}
                                   strokeWidth={2.8}
                                 />
@@ -2989,7 +3126,7 @@ export default function MapScreen() {
                       <ShelterMetaRow>
                         {typeof shelter.capacity === 'number' ? (
                           <ShelterMetaIconText>
-                            <Users color="#4b5563" size={14} strokeWidth={2.4} />
+                            <Users color={colors.textTertiary} size={14} strokeWidth={2.4} />
                             <ShelterMetaText>
                               {shelter.capacity.toLocaleString()}
                             </ShelterMetaText>
@@ -2997,7 +3134,7 @@ export default function MapScreen() {
                         ) : null}
                         {typeof shelter.area === 'number' ? (
                           <ShelterMetaIconText>
-                            <Square color="#4b5563" size={13} strokeWidth={2.4} />
+                            <Square color={colors.textTertiary} size={13} strokeWidth={2.4} />
                             <ShelterMetaText>
                               {shelter.area.toLocaleString()}㎡
                             </ShelterMetaText>
@@ -3031,7 +3168,7 @@ export default function MapScreen() {
                                 handleCall(shelter.managingAuthorityTelNo)
                               }
                             >
-                              <Phone color="#2563eb" size={12} strokeWidth={2.6} />
+                              <Phone color={colors.primary} size={12} strokeWidth={2.6} />
                               <PhoneButtonText>
                                 {shelter.managingAuthorityTelNo}
                               </PhoneButtonText>
@@ -3061,9 +3198,9 @@ export default function MapScreen() {
                               )}
                             >
                               {chip.active ? (
-                                <Check color="#ffffff" size={11} strokeWidth={3} />
+                                <Check color={colors.textOnColor} size={11} strokeWidth={3} />
                               ) : (
-                                <X color="#9ca3af" size={11} strokeWidth={3} />
+                                <X color={colors.textDisabled} size={11} strokeWidth={3} />
                               )}
                               <AccessChipText $active={chip.active}>
                                 {chipLabel}
@@ -3088,7 +3225,7 @@ export default function MapScreen() {
                       ) : user ? (
                         <ReportButton onPress={() => openReportModal(shelter)}>
                           <Camera
-                            color="#2563eb"
+                            color={colors.primary}
                             size={16}
                             strokeWidth={2.5}
                           />
@@ -3141,7 +3278,7 @@ export default function MapScreen() {
                 accessibilityLabel={t('common.close')}
                 onPress={closeAccessibilityInfo}
               >
-                <X color="#6b7280" size={22} strokeWidth={2.6} />
+                <X color={colors.textMuted} size={22} strokeWidth={2.6} />
               </AccessibilityInfoCloseButton>
             </AccessibilityInfoHeader>
             <AccessibilityInfoDescription>
@@ -3163,25 +3300,25 @@ export default function MapScreen() {
             </AccessibilityInfoList>
             <AccessibilityLegendList>
               <AccessibilityLegendRow>
-                <AccessibilityLegendDot $color="#2563eb" />
+                <AccessibilityLegendDot $color={colors.primary} />
                 <AccessibilityLegendText>
                   {t('map.accessibilityInfo.blue')}
                 </AccessibilityLegendText>
               </AccessibilityLegendRow>
               <AccessibilityLegendRow>
-                <AccessibilityLegendDot $color="#16a34a" />
+                <AccessibilityLegendDot $color={colors.a11yLegend.accessible} />
                 <AccessibilityLegendText>
                   {t('map.accessibilityInfo.green')}
                 </AccessibilityLegendText>
               </AccessibilityLegendRow>
               <AccessibilityLegendRow>
-                <AccessibilityLegendDot $color="#f59e0b" />
+                <AccessibilityLegendDot $color={colors.a11yLegend.partial} />
                 <AccessibilityLegendText>
                   {t('map.accessibilityInfo.orange')}
                 </AccessibilityLegendText>
               </AccessibilityLegendRow>
               <AccessibilityLegendRow>
-                <AccessibilityLegendDot $color="#dc2626" />
+                <AccessibilityLegendDot $color={colors.a11yLegend.inaccessible} />
                 <AccessibilityLegendText>
                   {t('map.accessibilityInfo.red')}
                 </AccessibilityLegendText>
@@ -3218,7 +3355,7 @@ export default function MapScreen() {
                   hitSlop={5}
                   onPress={closeReportModal}
                 >
-                  <X color="#6b7280" size={22} strokeWidth={2.6} />
+                  <X color={colors.textMuted} size={22} strokeWidth={2.6} />
                 </ReportCloseButton>
               </ReportModalHeader>
               {reportShelter ? (
@@ -3292,7 +3429,7 @@ export default function MapScreen() {
                 <ReportField>
                   <ReportLabel>{t('map.report.images')}</ReportLabel>
                   <AddImageButton onPress={addReportImages}>
-                    <ImagePlus color="#2563eb" size={16} strokeWidth={2.6} />
+                    <ImagePlus color={colors.primary} size={16} strokeWidth={2.6} />
                     <AddImageButtonText>
                       {t('map.report.addImage')}
                     </AddImageButtonText>
@@ -3313,7 +3450,7 @@ export default function MapScreen() {
                             onPress={() => removeReportImage(image.id)}
                           >
                             <Trash2
-                              color="#ef4444"
+                              color={colors.dangerBright}
                               size={16}
                               strokeWidth={2.4}
                             />
@@ -3352,7 +3489,7 @@ export default function MapScreen() {
                           placeholder={t(
                             'map.report.imageDescriptionPlaceholder',
                           )}
-                          placeholderTextColor="#9ca3af"
+                          placeholderTextColor={colors.textDisabled}
                         />
                       </ReportImageBody>
                     </ReportImageItem>
@@ -3367,7 +3504,7 @@ export default function MapScreen() {
                       updateReportForm('etcFacilities', value)
                     }
                     placeholder={t('map.report.etcFacilitiesPlaceholder')}
-                    placeholderTextColor="#9ca3af"
+                    placeholderTextColor={colors.textDisabled}
                     multiline
                     textAlignVertical="top"
                   />
@@ -3379,10 +3516,10 @@ export default function MapScreen() {
                 onPress={submitShelterReport}
               >
                 {isReportSubmitting ? (
-                  <ActivityIndicator color="#ffffff" />
+                  <ActivityIndicator color={colors.textOnColor} />
                 ) : (
                   <>
-                    <Send color="#ffffff" size={16} strokeWidth={2.6} />
+                    <Send color={colors.textOnColor} size={16} strokeWidth={2.6} />
                     <ReportSubmitText>
                       {t('map.report.submit')}
                     </ReportSubmitText>
@@ -3418,7 +3555,7 @@ export default function MapScreen() {
                   accessibilityLabel={t('common.close')}
                   onPress={() => setImageModal(null)}
                 >
-                  <X color="#ffffff" size={24} strokeWidth={2.8} />
+                  <X color={colors.textOnColor} size={24} strokeWidth={2.8} />
                 </ImageCloseButton>
                 {imageModal.images.length > 1 ? (
                   <>
@@ -3440,7 +3577,7 @@ export default function MapScreen() {
                       }
                     >
                       <ChevronLeft
-                        color="#ffffff"
+                        color={colors.textOnColor}
                         size={26}
                         strokeWidth={2.8}
                       />
@@ -3461,7 +3598,7 @@ export default function MapScreen() {
                       }
                     >
                       <ChevronRight
-                        color="#ffffff"
+                        color={colors.textOnColor}
                         size={26}
                         strokeWidth={2.8}
                       />
@@ -3481,1048 +3618,3 @@ export default function MapScreen() {
     </Screen>
   );
 }
-
-const Screen = styled(SafeAreaView)`
-  flex: 1;
-  position: relative;
-  overflow: hidden;
-  background-color: #f4f7fb;
-`;
-
-const Header = styled.View`
-  padding: 20px 20px 12px;
-`;
-
-const MapFrame = styled.View`
-  flex: 1;
-  overflow: hidden;
-  margin: 10px 12px 0;
-  border-radius: 18px;
-  background-color: #dbeafe;
-`;
-
-const LoadingBox = styled.View`
-  flex: 1;
-  align-items: center;
-  justify-content: center;
-  background-color: #eef4ff;
-`;
-
-const EmptyText = styled.Text`
-  padding: 24px;
-  color: #6b7280;
-  font-size: 14px;
-  text-align: center;
-`;
-
-const ErrorText = styled.Text`
-  flex-shrink: 1;
-  color: #dc2626;
-  font-size: 13px;
-  font-weight: 600;
-`;
-
-const MapErrorOverlay = styled.View`
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  right: 56px;
-  align-items: flex-start;
-`;
-
-const MapErrorCard = styled.View`
-  flex-direction: row;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 8px 8px 12px;
-  border-radius: 12px;
-  background-color: #ffffff;
-  elevation: 3;
-`;
-
-const RetryButton = styled.Pressable`
-  min-height: 44px;
-  padding: 0 14px;
-  border-radius: 8px;
-  align-items: center;
-  justify-content: center;
-  background-color: #093a6e;
-`;
-
-const RetryButtonText = styled.Text`
-  color: #ffffff;
-  font-size: 13px;
-  font-weight: 700;
-`;
-
-const PanelErrorRow = styled.View`
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 6px 0;
-`;
-
-const PanelErrorText = styled.Text`
-  flex-shrink: 1;
-  color: #dc2626;
-  font-size: 13px;
-  font-weight: 700;
-`;
-
-const RegionTrailRow = styled.View`
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  right: 56px;
-  flex-direction: row;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 2px;
-`;
-
-const RegionTrailItemView = styled.View`
-  flex-direction: row;
-  align-items: center;
-  gap: 2px;
-`;
-
-const RegionTrailChip = styled.TouchableOpacity<{ $current: boolean }>`
-  padding: 6px 10px;
-  border-radius: 999px;
-  background-color: ${({ $current }) => ($current ? '#2563eb' : '#ffffff')};
-  shadow-color: #111827;
-  shadow-opacity: 0.12;
-  shadow-radius: 6px;
-  shadow-offset: 0 2px;
-  elevation: 3;
-`;
-
-const RegionTrailText = styled.Text<{ $current: boolean }>`
-  color: ${({ $current }) => ($current ? '#ffffff' : '#111827')};
-  font-size: 12px;
-  font-weight: 700;
-`;
-
-const MapFetchingBadge = styled.View`
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  width: 36px;
-  height: 36px;
-  align-items: center;
-  justify-content: center;
-  border-radius: 999px;
-  background-color: #ffffff;
-  elevation: 3;
-`;
-
-const MAP_CONTROL_SIZE = 40;
-const MAP_CONTROL_GAP = 8;
-const MAP_CONTROL_MARGIN = 12;
-
-const MapControls = styled(Animated.View)`
-  position: absolute;
-  right: 24px;
-  gap: ${MAP_CONTROL_GAP}px;
-`;
-
-const MapControlButton = styled.TouchableOpacity.attrs({ activeOpacity: 0.6 })`
-  width: ${MAP_CONTROL_SIZE}px;
-  height: ${MAP_CONTROL_SIZE}px;
-  align-items: center;
-  justify-content: center;
-  border-radius: 12px;
-  background-color: #ffffff;
-  shadow-color: #111827;
-  shadow-opacity: 0.14;
-  shadow-radius: 6px;
-  shadow-offset: 0 2px;
-  elevation: 4;
-`;
-
-const BottomPanel = styled(Animated.View)`
-  position: absolute;
-  left: 12px;
-  right: 12px;
-  bottom: 0;
-  gap: 6px;
-  padding: 0 10px 10px;
-  border-radius: 16px 16px 0 0;
-  background-color: #ffffff;
-  min-height: 0;
-  overflow: hidden;
-  shadow-color: #111827;
-  shadow-opacity: 0.14;
-  shadow-radius: 12px;
-  shadow-offset: 0 -3px;
-  elevation: 10;
-`;
-
-const AccessibilityInfoOverlay = styled.Pressable`
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  padding: 92px 20px 20px;
-  background-color: rgba(17, 24, 39, 0.24);
-`;
-
-const AccessibilityInfoCard = styled.Pressable`
-  gap: 14px;
-  padding: 18px;
-  border-radius: 16px;
-  background-color: #ffffff;
-`;
-
-const AccessibilityInfoHeader = styled.View`
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-`;
-
-const AccessibilityInfoTitle = styled.Text`
-  flex: 1;
-  color: #111827;
-  font-size: 17px;
-  font-weight: 800;
-`;
-
-// 터치 영역 44px(접근성 최소 크기). 음수 여백으로 헤더 높이는 그대로 둔다.
-const AccessibilityInfoCloseButton = styled.Pressable`
-  width: 44px;
-  height: 44px;
-  margin: -5px;
-  align-items: center;
-  justify-content: center;
-`;
-
-const AccessibilityInfoDescription = styled.Text`
-  color: #4b5563;
-  font-size: 14px;
-  line-height: 22px;
-  font-weight: 500;
-`;
-
-const AccessibilityInfoList = styled.View`
-  gap: 8px;
-`;
-
-const AccessibilityInfoText = styled.Text`
-  color: #374151;
-  font-size: 13px;
-  line-height: 20px;
-  font-weight: 500;
-`;
-
-const AccessibilityLegendList = styled.View`
-  gap: 8px;
-  padding-top: 2px;
-`;
-
-const AccessibilityLegendRow = styled.View`
-  flex-direction: row;
-  align-items: flex-start;
-  gap: 8px;
-`;
-
-const AccessibilityLegendDot = styled.View<{ $color: string }>`
-  width: 10px;
-  height: 10px;
-  margin-top: 5px;
-  border-radius: 999px;
-  background-color: ${({ $color }) => $color};
-`;
-
-const AccessibilityLegendText = styled.Text`
-  flex: 1;
-  color: #374151;
-  font-size: 13px;
-  line-height: 20px;
-  font-weight: 500;
-`;
-
-const AccessibilityInfoButton = styled.Pressable`
-  align-self: flex-end;
-  padding: 10px 14px;
-  border-radius: 10px;
-  background-color: #f3f4f6;
-`;
-
-const AccessibilityInfoButtonText = styled.Text`
-  color: #111827;
-  font-size: 14px;
-  font-weight: 700;
-`;
-
-const PanelHandleButton = styled.View`
-  height: 42px;
-  align-items: center;
-  justify-content: center;
-`;
-
-const PanelHandleBar = styled.View`
-  width: 42px;
-  height: 4px;
-  border-radius: 999px;
-  background-color: #d1d5db;
-`;
-
-const PanelHeader = styled.View`
-  min-height: 26px;
-  flex-direction: row;
-  align-items: center;
-  gap: 8px;
-`;
-
-const PanelTitle = styled.Text`
-  flex: 1;
-  color: #111827;
-  font-size: 17px;
-  font-weight: 800;
-`;
-
-const PanelCount = styled.Text`
-  color: #2563eb;
-  font-size: 13px;
-  font-weight: 800;
-  margin-left: auto;
-`;
-
-const BackButton = styled.Pressable`
-  align-items: center;
-  justify-content: center;
-`;
-
-const PanelScroll = styled.ScrollView`
-  flex: 1;
-`;
-
-const PanelBody = styled.View`
-  flex: 1;
-  min-height: 0;
-`;
-
-const PanelLayer = styled.View`
-  flex: 1;
-  min-height: 0;
-  gap: 6px;
-`;
-
-// 목록 위를 덮는 상세. 목록은 아래에 그대로 살아 있다.
-const DetailLayer = styled.View`
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  gap: 6px;
-  background-color: #ffffff;
-`;
-
-const UnlocatedToggle = styled.Pressable`
-  min-height: 44px;
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  margin-top: 6px;
-  padding: 0 4px;
-  border-top-width: 1px;
-  border-top-color: #e5e7eb;
-`;
-
-const UnlocatedToggleText = styled.Text`
-  flex-shrink: 1;
-  color: #4b5563;
-  font-size: 13px;
-  font-weight: 700;
-`;
-
-const PanelLoading = styled.View`
-  flex: 1;
-  min-height: 120px;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-`;
-
-const PanelLoadingText = styled.Text`
-  color: #6b7280;
-  font-size: 13px;
-  font-weight: 700;
-`;
-
-const PlaceItem = styled.Pressable`
-  gap: 4px;
-  padding: 9px 0;
-  border-bottom-width: 1px;
-  border-bottom-color: #eef2f7;
-`;
-
-const PlaceTitleRow = styled.View`
-  flex-direction: row;
-  align-items: center;
-  gap: 8px;
-`;
-
-const PlaceName = styled.Text`
-  flex-shrink: 1;
-  color: #111827;
-  font-size: 15px;
-  font-weight: 800;
-`;
-
-const MatchBadge = styled.View<{ $color: string }>`
-  flex-direction: row;
-  align-items: center;
-  gap: 2px;
-  padding: 2px 6px;
-  border-radius: 999px;
-  border-width: 1px;
-  border-color: ${({ $color }) => $color};
-`;
-
-const MatchBadgeText = styled.Text<{ $color: string }>`
-  color: ${({ $color }) => $color};
-  font-size: 11px;
-  font-weight: 800;
-`;
-
-const PlaceDistance = styled.Text`
-  color: #2563eb;
-  font-size: 13px;
-  font-weight: 700;
-`;
-
-const PlaceAddress = styled.Text`
-  color: #4b5563;
-  font-size: 13px;
-  line-height: 18px;
-`;
-
-const DetailAddress = styled.Text`
-  color: #4b5563;
-  font-size: 13px;
-  line-height: 18px;
-`;
-
-const DetailDescription = styled.Text`
-  color: #374151;
-  font-size: 13px;
-  line-height: 18px;
-`;
-
-const DetailMeta = styled.Text`
-  color: #2563eb;
-  font-size: 12px;
-  font-weight: 700;
-  text-align: right;
-`;
-
-const ShelterItem = styled.View`
-  gap: 5px;
-  margin-bottom: 8px;
-  padding: 10px;
-  border-radius: 12px;
-  background-color: #f8fafc;
-  border-width: 1px;
-  border-color: #e5e7eb;
-`;
-
-const ShelterImageFrame = styled.Pressable`
-  position: relative;
-  width: 100%;
-  aspect-ratio: 4 / 3;
-  overflow: hidden;
-  border-radius: 10px;
-  background-color: #e5e7eb;
-`;
-
-const ShelterImage = styled.Image`
-  width: 100%;
-  height: 100%;
-`;
-
-const ImageNavButton = styled.Pressable<{ $position: 'left' | 'right' }>`
-  position: absolute;
-  top: 50%;
-  ${({ $position }) => `${$position}: 8px;`}
-  width: 30px;
-  height: 30px;
-  margin-top: -15px;
-  border-radius: 999px;
-  align-items: center;
-  justify-content: center;
-  background-color: rgba(17, 24, 39, 0.62);
-`;
-
-const ImageCounter = styled.View`
-  position: absolute;
-  right: 8px;
-  bottom: 8px;
-  padding: 3px 7px;
-  border-radius: 999px;
-  background-color: rgba(17, 24, 39, 0.68);
-`;
-
-const ImageCounterText = styled.Text`
-  color: #ffffff;
-  font-size: 10px;
-  font-weight: 800;
-`;
-
-const ImageModalOverlay = styled.Pressable`
-  flex: 1;
-  align-items: center;
-  justify-content: center;
-  background-color: rgba(0, 0, 0, 0.86);
-`;
-
-const ImageModalContent = styled.Pressable`
-  width: 100%;
-  height: 100%;
-  align-items: center;
-  justify-content: center;
-`;
-
-const ImageModalImage = styled.Image`
-  width: 100%;
-  height: 100%;
-`;
-
-const ImageCloseButton = styled.Pressable`
-  position: absolute;
-  top: 46px;
-  right: 16px;
-  width: 44px;
-  height: 44px;
-  border-radius: 999px;
-  align-items: center;
-  justify-content: center;
-  background-color: rgba(17, 24, 39, 0.68);
-`;
-
-const ModalImageNavButton = styled.Pressable<{ $position: 'left' | 'right' }>`
-  position: absolute;
-  top: 50%;
-  ${({ $position }) => `${$position}: 16px;`}
-  width: 44px;
-  height: 44px;
-  margin-top: -22px;
-  border-radius: 999px;
-  align-items: center;
-  justify-content: center;
-  background-color: rgba(17, 24, 39, 0.62);
-`;
-
-const ModalImageCounter = styled.View`
-  position: absolute;
-  right: 16px;
-  bottom: 32px;
-  padding: 5px 10px;
-  border-radius: 999px;
-  background-color: rgba(17, 24, 39, 0.72);
-`;
-
-const ShelterTitleRow = styled.View`
-  flex-direction: row;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-`;
-
-const ShelterName = styled.Text`
-  width: 100%;
-  color: #111827;
-  font-size: 14px;
-  line-height: 19px;
-  font-weight: 800;
-`;
-
-const ShelterMetaRow = styled.View`
-  flex-direction: row;
-  align-items: center;
-  gap: 10px;
-`;
-
-const ShelterMetaIconText = styled.View`
-  flex-direction: row;
-  align-items: center;
-  gap: 4px;
-`;
-
-const ShelterMetaText = styled.Text`
-  color: #4b5563;
-  font-size: 12px;
-  line-height: 18px;
-`;
-
-const ShelterMeta = styled.Text`
-  color: #4b5563;
-  font-size: 12px;
-  line-height: 18px;
-`;
-
-const ChipRow = styled.View`
-  flex-direction: row;
-  flex-wrap: wrap;
-  gap: 5px;
-  margin-top: 2px;
-`;
-
-const TypeChip = styled.View`
-  padding: 4px 7px;
-  border-radius: 999px;
-  background-color: ${SHELTER_SELECTED_COLOR};
-`;
-
-const TypeChipText = styled.Text`
-  color: #ffffff;
-  font-size: 10px;
-  font-weight: 800;
-`;
-
-const TypeCountChip = styled.View`
-  padding: 5px 8px;
-  border-radius: 999px;
-  background-color: ${SHELTER_SELECTED_COLOR};
-`;
-
-const TypeCountText = styled.Text`
-  color: #ffffff;
-  font-size: 11px;
-  font-weight: 800;
-`;
-
-const AccessChip = styled.View<{ $active: boolean }>`
-  flex-direction: row;
-  align-items: center;
-  gap: 3px;
-  padding: 5px 7px;
-  border-radius: 999px;
-  background-color: ${({ $active }) =>
-    $active ? ACCESSIBILITY_SELECTED_COLOR : '#f3f4f6'};
-  border-width: 1px;
-  border-color: ${({ $active }) =>
-    $active ? ACCESSIBILITY_SELECTED_COLOR : '#e5e7eb'};
-`;
-
-const AccessChipText = styled.Text<{ $active: boolean }>`
-  color: ${({ $active }) => ($active ? '#ffffff' : '#9ca3af')};
-  font-size: 10px;
-  font-weight: 800;
-`;
-
-const ReportButton = styled.Pressable`
-  min-height: 38px;
-  margin-top: 4px;
-  border-radius: 10px;
-  align-items: center;
-  justify-content: center;
-  flex-direction: row;
-  gap: 6px;
-  background-color: #eff6ff;
-  border-width: 1px;
-  border-color: #bfdbfe;
-`;
-
-const ReportButtonText = styled.Text`
-  color: #2563eb;
-  font-size: 13px;
-  font-weight: 800;
-`;
-
-const ReportDoneBadge = styled.View`
-  min-height: 38px;
-  margin-top: 4px;
-  border-radius: 10px;
-  align-items: center;
-  justify-content: center;
-  background-color: #f3f4f6;
-  border-width: 1px;
-  border-color: #e5e7eb;
-`;
-
-const ReportDoneBadgeText = styled.Text`
-  color: #6b7280;
-  font-size: 13px;
-  font-weight: 800;
-`;
-
-const ReportLoginButton = styled.Pressable`
-  min-height: 44px;
-  margin-top: 4px;
-  border-radius: 10px;
-  align-items: center;
-  justify-content: center;
-  border-width: 1px;
-  border-color: #d1d5db;
-  border-style: dashed;
-`;
-
-const ReportLoginButtonText = styled.Text`
-  color: #4b5563;
-  font-size: 13px;
-  font-weight: 700;
-`;
-
-const DirectionsButton = styled.Pressable`
-  min-height: 32px;
-  padding: 0 10px;
-  border-radius: 8px;
-  flex-direction: row;
-  align-items: center;
-  gap: 4px;
-  background-color: #093a6e;
-`;
-
-const DirectionsButtonText = styled.Text`
-  color: #ffffff;
-  font-size: 12px;
-  font-weight: 800;
-`;
-
-const DetailActionRow = styled.View`
-  flex-direction: row;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px;
-`;
-
-const SecondaryActionButton = styled.Pressable`
-  min-height: 32px;
-  padding: 0 10px;
-  border-radius: 8px;
-  flex-direction: row;
-  align-items: center;
-  gap: 4px;
-  border-width: 1px;
-  border-color: #c7d2fe;
-  background-color: #ffffff;
-`;
-
-const SecondaryActionButtonText = styled.Text`
-  color: #093a6e;
-  font-size: 12px;
-  font-weight: 800;
-`;
-
-// 미리보기 띠. 패널과 같은 좌우 여백으로 패널 윗변 위에 뜬다.
-const PreviewStrip = styled(Animated.View)`
-  position: absolute;
-  left: 12px;
-  right: 12px;
-  height: ${PREVIEW_STRIP_HEIGHT}px;
-`;
-
-// 고른 핀과 같은 파란 선을 왼쪽에 둬서 어느 핀의 카드인지 보이게 한다.
-const PreviewCard = styled.View`
-  flex: 1;
-  flex-direction: row;
-  align-items: stretch;
-  overflow: hidden;
-  border-radius: 14px;
-  border-left-width: 4px;
-  border-left-color: #2563eb;
-  background-color: #ffffff;
-  shadow-color: #111827;
-  shadow-opacity: 0.16;
-  shadow-radius: 10px;
-  shadow-offset: 0 3px;
-  elevation: 8;
-`;
-
-const PreviewOpenButton = styled.Pressable`
-  flex: 1;
-  min-width: 0;
-  flex-direction: row;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 0 8px 12px;
-`;
-
-const PreviewBody = styled.View`
-  flex: 1;
-  min-width: 0;
-  gap: 3px;
-`;
-
-const PreviewMeta = styled.Text`
-  color: #2563eb;
-  font-size: 12px;
-  font-weight: 700;
-`;
-
-const PreviewMore = styled.View`
-  align-self: flex-end;
-  flex-direction: row;
-  align-items: center;
-  gap: 2px;
-  padding: 4px 6px 4px 10px;
-  border-radius: 999px;
-  background-color: #2563eb;
-`;
-
-const PreviewMoreText = styled.Text`
-  color: #ffffff;
-  font-size: 12px;
-  font-weight: 800;
-`;
-
-const PreviewCloseButton = styled.Pressable`
-  width: 44px;
-  align-items: center;
-  justify-content: center;
-`;
-
-const ShelterContactRow = styled.View`
-  flex-direction: row;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px;
-`;
-
-const PhoneButton = styled.Pressable`
-  min-height: 28px;
-  padding: 0 8px;
-  border-radius: 999px;
-  flex-direction: row;
-  align-items: center;
-  gap: 4px;
-  background-color: #eff6ff;
-`;
-
-const PhoneButtonText = styled.Text`
-  color: #2563eb;
-  font-size: 12px;
-  font-weight: 700;
-`;
-
-const ReportModalOverlay = styled.Pressable`
-  flex: 1;
-  justify-content: flex-end;
-  padding: 16px;
-  background-color: rgba(17, 24, 39, 0.32);
-`;
-
-const ReportModalCard = styled.Pressable`
-  height: 90%;
-  gap: 12px;
-  padding: 18px;
-  border-radius: 18px;
-  background-color: #ffffff;
-`;
-
-const ReportModalHeader = styled.View`
-  min-height: 34px;
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-`;
-
-const ReportModalTitle = styled.Text`
-  flex: 1;
-  color: #111827;
-  font-size: 18px;
-  font-weight: 800;
-`;
-
-const ReportCloseButton = styled.Pressable`
-  width: 34px;
-  height: 34px;
-  align-items: center;
-  justify-content: center;
-`;
-
-const ReportShelterName = styled.Text`
-  color: #374151;
-  font-size: 14px;
-  line-height: 20px;
-  font-weight: 700;
-`;
-
-const ReportModalScroll = styled.ScrollView`
-  flex: 1;
-`;
-
-const ReportField = styled.View`
-  gap: 8px;
-  margin-bottom: 14px;
-`;
-
-const ReportEtcField = styled.View`
-  flex: 1;
-  gap: 8px;
-  margin-bottom: 14px;
-`;
-
-const ReportLabel = styled.Text`
-  color: #111827;
-  font-size: 13px;
-  font-weight: 800;
-`;
-
-const ReportTextArea = styled.TextInput`
-  flex: 1;
-  min-height: 104px;
-  padding: 12px;
-  border-radius: 10px;
-  color: #111827;
-  font-size: 14px;
-  line-height: 20px;
-  background-color: #f9fafb;
-  border-width: 1px;
-  border-color: #e5e7eb;
-`;
-
-const ReportToggleGrid = styled.View`
-  flex-direction: row;
-  flex-wrap: wrap;
-  gap: 8px;
-`;
-
-const ReportToggle = styled.Pressable<{ $active: boolean }>`
-  min-height: 38px;
-  padding: 0 12px;
-  border-radius: 999px;
-  align-items: center;
-  justify-content: center;
-  background-color: ${({ $active }) => ($active ? '#2563eb' : '#f3f4f6')};
-  border-width: 1px;
-  border-color: ${({ $active }) => ($active ? '#2563eb' : '#e5e7eb')};
-`;
-
-const ReportToggleText = styled.Text<{ $active: boolean }>`
-  color: ${({ $active }) => ($active ? '#ffffff' : '#4b5563')};
-  font-size: 12px;
-  font-weight: 800;
-`;
-
-const AddImageButton = styled.Pressable`
-  min-height: 40px;
-  border-radius: 10px;
-  align-items: center;
-  justify-content: center;
-  flex-direction: row;
-  gap: 6px;
-  background-color: #eff6ff;
-  border-width: 1px;
-  border-color: #bfdbfe;
-`;
-
-const AddImageButtonText = styled.Text`
-  color: #2563eb;
-  font-size: 13px;
-  font-weight: 800;
-`;
-
-const ReportImageItem = styled.View`
-  flex-direction: row;
-  gap: 10px;
-  padding: 10px;
-  border-radius: 12px;
-  background-color: #f9fafb;
-  border-width: 1px;
-  border-color: #e5e7eb;
-`;
-
-const ReportImagePreview = styled.Image`
-  width: 74px;
-  height: 74px;
-  border-radius: 10px;
-  background-color: #e5e7eb;
-`;
-
-const ReportImageBody = styled.View`
-  flex: 1;
-  gap: 8px;
-  min-width: 0;
-`;
-
-const ReportImageTopRow = styled.View`
-  flex-direction: row;
-  align-items: center;
-  gap: 8px;
-`;
-
-const ReportImageName = styled.Text`
-  flex: 1;
-  color: #374151;
-  font-size: 12px;
-  font-weight: 700;
-`;
-
-const ReportImageRemoveButton = styled.Pressable`
-  width: 28px;
-  height: 28px;
-  border-radius: 999px;
-  align-items: center;
-  justify-content: center;
-  background-color: #fee2e2;
-`;
-
-const ReportCategoryRow = styled.View`
-  flex-direction: row;
-  flex-wrap: wrap;
-  gap: 6px;
-`;
-
-const ReportCategoryChip = styled.Pressable<{ $active: boolean }>`
-  min-height: 28px;
-  padding: 0 8px;
-  border-radius: 999px;
-  align-items: center;
-  justify-content: center;
-  background-color: ${({ $active }) => ($active ? '#111827' : '#ffffff')};
-  border-width: 1px;
-  border-color: ${({ $active }) => ($active ? '#111827' : '#e5e7eb')};
-`;
-
-const ReportCategoryText = styled.Text<{ $active: boolean }>`
-  color: ${({ $active }) => ($active ? '#ffffff' : '#4b5563')};
-  font-size: 11px;
-  font-weight: 800;
-`;
-
-const ReportImageDescriptionInput = styled.TextInput`
-  min-height: 36px;
-  padding: 0 10px;
-  border-radius: 8px;
-  color: #111827;
-  font-size: 12px;
-  background-color: #ffffff;
-  border-width: 1px;
-  border-color: #e5e7eb;
-`;
-
-const ReportSubmitButton = styled.Pressable`
-  min-height: 46px;
-  border-radius: 12px;
-  align-items: center;
-  justify-content: center;
-  flex-direction: row;
-  gap: 7px;
-  background-color: #2563eb;
-`;
-
-const ReportSubmitText = styled.Text`
-  color: #ffffff;
-  font-size: 14px;
-  font-weight: 800;
-`;
-
-const EmptyList = styled.View`
-  align-items: center;
-  padding-bottom: 12px;
-`;
-
-const EmptyPanelText = styled.Text`
-  padding: 18px 0;
-  color: #6b7280;
-  font-size: 14px;
-  text-align: center;
-`;
