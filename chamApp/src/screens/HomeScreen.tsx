@@ -117,7 +117,14 @@ import {
   SMSPager,
   SMSPagerText,
   SMSActions,
+  BrandRow,
+  BrandLogo,
+  BrandTitle,
 } from './HomeScreen.styles.ts';
+
+// 스플래시 이미지에서 로고만 잘라 낸 것. 앱 이름은 브랜드명이라 번역하지 않는다(스토어 이름과 같음).
+const appLogo = require('../assets/images/app-logo.png');
+const APP_NAME = '모두의 안전';
 
 function getShelterTypeLabel(type?: string) {
   if (!type) return 'map.labels.unknownType';
@@ -367,6 +374,10 @@ export default function HomeScreen() {
       <HomeScroll showsVerticalScrollIndicator={false}>
         <TopSection>
           <LanguageRow>
+            <BrandRow accessibilityRole="header">
+              <BrandLogo source={appLogo} resizeMode="contain" />
+              <BrandTitle>{APP_NAME}</BrandTitle>
+            </BrandRow>
             <LanguageButton />
           </LanguageRow>
 

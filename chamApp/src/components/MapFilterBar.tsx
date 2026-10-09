@@ -8,9 +8,7 @@ import Button from './ui/Button.tsx';
 import IconButton from './ui/IconButton.tsx';
 import {
   ACCESSIBILITY_ALL_LABEL,
-  ACCESSIBILITY_SELECTED_COLOR,
   SHELTER_ALL_LABEL,
-  SHELTER_SELECTED_COLOR,
   accessibilityFilterLabelKeys,
   accessibilityOptions,
   shelterTypeFilterLabelKeys,
@@ -91,13 +89,13 @@ export default function MapFilterBar({
     ...activeShelterTypes.map(item => ({
       key: `type-${item}`,
       label: translate(shelterTypeFilterLabelKeys[item] ?? item),
-      color: SHELTER_SELECTED_COLOR,
+      color: colors.filterStrong.shelter,
       onRemove: () => toggleShelterType(item),
     })),
     ...activeAccessibility.map(item => ({
       key: `a11y-${item}`,
       label: translate(accessibilityFilterLabelKeys[item] ?? item),
-      color: ACCESSIBILITY_SELECTED_COLOR,
+      color: colors.filterStrong.accessibility,
       onRemove: () => toggleAccessibility(item),
     })),
   ];

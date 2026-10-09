@@ -552,6 +552,9 @@ function buildMapHtml(
       const SELECT_LEVEL = 6;
       const BASE_Z_INDEX = 10;
       const SELECTED_Z_INDEX = 9000;
+      // 내 위치 점은 일반 장소 핀보다 위, 지역 버블보다 아래. 버블 위에 얹히면 숫자를 가렸다.
+      const USER_LOCATION_Z_INDEX = BASE_Z_INDEX + 40;
+      const SUMMARY_Z_INDEX = BASE_Z_INDEX + 90;
       const FIT_PADDING = 40;
       // 핀은 clickable 이 아니라 핀 탭도 지도 click 으로 내려온다(Android 는 둘 다 온다).
       // 핀을 누른 직후 이 시간 안의 지도 click 은 빈 곳 탭으로 치지 않는다.
@@ -680,7 +683,7 @@ function buildMapHtml(
             content: el,
             xAnchor: 0.5,
             yAnchor: 0.5,
-            zIndex: BASE_Z_INDEX,
+            zIndex: SUMMARY_Z_INDEX,
           }),
           el: el,
           shown: false,
@@ -940,7 +943,7 @@ function buildMapHtml(
             content: markerEl,
             xAnchor: 0.5,
             yAnchor: 0.5,
-            zIndex: 10000,
+            zIndex: USER_LOCATION_Z_INDEX,
           });
         }
 

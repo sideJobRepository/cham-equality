@@ -74,7 +74,9 @@ export const ShelterImage = styled.Image`
 // 사진을 덜 가리려고 보이는 크기만 줄인다. 터치 영역은 IconButton 이 hitSlop 으로 44를 채운다
 export const IMAGE_NAV_SIZE = 36;
 
-export const ImageNavButton = styled(IconButton)<{ $position: 'left' | 'right' }>`
+export const ImageNavButton = styled(IconButton)<{
+  $position: 'left' | 'right';
+}>`
   position: absolute;
   top: 50%;
   ${({ $position }) => `${$position}: 8px;`}
@@ -154,10 +156,31 @@ export const TypeChipText = styled.Text`
   font-weight: 800;
 `;
 
+// 왼쪽 앱 로고·이름, 오른쪽 언어 버튼. 언어 버튼만 있으면 상단이 비어 보여 브랜드를 함께 둔다.
 export const LanguageRow = styled.View`
   flex-direction: row;
-  justify-content: flex-end;
+  align-items: center;
+  justify-content: space-between;
+  gap: ${spacing.md}px;
   padding-top: ${spacing.md}px;
+`;
+
+export const BrandRow = styled.View`
+  flex-shrink: 1;
+  flex-direction: row;
+  align-items: center;
+  gap: ${spacing.md}px;
+`;
+
+export const BrandLogo = styled.Image`
+  width: 32px;
+  height: 36px;
+`;
+
+export const BrandTitle = styled.Text`
+  color: ${colors.brand};
+  font-size: ${fontSize.display}px;
+  font-weight: ${fontWeight.heavy};
 `;
 
 export const MessageBox = styled.Pressable`
@@ -437,4 +460,3 @@ export const SMSActions = styled.View`
   gap: 8px;
   margin-top: 4px;
 `;
-

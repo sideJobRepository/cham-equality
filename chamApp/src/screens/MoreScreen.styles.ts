@@ -136,7 +136,7 @@ export const LanguageButton = styled.Pressable<{ $active: boolean }>`
   justify-content: center;
   border-radius: 8px;
   background-color: ${({ $active }) =>
-    $active ? colors.inverse : colors.surfaceMuted};
+    $active ? colors.primary : colors.surfaceMuted};
 `;
 
 export const LanguageText = styled.Text<{ $active: boolean }>`
