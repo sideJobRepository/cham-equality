@@ -60,6 +60,7 @@ import AccessibilityChip from '../components/shelter/AccessibilityChip.tsx';
 import ShelterNoPhotoBanner from '../components/shelter/ShelterNoPhotoBanner.tsx';
 import ImageAttachButton from '../components/ui/ImageAttachButton.tsx';
 import SubmitButton from '../components/ui/SubmitButton.tsx';
+import Button from '../components/ui/Button.tsx';
 import { loadCurrentLocation } from '../hooks/useCurrentLocation.ts';
 import { fetchPlaceBoundary, useFetchMap } from '../services/map.service.ts';
 import type { ShelterImageCategory } from '../services/report.service.ts';
@@ -102,8 +103,6 @@ import {
   ErrorText,
   MapErrorOverlay,
   MapErrorCard,
-  RetryButton,
-  RetryButtonText,
   PanelErrorRow,
   PanelErrorText,
   RegionTrailRow,
@@ -126,8 +125,6 @@ import {
   AccessibilityLegendRow,
   AccessibilityLegendDot,
   AccessibilityLegendText,
-  AccessibilityInfoButton,
-  AccessibilityInfoButtonText,
   PanelHandleButton,
   PanelHandleBar,
   PanelHeader,
@@ -169,17 +166,11 @@ import {
   TypeChipText,
   TypeCountChip,
   TypeCountText,
-  ReportButton,
-  ReportButtonText,
   ReportDoneBadge,
   ReportDoneBadgeText,
   ReportLoginButton,
   ReportLoginButtonText,
-  DirectionsButton,
-  DirectionsButtonText,
   DetailActionRow,
-  SecondaryActionButton,
-  SecondaryActionButtonText,
   PreviewStrip,
   PreviewCard,
   PreviewOpenButton,
@@ -615,14 +606,14 @@ function buildMapHtml(
 
       function accessibilityMatchColor(status) {
         const value = String(status || '').toUpperCase();
-        if (!value) return '#2563eb';
+        if (!value) return '${colors.primary}';
 
-        if (value === 'ACCESSIBLE') return '#16a34a';
-        if (value === 'PARTIAL') return '#f59e0b';
-        if (value === 'INACCESSIBLE') return '#dc2626';
-        if (value === 'NONE') return '#2563eb';
+        if (value === 'ACCESSIBLE') return '${colors.a11yMatch.accessible}';
+        if (value === 'PARTIAL') return '${colors.a11yMatch.partial}';
+        if (value === 'INACCESSIBLE') return '${colors.a11yMatch.inaccessible}';
+        if (value === 'NONE') return '${colors.primary}';
 
-        return '#2563eb';
+        return '${colors.primary}';
       }
 
       function detailMarkerStyle(markerColor, isSelected) {
@@ -1430,8 +1421,9 @@ function buildMapHtml(
 
 const placeListStyle = { flex: 1 };
 const panelHandleActions = [{ name: 'activate' as const }];
+const reportButtonStyle = { marginTop: 4 };
+const accessibilityInfoCloseStyle = { alignSelf: 'flex-end' as const };
 // 보이는 크기는 그대로 두고 누르는 영역만 44dp 로 맞춘다. 가로로 붙은 버튼끼리 겹치지 않게 위아래만 넓힌다.
-const actionRowHitSlop = { top: 6, bottom: 6 };
 const phoneHitSlop = { top: 8, bottom: 8 };
 
 // 하단 패널 정지점. 값은 panelAnimation 의 0~1(접힘~전체) 위치다.
@@ -2359,9 +2351,11 @@ export default function MapScreen() {
             <EmptyPanelText>{t('map.labels.noVisiblePlaces')}</EmptyPanelText>
             {/* 필터 결과가 있는데 화면 밖에만 있을 때 한 번에 데려온다. */}
             {hasLocatedPlaces ? (
-              <RetryButton onPress={handleShowAllResults}>
-                <RetryButtonText>{t('map.labels.showAllResults')}</RetryButtonText>
-              </RetryButton>
+              <Button
+                label={t('map.labels.showAllResults')}
+                onPress={handleShowAllResults}
+                size="sm"
+              />
             ) : null}
           </EmptyList>
         );
@@ -2763,9 +2757,11 @@ export default function MapScreen() {
           <MapErrorOverlay>
             <MapErrorCard>
               <ErrorText>{t('map.labels.mapLoadFailed')}</ErrorText>
-              <RetryButton onPress={handleRetryMapLoad}>
-                <RetryButtonText>{t('map.labels.retry')}</RetryButtonText>
-              </RetryButton>
+              <Button
+                label={t('map.labels.retry')}
+                onPress={handleRetryMapLoad}
+                size="sm"
+              />
             </MapErrorCard>
           </MapErrorOverlay>
         ) : null}
@@ -2913,18 +2909,22 @@ export default function MapScreen() {
             {mapFetchError && mapData ? (
               <PanelErrorRow>
                 <PanelErrorText>{t('map.labels.loadFailed')}</PanelErrorText>
-                <RetryButton onPress={fetchMap}>
-                  <RetryButtonText>{t('map.labels.retry')}</RetryButtonText>
-                </RetryButton>
+                <Button
+                  label={t('map.labels.retry')}
+                  onPress={fetchMap}
+                  size="sm"
+                />
               </PanelErrorRow>
             ) : null}
 
             {mapFetchError && !mapData ? (
               <PanelLoading style={panelHiddenPadStyle}>
                 <PanelErrorText>{t('map.labels.loadFailed')}</PanelErrorText>
-                <RetryButton onPress={fetchMap}>
-                  <RetryButtonText>{t('map.labels.retry')}</RetryButtonText>
-                </RetryButton>
+                <Button
+                  label={t('map.labels.retry')}
+                  onPress={fetchMap}
+                  size="sm"
+                />
               </PanelLoading>
             ) : !mapData || !panelReady ? (
               <PanelLoading style={panelHiddenPadStyle}>
@@ -2968,44 +2968,34 @@ export default function MapScreen() {
               <DetailActionRow>
                 {selectedPlace.coords ? (
                   <>
-                    <DirectionsButton
-                      hitSlop={actionRowHitSlop}
-                      accessibilityRole="button"
+                    <Button
+                      label={t('map.detail.kakaoMap')}
+                      icon={Navigation}
+                      size="sm"
                       accessibilityLabel={`${t('map.detail.directions')} ${t(
                         'map.detail.kakaoMap',
                       )}`}
                       onPress={() => handleOpenKakaoMap(selectedPlace)}
-                    >
-                      <Navigation color={colors.textOnColor} size={14} strokeWidth={2.6} />
-                      <DirectionsButtonText>
-                        {t('map.detail.kakaoMap')}
-                      </DirectionsButtonText>
-                    </DirectionsButton>
-                    <SecondaryActionButton
-                      hitSlop={actionRowHitSlop}
-                      accessibilityRole="button"
+                    />
+                    <Button
+                      label={t('map.detail.naverMap')}
+                      icon={Navigation}
+                      size="sm"
+                      variant="soft"
                       accessibilityLabel={`${t('map.detail.directions')} ${t(
                         'map.detail.naverMap',
                       )}`}
                       onPress={() => handleOpenNaverMap(selectedPlace)}
-                    >
-                      <Navigation color={colors.brand} size={14} strokeWidth={2.6} />
-                      <SecondaryActionButtonText>
-                        {t('map.detail.naverMap')}
-                      </SecondaryActionButtonText>
-                    </SecondaryActionButton>
+                    />
                   </>
                 ) : null}
-                <SecondaryActionButton
-                  hitSlop={actionRowHitSlop}
-                  accessibilityRole="button"
+                <Button
+                  label={t('map.detail.share')}
+                  icon={Share2}
+                  size="sm"
+                  variant="soft"
                   onPress={() => handleSharePlace(selectedPlace)}
-                >
-                  <Share2 color={colors.brand} size={14} strokeWidth={2.6} />
-                  <SecondaryActionButtonText>
-                    {t('map.detail.share')}
-                  </SecondaryActionButtonText>
-                </SecondaryActionButton>
+                />
               </DetailActionRow>
               {selectedPlace.description ? (
                 <DetailDescription numberOfLines={2}>
@@ -3190,16 +3180,14 @@ export default function MapScreen() {
                           </ReportDoneBadgeText>
                         </ReportDoneBadge>
                       ) : user ? (
-                        <ReportButton onPress={() => openReportModal(shelter)}>
-                          <Camera
-                            color={colors.primary}
-                            size={16}
-                            strokeWidth={2.5}
-                          />
-                          <ReportButtonText>
-                            {t('map.report.button')}
-                          </ReportButtonText>
-                        </ReportButton>
+                        <Button
+                          label={t('map.report.button')}
+                          icon={Camera}
+                          size="sm"
+                          variant="soft"
+                          style={reportButtonStyle}
+                          onPress={() => openReportModal(shelter)}
+                        />
                       ) : (
                         <ReportLoginButton onPress={() => navigation.navigate('More')}>
                           <ReportLoginButtonText>
@@ -3273,32 +3261,31 @@ export default function MapScreen() {
                 </AccessibilityLegendText>
               </AccessibilityLegendRow>
               <AccessibilityLegendRow>
-                <AccessibilityLegendDot $color={colors.a11yLegend.accessible} />
+                <AccessibilityLegendDot $color={colors.a11yMatch.accessible} />
                 <AccessibilityLegendText>
                   {t('map.accessibilityInfo.green')}
                 </AccessibilityLegendText>
               </AccessibilityLegendRow>
               <AccessibilityLegendRow>
-                <AccessibilityLegendDot $color={colors.a11yLegend.partial} />
+                <AccessibilityLegendDot $color={colors.a11yMatch.partial} />
                 <AccessibilityLegendText>
                   {t('map.accessibilityInfo.orange')}
                 </AccessibilityLegendText>
               </AccessibilityLegendRow>
               <AccessibilityLegendRow>
-                <AccessibilityLegendDot $color={colors.a11yLegend.inaccessible} />
+                <AccessibilityLegendDot $color={colors.a11yMatch.inaccessible} />
                 <AccessibilityLegendText>
                   {t('map.accessibilityInfo.red')}
                 </AccessibilityLegendText>
               </AccessibilityLegendRow>
             </AccessibilityLegendList>
-            <AccessibilityInfoButton
-              accessibilityRole="button"
+            <Button
+              label={t('map.accessibilityInfo.close')}
               onPress={closeAccessibilityInfo}
-            >
-              <AccessibilityInfoButtonText>
-                {t('map.accessibilityInfo.close')}
-              </AccessibilityInfoButtonText>
-            </AccessibilityInfoButton>
+              variant="secondary"
+              size="sm"
+              style={accessibilityInfoCloseStyle}
+            />
           </AccessibilityInfoCard>
         </AccessibilityInfoOverlay>
       </Modal>
@@ -3415,7 +3402,7 @@ export default function MapScreen() {
                             onPress={() => removeReportImage(image.id)}
                           >
                             <Trash2
-                              color={colors.dangerBright}
+                              color={colors.danger}
                               size={16}
                               strokeWidth={2.4}
                             />

@@ -67,21 +67,6 @@ export const MapErrorCard = styled.View`
   elevation: 3;
 `;
 
-export const RetryButton = styled.Pressable`
-  min-height: 44px;
-  padding: 0 14px;
-  border-radius: 8px;
-  align-items: center;
-  justify-content: center;
-  background-color: ${colors.brand};
-`;
-
-export const RetryButtonText = styled.Text`
-  color: ${colors.textOnColor};
-  font-size: 13px;
-  font-weight: 700;
-`;
-
 export const PanelErrorRow = styled.View`
   flex-direction: row;
   align-items: center;
@@ -268,19 +253,6 @@ export const AccessibilityLegendText = styled.Text`
   font-size: 13px;
   line-height: 20px;
   font-weight: 500;
-`;
-
-export const AccessibilityInfoButton = styled.Pressable`
-  align-self: flex-end;
-  padding: 10px 14px;
-  border-radius: 10px;
-  background-color: ${colors.surfaceMuted};
-`;
-
-export const AccessibilityInfoButtonText = styled.Text`
-  color: ${colors.text};
-  font-size: 14px;
-  font-weight: 700;
 `;
 
 export const PanelHandleButton = styled.View`
@@ -570,25 +542,6 @@ export const TypeCountText = styled.Text`
   font-weight: 800;
 `;
 
-export const ReportButton = styled.Pressable`
-  min-height: 38px;
-  margin-top: 4px;
-  border-radius: 10px;
-  align-items: center;
-  justify-content: center;
-  flex-direction: row;
-  gap: 6px;
-  background-color: ${colors.primarySoft};
-  border-width: 1px;
-  border-color: ${colors.primaryBorder};
-`;
-
-export const ReportButtonText = styled.Text`
-  color: ${colors.primary};
-  font-size: 13px;
-  font-weight: 800;
-`;
-
 export const ReportDoneBadge = styled.View`
   min-height: 38px;
   margin-top: 4px;
@@ -623,45 +576,11 @@ export const ReportLoginButtonText = styled.Text`
   font-weight: 700;
 `;
 
-export const DirectionsButton = styled.Pressable`
-  min-height: 32px;
-  padding: 0 10px;
-  border-radius: 8px;
-  flex-direction: row;
-  align-items: center;
-  gap: 4px;
-  background-color: ${colors.brand};
-`;
-
-export const DirectionsButtonText = styled.Text`
-  color: ${colors.textOnColor};
-  font-size: 12px;
-  font-weight: 800;
-`;
-
 export const DetailActionRow = styled.View`
   flex-direction: row;
   flex-wrap: wrap;
   align-items: center;
   gap: 6px;
-`;
-
-export const SecondaryActionButton = styled.Pressable`
-  min-height: 32px;
-  padding: 0 10px;
-  border-radius: 8px;
-  flex-direction: row;
-  align-items: center;
-  gap: 4px;
-  border-width: 1px;
-  border-color: #c7d2fe;
-  background-color: ${colors.surface};
-`;
-
-export const SecondaryActionButtonText = styled.Text`
-  color: ${colors.brand};
-  font-size: 12px;
-  font-weight: 800;
 `;
 
 // 미리보기 띠. 패널과 같은 좌우 여백으로 패널 윗변 위에 뜬다.
@@ -717,7 +636,7 @@ export const PreviewMore = styled.View`
   gap: 2px;
   padding: 4px 6px 4px 10px;
   border-radius: 999px;
-  background-color: ${colors.primary};
+  background-color: ${colors.brand};
 `;
 
 export const PreviewMoreText = styled.Text`

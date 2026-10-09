@@ -21,6 +21,7 @@ import type { TFunction } from 'i18next';
 import CurrentLocationBar from '../components/CurrentLocationBar.tsx';
 import MapSearchFilters from '../components/MapSearchFilters.tsx';
 import FullscreenImageViewer from '../components/ui/FullscreenImageViewer.tsx';
+import Button from '../components/ui/Button.tsx';
 import AccessibilityChip from '../components/shelter/AccessibilityChip.tsx';
 import ShelterNoPhotoBanner from '../components/shelter/ShelterNoPhotoBanner.tsx';
 import { useCurrentLocation } from '../hooks/useCurrentLocation.ts';
@@ -92,11 +93,7 @@ import {
   NoticeImage,
   NoticeContent,
   NoticeButtonRow,
-  NoticeButton,
-  NoticePrimaryButton,
-  NoticePrimaryButtonText,
   IconButton,
-  ModalButtonText,
   SMSCard,
   SMSHeader,
   SMSStepText,
@@ -113,10 +110,6 @@ import {
   SMSPager,
   SMSPagerText,
   SMSActions,
-  SMSPrimaryButton,
-  SMSPrimaryText,
-  SMSSecondaryButton,
-  SMSSecondaryText,
 } from './HomeScreen.styles.ts';
 
 const languageOptions = [
@@ -550,15 +543,18 @@ export default function HomeScreen() {
             ) : null}
             <NoticeButtonRow>
               {popupContent?.url ? (
-                <NoticePrimaryButton onPress={handlePressNoticeLink}>
-                  <NoticePrimaryButtonText>
-                    {t('home.noticeDetail')}
-                  </NoticePrimaryButtonText>
-                </NoticePrimaryButton>
+                <Button
+                  label={t('home.noticeDetail')}
+                  onPress={handlePressNoticeLink}
+                  accessibilityRole="link"
+                  flex
+                />
               ) : null}
-              <NoticeButton onPress={closeNoticeModal}>
-                <ModalButtonText>{t('common.close')}</ModalButtonText>
-              </NoticeButton>
+              <Button
+                label={t('common.close')}
+                onPress={closeNoticeModal}
+                variant="secondary"
+              />
             </NoticeButtonRow>
           </NoticeModalCard>
         </ModalOverlay>
@@ -672,22 +668,20 @@ export default function HomeScreen() {
               ) : null}
 
               <SMSActions>
-                <SMSPrimaryButton
-                  accessibilityRole="button"
+                <Button
+                  label={t('home.smsFindShelter')}
                   onPress={() => {
                     setIsSMSModalVisible(false);
                     if (nearestShelter) handlePressNearestShelter();
                     else navigation.navigate('Map');
                   }}
-                >
-                  <SMSPrimaryText>{t('home.smsFindShelter')}</SMSPrimaryText>
-                </SMSPrimaryButton>
-                <SMSSecondaryButton
-                  accessibilityRole="button"
+                  flex
+                />
+                <Button
+                  label={t('common.close')}
                   onPress={() => setIsSMSModalVisible(false)}
-                >
-                  <SMSSecondaryText>{t('common.close')}</SMSSecondaryText>
-                </SMSSecondaryButton>
+                  variant="secondary"
+                />
               </SMSActions>
             </SMSBody>
           </SMSCard>

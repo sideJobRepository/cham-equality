@@ -60,7 +60,7 @@ export const SearchButton = styled.Pressable`
   align-items: center;
   justify-content: center;
   border-radius: 8px;
-  background-color: ${colors.primary};
+  background-color: ${colors.brand};
 `;
 
 export const Board = styled.View`
@@ -232,7 +232,7 @@ export const MapShortcutButton = styled.Pressable`
   justify-content: center;
   gap: 2px;
   border-radius: 4px;
-  background-color: ${colors.primary};
+  background-color: ${colors.brand};
 `;
 
 export const MapShortcutText = styled.Text`

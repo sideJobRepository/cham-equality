@@ -7,8 +7,6 @@ export const colors = {
   primarySoft: '#eff6ff',
   primaryBorder: '#bfdbfe',
   danger: '#dc2626',
-  // UI 개선 때 의미별(위치 버튼·삭제 아이콘)로 다시 나눌 값이라 danger 와 따로 둔다
-  dangerBright: '#ef4444',
   dangerSoft: '#fee2e2',
   warning: '#ea580c',
   warningSoft: '#fff7ed',
@@ -36,19 +34,15 @@ export const colors = {
     advisory: '#093a6e',
     etc: '#475569',
   },
+  // 범례·배지·지도 마커가 모두 이 값을 쓴다. 흰 배경 위 글자 대비 때문에 진한 톤으로 고정
   a11yMatch: {
     accessible: '#15803d',
     partial: '#b45309',
     inaccessible: '#dc2626',
   },
-  a11yLegend: {
-    accessible: '#16a34a',
-    partial: '#f59e0b',
-    inaccessible: '#dc2626',
-  },
   filter: { shelter: '#4aa199', accessibility: '#5088dc' },
-  // 웹 SweetAlert(.cham-alert) 색을 그대로 맞춘 값이라 다른 토큰과 합치지 않는다
-  dialog: { cancel: '#8a94a3', destructive: '#e5484d', warning: '#f59e0b' },
+  // 웹 SweetAlert(.cham-alert) 색을 맞춘 값이라 다른 토큰과 합치지 않는다(오류·삭제만 앱 danger 를 따른다)
+  dialog: { cancel: '#8a94a3', warning: '#f59e0b' },
 } as const;
 
 // 각 사의 공식 브랜드 가이드 색이라 디자인 토큰과 분리

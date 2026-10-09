@@ -355,35 +355,11 @@ export const NoticeButtonRow = styled.View`
   gap: 8px;
 `;
 
-export const NoticeButton = styled.Pressable`
-  padding: 10px 14px;
-  border-radius: 10px;
-  background-color: ${colors.surfaceMuted};
-`;
-
-export const NoticePrimaryButton = styled.Pressable`
-  padding: 10px 14px;
-  border-radius: 10px;
-  background-color: ${colors.brandDeep};
-`;
-
-export const NoticePrimaryButtonText = styled.Text`
-  color: ${colors.textOnColor};
-  font-size: 14px;
-  font-weight: 800;
-`;
-
 export const IconButton = styled.Pressable`
   width: 44px;
   height: 44px;
   align-items: center;
   justify-content: center;
-`;
-
-export const ModalButtonText = styled.Text`
-  color: ${colors.text};
-  font-size: 14px;
-  font-weight: 700;
 `;
 
 export const SMSCard = styled.Pressable`
@@ -487,32 +463,3 @@ export const SMSActions = styled.View`
   margin-top: 4px;
 `;
 
-export const SMSPrimaryButton = styled.Pressable`
-  flex: 1;
-  min-height: 48px;
-  align-items: center;
-  justify-content: center;
-  border-radius: 12px;
-  background-color: ${colors.brand};
-`;
-
-export const SMSPrimaryText = styled.Text`
-  color: ${colors.textOnColor};
-  font-size: 15px;
-  font-weight: 800;
-`;
-
-export const SMSSecondaryButton = styled.Pressable`
-  min-width: 80px;
-  min-height: 48px;
-  align-items: center;
-  justify-content: center;
-  border-radius: 12px;
-  background-color: ${colors.surfaceMuted};
-`;
-
-export const SMSSecondaryText = styled.Text`
-  color: ${colors.text};
-  font-size: 15px;
-  font-weight: 700;
-`;

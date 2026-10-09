@@ -221,22 +221,6 @@ export const AppleText = styled.Text`
   font-weight: 800;
 `;
 
-export const LogoutButton = styled.Pressable`
-  height: 48px;
-  align-items: center;
-  justify-content: center;
-  border-radius: 12px;
-  border-width: 1px;
-  border-color: ${colors.borderStrong};
-  background-color: ${colors.surface};
-`;
-
-export const LogoutText = styled.Text`
-  color: ${colors.textSecondary};
-  font-size: 15px;
-  font-weight: 700;
-`;
-
 export const WithdrawButton = styled.Pressable`
   height: 36px;
   align-items: center;

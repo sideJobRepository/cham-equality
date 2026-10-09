@@ -22,13 +22,13 @@ export type DialogTone = 'success' | 'error' | 'warning' | 'info';
 
 const TONE_COLORS: Record<DialogTone, string> = {
   success: colors.success,
-  error: colors.dialog.destructive,
+  error: colors.danger,
   warning: colors.dialog.warning,
   info: colors.brand,
 };
 const CONFIRM_COLOR = colors.brand;
 const CANCEL_COLOR = colors.dialog.cancel;
-const DESTRUCTIVE_COLOR = colors.dialog.destructive;
+const DESTRUCTIVE_COLOR = colors.danger;
 const AUTO_CLOSE_MS = 3000;
 
 type DialogAction = {

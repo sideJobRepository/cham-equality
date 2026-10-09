@@ -47,6 +47,7 @@ import {
 import { useDialogUtil } from '../utils/dialog';
 import ImageAttachButton from '../components/ui/ImageAttachButton.tsx';
 import SubmitButton from '../components/ui/SubmitButton.tsx';
+import Button from '../components/ui/Button.tsx';
 import { colors } from '../theme/index.ts';
 import {
   Screen,
@@ -77,8 +78,6 @@ import {
   NaverText,
   AppleButton,
   AppleText,
-  LogoutButton,
-  LogoutText,
   WithdrawButton,
   WithdrawText,
   FeedbackEntryButton,
@@ -676,9 +675,12 @@ export default function MoreScreen() {
           {user ? (
             <LoginBlock>
               <Greeting>{t('auth.greeting', { name: user.name })}</Greeting>
-              <LogoutButton onPress={onLogout}>
-                <LogoutText>{t('auth.logout')}</LogoutText>
-              </LogoutButton>
+              <Button
+                label={t('auth.logout')}
+                onPress={onLogout}
+                variant="outline"
+                fullWidth
+              />
               <WithdrawButton onPress={onWithdraw}>
                 <WithdrawText>{t('auth.withdraw')}</WithdrawText>
               </WithdrawButton>
@@ -793,7 +795,7 @@ export default function MoreScreen() {
                         accessibilityLabel={t('map.a11y.removeImage')}
                       >
                         <Trash2
-                          color={colors.dangerBright}
+                          color={colors.danger}
                           size={16}
                           strokeWidth={2.4}
                         />

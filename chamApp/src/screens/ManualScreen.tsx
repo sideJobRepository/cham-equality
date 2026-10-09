@@ -11,6 +11,7 @@ import {
 } from '../services/manual.service.ts';
 import { useManualStore } from '../store/manual.ts';
 import type { RootTabParamList } from '../navigation/AppNavigator.tsx';
+import { colors } from '../theme/index.ts';
 import {
   manualStyles,
   Screen,
@@ -166,7 +167,7 @@ export default function ManualScreen() {
           </IconButton>
         ) : null}
         <SearchButton onPress={handleSubmitSearch}>
-          <Search color="#ffffff" size={18} strokeWidth={2.6} />
+          <Search color={colors.textOnColor} size={18} strokeWidth={2.6} />
         </SearchButton>
       </SearchBox>
 
@@ -243,7 +244,7 @@ export default function ManualScreen() {
                   {t('manual.goToMap')}
                 </MapShortcutText>
                 <MapShortcutIcon>
-                  <ChevronRight color="#ffffff" size={16} strokeWidth={2.8} />
+                  <ChevronRight color={colors.textOnColor} size={16} strokeWidth={2.8} />
                 </MapShortcutIcon>
               </MapShortcutButton>
             </ModalMetaRow>
