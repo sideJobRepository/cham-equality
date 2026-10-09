@@ -7,8 +7,6 @@ import {
   Platform,
   Switch,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import styled from 'styled-components/native';
 import { useTranslation } from 'react-i18next';
 import { useFocusEffect } from '@react-navigation/native';
 import {
@@ -22,7 +20,6 @@ import {
   X,
 } from 'lucide-react-native';
 import { launchImageLibrary, type Asset } from 'react-native-image-picker';
-import LinearGradient from 'react-native-linear-gradient';
 import { useUserStore } from '../store/user';
 import { usePushStore } from '../store/push';
 import {
@@ -50,6 +47,100 @@ import {
   type LocalFeedbackImage,
 } from '../services/feedback.service';
 import { useDialogUtil } from '../utils/dialog';
+import { colors } from '../theme/index.ts';
+import {
+  Screen,
+  Content,
+  IntroHero,
+  IntroRightGradient,
+  IntroTitle,
+  IntroDescription,
+  Section,
+  SectionTitle,
+  ServiceList,
+  ServiceButton,
+  ServiceLabel,
+  ServiceIcon,
+  ServiceText,
+  SettingBlock,
+  LanguageRow,
+  LanguageButton,
+  LanguageText,
+  LoginBlock,
+  Greeting,
+  KakaoButton,
+  LoginIcon,
+  AppleLoginIcon,
+  KakaoText,
+  NaverButton,
+  NaverIconText,
+  NaverText,
+  AppleButton,
+  AppleText,
+  LogoutButton,
+  LogoutText,
+  WithdrawButton,
+  WithdrawText,
+  FeedbackEntryButton,
+  FeedbackIconBox,
+  FeedbackModalCard,
+  FeedbackModalScroll,
+  FeedbackField,
+  FeedbackLabel,
+  FeedbackChipRow,
+  FeedbackCategoryChip,
+  FeedbackCategoryText,
+  FeedbackTextArea,
+  FeedbackInput,
+  FeedbackCount,
+  AddImageButton,
+  AddImageButtonText,
+  FeedbackImageItem,
+  FeedbackImagePreview,
+  FeedbackImageName,
+  FeedbackImageRemoveButton,
+  FeedbackSubmitButton,
+  FeedbackSubmitText,
+  ReportListBlock,
+  ReportLoadingRow,
+  ReportListButton,
+  ReportListIconBox,
+  ReportListBody,
+  ReportListTitle,
+  ReportListMeta,
+  ReportEmptyText,
+  ReportModalOverlay,
+  ReportModalCard,
+  ReportModalHeader,
+  ReportModalTitle,
+  ReportModalCloseButton,
+  ReportDetailLoading,
+  ReportDetailScroll,
+  ReportDetailName,
+  ReportDetailAddress,
+  ReportDetailStatus,
+  ReportDetailSection,
+  ReportDetailSectionTitle,
+  ReportChipRow,
+  ReportAccessChip,
+  ReportAccessChipText,
+  ReportDetailText,
+  ReportDetailImageRow,
+  ReportDetailImage,
+  ReportDetailImagePlaceholder,
+  ReportDetailImageInfo,
+  ReportDetailImageCategory,
+  ReportDetailImageDescription,
+  NotificationRow,
+  NotificationTextBox,
+  NotificationLabel,
+  NotificationDescription,
+  NotificationDivider,
+  NotificationPermissionBox,
+  NotificationPermissionText,
+  NotificationSettingsButton,
+  NotificationSettingsText,
+} from './MoreScreen.styles.ts';
 
 const kakaoIcon = require('../assets/icons/kakao.png');
 const appleIcon = require('../assets/icons/apple.png');
@@ -269,9 +360,7 @@ export default function MoreScreen() {
         return;
       }
       const message =
-        error instanceof Error
-          ? error.message
-          : t('auth.naverLoginFailed');
+        error instanceof Error ? error.message : t('auth.naverLoginFailed');
       alert(message, undefined, { tone: 'error' });
     }
   };
@@ -425,7 +514,11 @@ export default function MoreScreen() {
                   />
                   <ServiceText>{t(service.titleKey)}</ServiceText>
                 </ServiceLabel>
-                <ChevronRight color="#6b7280" size={20} strokeWidth={2.4} />
+                <ChevronRight
+                  color={colors.textMuted}
+                  size={20}
+                  strokeWidth={2.4}
+                />
               </ServiceButton>
             ))}
           </ServiceList>
@@ -468,8 +561,10 @@ export default function MoreScreen() {
                 onValueChange={value =>
                   updatePushPreferences({ disasterEnabled: value })
                 }
-                trackColor={{ false: '#d1d5db', true: '#93c5fd' }}
-                thumbColor={disasterEnabled ? '#2563eb' : '#f9fafb'}
+                trackColor={{ false: colors.borderStrong, true: '#93c5fd' }}
+                thumbColor={
+                  disasterEnabled ? colors.primary : colors.background
+                }
               />
             </NotificationRow>
             <NotificationDivider />
@@ -488,8 +583,10 @@ export default function MoreScreen() {
                 onValueChange={value =>
                   updatePushPreferences({ personalEnabled: value })
                 }
-                trackColor={{ false: '#d1d5db', true: '#93c5fd' }}
-                thumbColor={personalEnabled ? '#2563eb' : '#f9fafb'}
+                trackColor={{ false: colors.borderStrong, true: '#93c5fd' }}
+                thumbColor={
+                  personalEnabled ? colors.primary : colors.background
+                }
               />
             </NotificationRow>
             {!notificationAllowed ? (
@@ -515,11 +612,19 @@ export default function MoreScreen() {
           <FeedbackEntryButton onPress={() => setIsFeedbackVisible(true)}>
             <ServiceLabel>
               <FeedbackIconBox>
-                <MessageSquare color="#2563eb" size={18} strokeWidth={2.5} />
+                <MessageSquare
+                  color={colors.primary}
+                  size={18}
+                  strokeWidth={2.5}
+                />
               </FeedbackIconBox>
               <ServiceText>피드백</ServiceText>
             </ServiceLabel>
-            <ChevronRight color="#9ca3af" size={20} strokeWidth={2.4} />
+            <ChevronRight
+              color={colors.textDisabled}
+              size={20}
+              strokeWidth={2.4}
+            />
           </FeedbackEntryButton>
         </Section>
 
@@ -529,7 +634,7 @@ export default function MoreScreen() {
             <ReportListBlock>
               {reportsLoading ? (
                 <ReportLoadingRow>
-                  <ActivityIndicator color="#2563eb" />
+                  <ActivityIndicator color={colors.primary} />
                 </ReportLoadingRow>
               ) : reports.length ? (
                 reports.map(report => (
@@ -539,7 +644,7 @@ export default function MoreScreen() {
                   >
                     <ReportListIconBox>
                       <ClipboardList
-                        color="#2563eb"
+                        color={colors.primary}
                         size={18}
                         strokeWidth={2.5}
                       />
@@ -553,7 +658,11 @@ export default function MoreScreen() {
                         {t(`moreReports.status.${report.requestStatus}`)}
                       </ReportListMeta>
                     </ReportListBody>
-                    <ChevronRight color="#9ca3af" size={20} strokeWidth={2.4} />
+                    <ChevronRight
+                      color={colors.textDisabled}
+                      size={20}
+                      strokeWidth={2.4}
+                    />
                   </ReportListButton>
                 ))
               ) : (
@@ -610,7 +719,7 @@ export default function MoreScreen() {
               <ReportModalHeader>
                 <ReportModalTitle>피드백</ReportModalTitle>
                 <ReportModalCloseButton onPress={closeFeedbackModal}>
-                  <X color="#6b7280" size={22} strokeWidth={2.6} />
+                  <X color={colors.textMuted} size={22} strokeWidth={2.6} />
                 </ReportModalCloseButton>
               </ReportModalHeader>
 
@@ -640,7 +749,7 @@ export default function MoreScreen() {
                     value={feedbackContent}
                     onChangeText={setFeedbackContent}
                     placeholder="불편한 점이나 개선 의견을 입력하세요."
-                    placeholderTextColor="#9ca3af"
+                    placeholderTextColor={colors.textDisabled}
                     multiline
                     maxLength={2000}
                     textAlignVertical="top"
@@ -654,14 +763,18 @@ export default function MoreScreen() {
                     value={feedbackContact}
                     onChangeText={setFeedbackContact}
                     placeholder="답변을 원하면 이메일이나 연락처를 입력하세요."
-                    placeholderTextColor="#9ca3af"
+                    placeholderTextColor={colors.textDisabled}
                   />
                 </FeedbackField>
 
                 <FeedbackField>
                   <FeedbackLabel>사진</FeedbackLabel>
                   <AddImageButton onPress={addFeedbackImages}>
-                    <ImagePlus color="#2563eb" size={16} strokeWidth={2.6} />
+                    <ImagePlus
+                      color={colors.primary}
+                      size={16}
+                      strokeWidth={2.6}
+                    />
                     <AddImageButtonText>사진 추가</AddImageButtonText>
                   </AddImageButton>
 
@@ -674,7 +787,11 @@ export default function MoreScreen() {
                       <FeedbackImageRemoveButton
                         onPress={() => removeFeedbackImage(image.id)}
                       >
-                        <Trash2 color="#ef4444" size={16} strokeWidth={2.4} />
+                        <Trash2
+                          color={colors.dangerBright}
+                          size={16}
+                          strokeWidth={2.4}
+                        />
                       </FeedbackImageRemoveButton>
                     </FeedbackImageItem>
                   ))}
@@ -686,10 +803,14 @@ export default function MoreScreen() {
                 onPress={submitFeedback}
               >
                 {isFeedbackSubmitting ? (
-                  <ActivityIndicator color="#ffffff" />
+                  <ActivityIndicator color={colors.textOnColor} />
                 ) : (
                   <>
-                    <Send color="#ffffff" size={16} strokeWidth={2.6} />
+                    <Send
+                      color={colors.textOnColor}
+                      size={16}
+                      strokeWidth={2.6}
+                    />
                     <FeedbackSubmitText>피드백 제출</FeedbackSubmitText>
                   </>
                 )}
@@ -712,13 +833,13 @@ export default function MoreScreen() {
                 {t('moreReports.detailTitle')}
               </ReportModalTitle>
               <ReportModalCloseButton onPress={() => setSelectedReport(null)}>
-                <X color="#6b7280" size={22} strokeWidth={2.6} />
+                <X color={colors.textMuted} size={22} strokeWidth={2.6} />
               </ReportModalCloseButton>
             </ReportModalHeader>
 
             {reportDetailLoading && !selectedReport ? (
               <ReportDetailLoading>
-                <ActivityIndicator color="#2563eb" />
+                <ActivityIndicator color={colors.primary} />
               </ReportDetailLoading>
             ) : selectedReport ? (
               <ReportDetailScroll showsVerticalScrollIndicator={false}>
@@ -776,7 +897,7 @@ export default function MoreScreen() {
                         ) : (
                           <ReportDetailImagePlaceholder>
                             <ImageIcon
-                              color="#9ca3af"
+                              color={colors.textDisabled}
                               size={20}
                               strokeWidth={2.4}
                             />
@@ -812,687 +933,3 @@ export default function MoreScreen() {
     </Screen>
   );
 }
-
-const Screen = styled(SafeAreaView)`
-  flex: 1;
-  background-color: #f4f7fb;
-`;
-
-const Content = styled.ScrollView`
-  flex: 1;
-`;
-
-const IntroHero = styled.View`
-  position: relative;
-  min-height: 150px;
-  justify-content: center;
-  align-items: center;
-  gap: 12px;
-  padding: 26px 18px;
-  overflow: hidden;
-  background-color: #1f3a5f;
-`;
-
-const IntroRightGradient = styled(LinearGradient)`
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  width: 58%;
-`;
-
-const IntroTitle = styled.Text.attrs({
-  textBreakStrategy: 'balanced',
-  lineBreakStrategyIOS: 'hangul-word',
-})`
-  z-index: 1;
-  width: 100%;
-  flex-shrink: 1;
-  color: #ffffff;
-  font-size: 19px;
-  line-height: 27px;
-  font-weight: 800;
-  text-align: center;
-`;
-
-const IntroDescription = styled.Text.attrs({
-  textBreakStrategy: 'balanced',
-  lineBreakStrategyIOS: 'hangul-word',
-})`
-  z-index: 1;
-  width: 100%;
-  flex-shrink: 1;
-  color: #d7e2e6;
-  font-size: 13px;
-  line-height: 20px;
-  font-weight: 600;
-  text-align: center;
-`;
-
-const Section = styled.View`
-  margin-top: 24px;
-  gap: 12px;
-  padding: 0 12px;
-`;
-
-const SectionTitle = styled.Text`
-  color: #6b7280;
-  font-size: 16px;
-  font-weight: 600;
-`;
-
-const ServiceList = styled.View`
-  overflow: hidden;
-  border-radius: 8px;
-  border-width: 1px;
-  border-color: #e5e7eb;
-  background-color: #ffffff;
-`;
-
-const ServiceButton = styled.Pressable`
-  min-height: 54px;
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 0 16px;
-  border-bottom-width: 1px;
-  border-bottom-color: #f1f5f9;
-`;
-
-const ServiceLabel = styled.View`
-  flex: 1;
-  min-width: 0;
-  flex-direction: row;
-  align-items: center;
-  gap: 8px;
-`;
-
-const ServiceIcon = styled.Image<{ $width: number; $aspectRatio: number }>`
-  width: ${({ $width }) => $width}px;
-  aspect-ratio: ${({ $aspectRatio }) => $aspectRatio};
-`;
-
-const ServiceText = styled.Text`
-  flex: 1;
-  min-width: 0;
-  font-size: 15px;
-  font-weight: 600;
-  color: #111827;
-`;
-
-const SettingBlock = styled.View`
-  gap: 12px;
-  padding: 16px;
-  border-radius: 8px;
-  border-width: 1px;
-  border-color: #e5e7eb;
-  background-color: #ffffff;
-`;
-
-const LanguageRow = styled.View`
-  flex-direction: row;
-  flex-wrap: wrap;
-  gap: 8px;
-`;
-
-const LanguageButton = styled.Pressable<{ $active: boolean }>`
-  padding: 6px 10px;
-  align-items: center;
-  justify-content: center;
-  border-radius: 8px;
-  background-color: ${({ $active }) => ($active ? '#1d1d1f' : '#f3f4f6')};
-`;
-
-const LanguageText = styled.Text<{ $active: boolean }>`
-  color: ${({ $active }) => ($active ? '#ffffff' : '#6b7280')};
-  font-size: 13px;
-  font-weight: 700;
-`;
-
-const LoginBlock = styled.View`
-  gap: 12px;
-  padding: 16px;
-  border-radius: 8px;
-  border-width: 1px;
-  border-color: #e5e7eb;
-  background-color: #ffffff;
-`;
-
-const Greeting = styled.Text`
-  font-size: 14px;
-  font-weight: 700;
-`;
-
-const KakaoButton = styled.Pressable`
-  height: 50px;
-  flex-direction: row;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  border-radius: 12px;
-  background-color: #fee500;
-`;
-
-const LoginIcon = styled.Image`
-  width: 20px;
-  height: 20px;
-`;
-
-const AppleLoginIcon = styled(LoginIcon)`
-  tint-color: #ffffff;
-`;
-
-const KakaoText = styled.Text`
-  color: #191600;
-  font-size: 15px;
-  font-weight: 800;
-`;
-
-const NaverButton = styled.Pressable`
-  height: 50px;
-  flex-direction: row;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  border-radius: 12px;
-  background-color: #03c75a;
-`;
-
-const NaverIconText = styled.Text`
-  color: #ffffff;
-  font-size: 18px;
-  font-weight: 900;
-`;
-
-const NaverText = styled.Text`
-  color: #ffffff;
-  font-size: 15px;
-  font-weight: 800;
-`;
-
-const AppleButton = styled.Pressable`
-  height: 50px;
-  flex-direction: row;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  border-radius: 12px;
-  background-color: #000000;
-`;
-
-const AppleText = styled.Text`
-  color: #ffffff;
-  font-size: 15px;
-  font-weight: 800;
-`;
-
-const LogoutButton = styled.Pressable`
-  height: 48px;
-  align-items: center;
-  justify-content: center;
-  border-radius: 12px;
-  border-width: 1px;
-  border-color: #d1d5db;
-  background-color: #ffffff;
-`;
-
-const LogoutText = styled.Text`
-  color: #374151;
-  font-size: 15px;
-  font-weight: 700;
-`;
-
-const WithdrawButton = styled.Pressable`
-  height: 36px;
-  align-items: center;
-  justify-content: center;
-`;
-
-const WithdrawText = styled.Text`
-  color: #9ca3af;
-  font-size: 13px;
-  font-weight: 600;
-  text-decoration-line: underline;
-`;
-
-const FeedbackEntryButton = styled.Pressable`
-  min-height: 54px;
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 0 16px;
-  border-radius: 8px;
-  border-width: 1px;
-  border-color: #e5e7eb;
-  background-color: #ffffff;
-`;
-
-const FeedbackIconBox = styled.View`
-  width: 34px;
-  height: 34px;
-  border-radius: 10px;
-  align-items: center;
-  justify-content: center;
-  background-color: #eff6ff;
-`;
-
-const FeedbackModalCard = styled.Pressable`
-  max-height: 90%;
-  gap: 12px;
-  padding: 18px;
-  border-radius: 18px;
-  background-color: #ffffff;
-`;
-
-const FeedbackModalScroll = styled.ScrollView`
-  max-height: 560px;
-`;
-
-const FeedbackField = styled.View`
-  gap: 8px;
-  margin-bottom: 14px;
-`;
-
-const FeedbackLabel = styled.Text`
-  color: #111827;
-  font-size: 13px;
-  font-weight: 800;
-`;
-
-const FeedbackChipRow = styled.View`
-  flex-direction: row;
-  flex-wrap: wrap;
-  gap: 8px;
-`;
-
-const FeedbackCategoryChip = styled.Pressable<{ $active: boolean }>`
-  min-height: 36px;
-  padding: 0 11px;
-  border-radius: 999px;
-  align-items: center;
-  justify-content: center;
-  background-color: ${({ $active }) => ($active ? '#2563eb' : '#f3f4f6')};
-  border-width: 1px;
-  border-color: ${({ $active }) => ($active ? '#2563eb' : '#e5e7eb')};
-`;
-
-const FeedbackCategoryText = styled.Text<{ $active: boolean }>`
-  color: ${({ $active }) => ($active ? '#ffffff' : '#4b5563')};
-  font-size: 12px;
-  font-weight: 800;
-`;
-
-const FeedbackTextArea = styled.TextInput`
-  min-height: 128px;
-  padding: 12px;
-  border-radius: 10px;
-  color: #111827;
-  font-size: 14px;
-  line-height: 20px;
-  background-color: #f9fafb;
-  border-width: 1px;
-  border-color: #e5e7eb;
-`;
-
-const FeedbackInput = styled.TextInput`
-  min-height: 44px;
-  padding: 0 12px;
-  border-radius: 10px;
-  color: #111827;
-  font-size: 14px;
-  background-color: #f9fafb;
-  border-width: 1px;
-  border-color: #e5e7eb;
-`;
-
-const FeedbackCount = styled.Text`
-  color: #9ca3af;
-  font-size: 11px;
-  font-weight: 700;
-  text-align: right;
-`;
-
-const AddImageButton = styled.Pressable`
-  min-height: 40px;
-  border-radius: 10px;
-  align-items: center;
-  justify-content: center;
-  flex-direction: row;
-  gap: 6px;
-  background-color: #eff6ff;
-  border-width: 1px;
-  border-color: #bfdbfe;
-`;
-
-const AddImageButtonText = styled.Text`
-  color: #2563eb;
-  font-size: 13px;
-  font-weight: 800;
-`;
-
-const FeedbackImageItem = styled.View`
-  min-height: 58px;
-  flex-direction: row;
-  align-items: center;
-  gap: 10px;
-  padding: 8px;
-  border-radius: 12px;
-  background-color: #f9fafb;
-  border-width: 1px;
-  border-color: #e5e7eb;
-`;
-
-const FeedbackImagePreview = styled.Image`
-  width: 42px;
-  height: 42px;
-  border-radius: 8px;
-  background-color: #e5e7eb;
-`;
-
-const FeedbackImageName = styled.Text`
-  flex: 1;
-  min-width: 0;
-  color: #374151;
-  font-size: 12px;
-  font-weight: 700;
-`;
-
-const FeedbackImageRemoveButton = styled.Pressable`
-  width: 30px;
-  height: 30px;
-  border-radius: 999px;
-  align-items: center;
-  justify-content: center;
-  background-color: #fee2e2;
-`;
-
-const FeedbackSubmitButton = styled.Pressable`
-  min-height: 46px;
-  border-radius: 12px;
-  align-items: center;
-  justify-content: center;
-  flex-direction: row;
-  gap: 7px;
-  background-color: #2563eb;
-`;
-
-const FeedbackSubmitText = styled.Text`
-  color: #ffffff;
-  font-size: 14px;
-  font-weight: 800;
-`;
-
-const ReportListBlock = styled.View`
-  overflow: hidden;
-  border-radius: 8px;
-  border-width: 1px;
-  border-color: #e5e7eb;
-  background-color: #ffffff;
-`;
-
-const ReportLoadingRow = styled.View`
-  min-height: 72px;
-  align-items: center;
-  justify-content: center;
-`;
-
-const ReportListButton = styled.Pressable`
-  min-height: 64px;
-  flex-direction: row;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 14px;
-  border-bottom-width: 1px;
-  border-bottom-color: #f1f5f9;
-`;
-
-const ReportListIconBox = styled.View`
-  width: 34px;
-  height: 34px;
-  border-radius: 10px;
-  align-items: center;
-  justify-content: center;
-  background-color: #eff6ff;
-`;
-
-const ReportListBody = styled.View`
-  flex: 1;
-  min-width: 0;
-  gap: 4px;
-`;
-
-const ReportListTitle = styled.Text`
-  color: #111827;
-  font-size: 14px;
-  font-weight: 800;
-`;
-
-const ReportListMeta = styled.Text`
-  color: #6b7280;
-  font-size: 12px;
-  font-weight: 600;
-`;
-
-const ReportEmptyText = styled.Text`
-  padding: 18px 14px;
-  color: #9ca3af;
-  font-size: 13px;
-  font-weight: 600;
-  text-align: center;
-`;
-
-const ReportModalOverlay = styled.Pressable`
-  flex: 1;
-  justify-content: flex-end;
-  padding: 16px;
-  background-color: rgba(17, 24, 39, 0.32);
-`;
-
-const ReportModalCard = styled.Pressable`
-  height: 90%;
-  gap: 12px;
-  padding: 18px;
-  border-radius: 18px;
-  background-color: #ffffff;
-`;
-
-const ReportModalHeader = styled.View`
-  min-height: 34px;
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-`;
-
-const ReportModalTitle = styled.Text`
-  flex: 1;
-  color: #111827;
-  font-size: 18px;
-  font-weight: 800;
-`;
-
-const ReportModalCloseButton = styled.Pressable`
-  width: 34px;
-  height: 34px;
-  align-items: center;
-  justify-content: center;
-`;
-
-const ReportDetailLoading = styled.View`
-  flex: 1;
-  align-items: center;
-  justify-content: center;
-`;
-
-const ReportDetailScroll = styled.ScrollView`
-  flex: 1;
-`;
-
-const ReportDetailName = styled.Text`
-  color: #111827;
-  font-size: 17px;
-  line-height: 24px;
-  font-weight: 800;
-`;
-
-const ReportDetailAddress = styled.Text`
-  margin-top: 4px;
-  color: #4b5563;
-  font-size: 13px;
-  line-height: 19px;
-  font-weight: 600;
-`;
-
-const ReportDetailStatus = styled.Text`
-  align-self: flex-start;
-  margin-top: 10px;
-  padding: 5px 9px;
-  border-radius: 999px;
-  overflow: hidden;
-  color: #2563eb;
-  font-size: 12px;
-  font-weight: 800;
-  background-color: #eff6ff;
-`;
-
-const ReportDetailSection = styled.View`
-  gap: 8px;
-  margin-top: 18px;
-`;
-
-const ReportDetailSectionTitle = styled.Text`
-  color: #111827;
-  font-size: 14px;
-  font-weight: 800;
-`;
-
-const ReportChipRow = styled.View`
-  flex-direction: row;
-  flex-wrap: wrap;
-  gap: 7px;
-`;
-
-const ReportAccessChip = styled.View<{ $active: boolean }>`
-  padding: 6px 9px;
-  border-radius: 999px;
-  background-color: ${({ $active }) => ($active ? '#2563eb' : '#f3f4f6')};
-  border-width: 1px;
-  border-color: ${({ $active }) => ($active ? '#2563eb' : '#e5e7eb')};
-`;
-
-const ReportAccessChipText = styled.Text<{ $active: boolean }>`
-  color: ${({ $active }) => ($active ? '#ffffff' : '#9ca3af')};
-  font-size: 12px;
-  font-weight: 800;
-`;
-
-const ReportDetailText = styled.Text`
-  color: #4b5563;
-  font-size: 13px;
-  line-height: 20px;
-  font-weight: 600;
-`;
-
-const ReportDetailImageRow = styled.View`
-  flex-direction: row;
-  gap: 10px;
-  padding: 10px;
-  border-radius: 12px;
-  background-color: #f9fafb;
-  border-width: 1px;
-  border-color: #e5e7eb;
-`;
-
-const ReportDetailImage = styled.Image`
-  width: 76px;
-  height: 76px;
-  border-radius: 10px;
-  background-color: #e5e7eb;
-`;
-
-const ReportDetailImagePlaceholder = styled.View`
-  width: 76px;
-  height: 76px;
-  border-radius: 10px;
-  align-items: center;
-  justify-content: center;
-  background-color: #f3f4f6;
-`;
-
-const ReportDetailImageInfo = styled.View`
-  flex: 1;
-  min-width: 0;
-  gap: 6px;
-`;
-
-const ReportDetailImageCategory = styled.Text`
-  color: #111827;
-  font-size: 13px;
-  font-weight: 800;
-`;
-
-const ReportDetailImageDescription = styled.Text`
-  color: #4b5563;
-  font-size: 12px;
-  line-height: 18px;
-  font-weight: 600;
-`;
-
-const NotificationRow = styled.View`
-  min-height: 48px;
-  flex-direction: row;
-  align-items: center;
-  gap: 12px;
-`;
-
-const NotificationTextBox = styled.View`
-  flex: 1;
-  gap: 2px;
-`;
-
-const NotificationLabel = styled.Text`
-  color: #111827;
-  font-size: 15px;
-  font-weight: 700;
-`;
-
-const NotificationDescription = styled.Text`
-  color: #6b7280;
-  font-size: 13px;
-  line-height: 18px;
-`;
-
-const NotificationDivider = styled.View`
-  height: 1px;
-  background-color: #f3f4f6;
-`;
-
-const NotificationPermissionBox = styled.View`
-  gap: 8px;
-  padding: 12px;
-  border-radius: 8px;
-  background-color: #fff7ed;
-`;
-
-const NotificationPermissionText = styled.Text`
-  color: #9a3412;
-  font-size: 13px;
-  line-height: 19px;
-`;
-
-const NotificationSettingsButton = styled.Pressable`
-  align-self: flex-start;
-  min-height: 44px;
-  justify-content: center;
-  padding: 0 14px;
-  border-radius: 8px;
-  background-color: #ea580c;
-`;
-
-const NotificationSettingsText = styled.Text`
-  color: #ffffff;
-  font-size: 14px;
-  font-weight: 700;
-`;
