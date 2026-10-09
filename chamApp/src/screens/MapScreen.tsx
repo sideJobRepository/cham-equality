@@ -933,8 +933,9 @@ function buildMapHtml(
             'justify-content:center',
             'pointer-events:none',
           ].join(';');
+          // 빨강은 접근성 '불가' 마커·위급 표시와 겹쳐 오인되므로 내 위치는 파란 점으로 그린다
           markerEl.innerHTML =
-            '<div style="width:22px;height:22px;border-radius:999px;background:#ef4444;border:4px solid #ffffff;box-shadow:0 0 0 6px rgba(239,68,68,.18),0 3px 12px rgba(239,68,68,.45);"></div>';
+            '<div style="width:22px;height:22px;border-radius:999px;background:${colors.primary};border:4px solid #ffffff;box-shadow:0 0 0 6px rgba(37,99,235,.18),0 3px 12px rgba(37,99,235,.45);"></div>';
 
           userLocationOverlay = new window.kakao.maps.CustomOverlay({
             map: map,

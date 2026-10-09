@@ -2,7 +2,7 @@ import styled from 'styled-components/native';
 import { useTranslation } from 'react-i18next';
 import { LocateFixed } from 'lucide-react-native';
 import { useLocationStore } from '../store/location.ts';
-import { colors } from '../theme/index.ts';
+import { colors, size, spacing } from '../theme/index.ts';
 
 interface CurrentLocationBarProps {
   actionLabel?: string;
@@ -38,7 +38,11 @@ export default function CurrentLocationBar({
         <Description numberOfLines={1}>{locationStatusText}</Description>
       </LocationLabel>
       {status === 'granted' && location && actionLabel && onAction ? (
-        <LocationButton onPress={onAction}>
+        <LocationButton
+          onPress={onAction}
+          accessibilityRole="button"
+          accessibilityLabel={actionLabel}
+        >
           <LocationButtonText>{actionLabel}</LocationButtonText>
         </LocationButton>
       ) : null}
@@ -79,11 +83,14 @@ const Description = styled.Text`
   font-size: 12px;
 `;
 
+// 빨강은 위급·오류 전용이라 일반 동작 버튼은 브랜드 남색으로 둔다
 const LocationButton = styled.Pressable`
   flex-shrink: 0;
-  padding: 8px 10px;
+  min-height: ${size.touchMin}px;
+  justify-content: center;
+  padding: 0 ${spacing.lg}px;
   border-radius: 999px;
-  background-color: ${colors.dangerBright};
+  background-color: ${colors.brand};
 `;
 
 const LocationButtonText = styled.Text`
