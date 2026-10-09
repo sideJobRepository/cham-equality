@@ -1,7 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Modal, StyleSheet, type ImageSourcePropType } from 'react-native';
-import styled from 'styled-components/native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { Modal, type ImageSourcePropType } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { ChevronLeft, ChevronRight, Search, X } from 'lucide-react-native';
@@ -13,6 +11,39 @@ import {
 } from '../services/manual.service.ts';
 import { useManualStore } from '../store/manual.ts';
 import type { RootTabParamList } from '../navigation/AppNavigator.tsx';
+import {
+  manualStyles,
+  Screen,
+  BannerFrame,
+  BannerImage,
+  SearchBox,
+  SearchInput,
+  IconButton,
+  SearchButton,
+  Board,
+  BoardHeader,
+  HeaderTitle,
+  HeaderDate,
+  ManualRow,
+  ManualTitle,
+  ManualDate,
+  EmptyBox,
+  EmptyText,
+  Pagination,
+  PageButton,
+  PageText,
+  ModalOverlay,
+  ModalCard,
+  ModalHeader,
+  ModalTitle,
+  CloseButton,
+  ModalMetaRow,
+  ModalDate,
+  ManualWebViewFrame,
+  MapShortcutButton,
+  MapShortcutText,
+  MapShortcutIcon,
+} from './ManualScreen.styles.ts';
 
 const PAGE_SIZE = 10;
 const manualBanner =
@@ -223,7 +254,7 @@ export default function ManualScreen() {
                 javaScriptEnabled
                 domStorageEnabled
                 nestedScrollEnabled
-                style={styles.manualWebView}
+                style={manualStyles.manualWebView}
               />
             </ManualWebViewFrame>
           </ModalCard>
@@ -232,249 +263,3 @@ export default function ManualScreen() {
     </Screen>
   );
 }
-
-const styles = StyleSheet.create({
-  manualWebView: {
-    flex: 1,
-    backgroundColor: '#ffffff',
-  },
-});
-
-const Screen = styled(SafeAreaView)`
-  flex: 1;
-  background-color: #ffffff;
-`;
-
-const BannerFrame = styled.View`
-  width: 100%;
-  aspect-ratio: 2.64;
-  margin-bottom: 16px;
-`;
-
-const BannerImage = styled.Image`
-  width: 100%;
-  height: 100%;
-`;
-
-const SearchBox = styled.View`
-  min-height: 46px;
-  flex-direction: row;
-  align-items: center;
-  gap: 8px;
-  margin: 0 12px 14px;
-  padding: 0 8px 0 12px;
-  border-radius: 8px;
-  border-width: 1px;
-  border-color: #dbeafe;
-  background-color: #f8fbff;
-`;
-
-const SearchInput = styled.TextInput`
-  flex: 1;
-  min-width: 0;
-  color: #111827;
-  font-size: 14px;
-  font-weight: 600;
-`;
-
-const IconButton = styled.Pressable`
-  width: 32px;
-  height: 32px;
-  align-items: center;
-  justify-content: center;
-`;
-
-const SearchButton = styled.Pressable`
-  width: 34px;
-  height: 34px;
-  align-items: center;
-  justify-content: center;
-  border-radius: 8px;
-  background-color: #2563eb;
-`;
-
-const Board = styled.View`
-  overflow: hidden;
-  border-radius: 8px;
-  border-color: #e5e7eb;
-  padding: 0 12px;
-`;
-
-const BoardHeader = styled.View`
-  min-height: 42px;
-  flex-direction: row;
-  align-items: center;
-  padding: 0 12px;
-  background-color: #edf5ff;
-  border-bottom-width: 1px;
-  border-bottom-color: #e5e7eb;
-`;
-
-const HeaderTitle = styled.Text`
-  flex: 1;
-  text-align: center;
-  font-size: 12px;
-  font-weight: 600;
-  color: #6b7280;
-`;
-
-const HeaderDate = styled.Text`
-  width: 88px;
-  text-align: center;
-  font-size: 12px;
-  font-weight: 600;
-  color: #6b7280;
-`;
-
-const ManualRow = styled.Pressable`
-  min-height: 48px;
-  flex-direction: row;
-  align-items: center;
-  padding: 0 12px;
-  border-bottom-width: 1px;
-  border-bottom-color: #eef2f7;
-  background-color: #ffffff;
-`;
-
-const ManualTitle = styled.Text`
-  flex: 1;
-  //text-align: center;
-  font-size: 12px;
-  font-weight: 700;
-  color: #1d1d1f;
-`;
-
-const ManualDate = styled.Text`
-  width: 88px;
-  text-align: center;
-  font-size: 12px;
-  font-weight: 700;
-  color: #1d1d1f;
-`;
-
-const EmptyBox = styled.View`
-  min-height: 160px;
-  align-items: center;
-  justify-content: center;
-`;
-
-const EmptyText = styled.Text`
-  color: #6b7280;
-  font-size: 14px;
-  font-weight: 700;
-`;
-
-const Pagination = styled.View`
-  flex-direction: row;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  margin-top: 16px;
-`;
-
-const PageButton = styled.Pressable`
-  width: 24px;
-  height: 24px;
-  align-items: center;
-  justify-content: center;
-  border-radius: 999px;
-  background-color: #ffffff;
-  border-width: 1px;
-  border-color: #e5e7eb;
-`;
-
-const PageText = styled.Text`
-  min-width: 58px;
-  text-align: center;
-  color: #6b7280;
-  font-size: 12px;
-  font-weight: 600;
-`;
-
-const ModalOverlay = styled.Pressable`
-  flex: 1;
-  justify-content: center;
-  padding: 20px;
-  background-color: rgba(15, 23, 42, 0.45);
-`;
-
-const ModalCard = styled.Pressable`
-  height: 78%;
-  padding: 18px;
-  border-radius: 14px;
-  background-color: #ffffff;
-`;
-
-const ModalHeader = styled.View`
-  min-height: 36px;
-  flex-direction: row;
-  align-items: center;
-  gap: 12px;
-`;
-
-const ModalTitle = styled.Text`
-  flex: 1;
-  color: #111827;
-  font-size: 18px;
-  line-height: 24px;
-  font-weight: 800;
-`;
-
-const CloseButton = styled.Pressable`
-  width: 36px;
-  height: 36px;
-  margin-right: -8px;
-  align-items: center;
-  justify-content: center;
-`;
-
-const ModalMetaRow = styled.View`
-  margin-top: 6px;
-  padding-bottom: 12px;
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  border-bottom-width: 1px;
-  border-bottom-color: #e5e7eb;
-`;
-
-const ModalDate = styled.Text`
-  flex: 1;
-  min-width: 0;
-  color: #6b7280;
-  font-size: 12px;
-  font-weight: 600;
-`;
-
-const ManualWebViewFrame = styled.View`
-  flex: 1;
-  width: 100%;
-  margin-top: 14px;
-  overflow: hidden;
-  background-color: #ffffff;
-`;
-
-const MapShortcutButton = styled.Pressable`
-  padding: 8px 12px;
-  flex-direction: row;
-  align-items: center;
-  justify-content: center;
-  gap: 2px;
-  border-radius: 4px;
-  background-color: #2563eb;
-`;
-
-const MapShortcutText = styled.Text`
-  color: #ffffff;
-  font-size: 12px;
-  font-weight: 600;
-`;
-
-const MapShortcutIcon = styled.View`
-  width: 16px;
-  height: 16px;
-  margin-top: 1px;
-  align-items: center;
-  justify-content: center;
-`;
