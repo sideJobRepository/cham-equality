@@ -18,6 +18,7 @@ import HomeScreen from '../screens/HomeScreen';
 import MapScreen from '../screens/MapScreen';
 import ManualScreen from '../screens/ManualScreen';
 import MoreScreen from '../screens/MoreScreen';
+import { colors } from '../theme/index.ts';
 
 export type RootTabParamList = {
   Home: undefined;
@@ -64,7 +65,7 @@ export default function AppNavigator() {
       <Tab.Navigator
         screenOptions={({ route }) => ({
           headerShown: false,
-          tabBarActiveTintColor: '#2563eb',
+          tabBarActiveTintColor: colors.primary,
           tabBarInactiveTintColor: '#a3a7ac',
           tabBarIcon: ({ color, focused, size }) => {
             const Icon = tabIcons[route.name];
@@ -80,7 +81,7 @@ export default function AppNavigator() {
             height: 56 + tabBarBottomPadding,
             paddingTop: 6,
             paddingBottom: tabBarBottomPadding,
-            borderTopColor: '#e5e7eb',
+            borderTopColor: colors.border,
           },
           tabBarLabelStyle: {
             fontSize: 12,

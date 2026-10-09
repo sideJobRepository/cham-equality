@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { colors } from '../theme/index.ts';
 
 export const shelterTypeOptions = [
   '전체',
@@ -19,8 +20,8 @@ export const accessibilityOptions = [
 
 export const SHELTER_ALL_LABEL = '전체';
 export const ACCESSIBILITY_ALL_LABEL = '접근성 전체';
-export const SHELTER_SELECTED_COLOR = '#4aa199';
-export const ACCESSIBILITY_SELECTED_COLOR = '#5088dc';
+export const SHELTER_SELECTED_COLOR = colors.filter.shelter;
+export const ACCESSIBILITY_SELECTED_COLOR = colors.filter.accessibility;
 
 export const shelterTypeFilterLabelKeys: Record<string, string> = {
   전체: 'map.filters.shelterAll',

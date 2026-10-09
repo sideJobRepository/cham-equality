@@ -12,6 +12,7 @@ import { Animated, Easing, Modal } from 'react-native';
 import Svg, { Circle, Path } from 'react-native-svg';
 import styled from 'styled-components/native';
 import i18n from '../i18n';
+import { colors } from '../theme/index.ts';
 
 // 웹(cham-front/src/utils/toast.js + GlobalStyle 의 .cham-alert, SweetAlert2)과 같은 규칙·색을 쓴다.
 // - 성공·안내는 [확인] 을 누르거나 3초 뒤 저절로 닫힌다
@@ -20,14 +21,14 @@ import i18n from '../i18n';
 export type DialogTone = 'success' | 'error' | 'warning' | 'info';
 
 const TONE_COLORS: Record<DialogTone, string> = {
-  success: '#16a34a',
-  error: '#e5484d',
-  warning: '#f59e0b',
-  info: '#093A6E',
+  success: colors.success,
+  error: colors.dialog.destructive,
+  warning: colors.dialog.warning,
+  info: colors.brand,
 };
-const CONFIRM_COLOR = '#093A6E';
-const CANCEL_COLOR = '#8a94a3';
-const DESTRUCTIVE_COLOR = '#e5484d';
+const CONFIRM_COLOR = colors.brand;
+const CANCEL_COLOR = colors.dialog.cancel;
+const DESTRUCTIVE_COLOR = colors.dialog.destructive;
 const AUTO_CLOSE_MS = 3000;
 
 type DialogAction = {
@@ -322,7 +323,7 @@ const DialogCard = styled(Animated.View)`
   max-width: 360px;
   align-items: center;
   border-radius: 16px;
-  background: #ffffff;
+  background: ${colors.surface};
   padding: 24px 20px 20px;
   shadow-color: #0f172a;
   shadow-opacity: 0.16;
@@ -345,7 +346,7 @@ const DialogTitle = styled.Text`
 
 const DialogDescription = styled.Text`
   margin-top: 6px;
-  color: #6b7280;
+  color: ${colors.textMuted};
   font-size: 14px;
   line-height: 21px;
   text-align: center;
@@ -375,7 +376,7 @@ const ActionButton = styled.Pressable<{
 `;
 
 const ActionText = styled.Text`
-  color: #ffffff;
+  color: ${colors.textOnColor};
   font-size: 14px;
   font-weight: 600;
 `;
