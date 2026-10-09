@@ -49,9 +49,11 @@ function ChipFilters({
   showShelterTypes,
   showAccessibilityAll,
   onPressAccessibilityInfo,
-}: Required<Omit<MapSearchFiltersProps, 'onPressAccessibilityInfo' | 'compact'>> &
+}: Required<
+  Omit<MapSearchFiltersProps, 'onPressAccessibilityInfo' | 'compact'>
+> &
   Pick<MapSearchFiltersProps, 'onPressAccessibilityInfo'>) {
-  const { t } = useTranslation();
+  const { t: translate } = useTranslation();
   const selectedShelterTypes = useMapFilterStore(
     state => state.selectedShelterTypes,
   );
@@ -66,8 +68,7 @@ function ChipFilters({
     onPressAccessibilityInfo?.();
   };
   const visibleAccessibilityOptions = useMemo(
-    () =>
-      accessibilityOptions.filter(item => item !== ACCESSIBILITY_ALL_LABEL),
+    () => accessibilityOptions.filter(item => item !== ACCESSIBILITY_ALL_LABEL),
     [],
   );
 
@@ -88,7 +89,7 @@ function ChipFilters({
                 onPress={() => toggleShelterType(item)}
               >
                 <FilterChipText $selected={selectedShelterTypes.includes(item)}>
-                  {t(shelterTypeFilterLabelKeys[item] ?? item)}
+                  {translate(shelterTypeFilterLabelKeys[item] ?? item)}
                 </FilterChipText>
               </FilterChip>
             ))}
@@ -102,32 +103,41 @@ function ChipFilters({
             <InfoChip
               accessibilityRole="button"
               onPress={openAccessibilityInfo}
-              accessibilityLabel={t('map.accessibilityInfo.label')}
+              accessibilityLabel={translate('map.accessibilityInfo.label')}
               hitSlop={8}
             >
-              <InfoChipText>{t('map.accessibilityInfo.label')}</InfoChipText>
-              <CircleHelp color={colors.primaryPressed} size={17} strokeWidth={2.5} />
+              <InfoChipText>
+                {translate('map.accessibilityInfo.label')}
+              </InfoChipText>
+              <CircleHelp
+                color={colors.primaryPressed}
+                size={17}
+                strokeWidth={2.5}
+              />
             </InfoChip>
           ) : null}
-          <AccessibilityFilterRow horizontal showsHorizontalScrollIndicator={false}>
-          {visibleAccessibilityOptions.map(item => {
-            const selected = selectedAccessibility.includes(item);
+          <AccessibilityFilterRow
+            horizontal
+            showsHorizontalScrollIndicator={false}
+          >
+            {visibleAccessibilityOptions.map(item => {
+              const selected = selectedAccessibility.includes(item);
 
-            return (
-              <FilterChip
-                key={item}
-                $selected={selected}
-                $selectedColor={ACCESSIBILITY_SELECTED_COLOR}
-                accessibilityRole="button"
-                accessibilityState={{ selected }}
-                onPress={() => toggleAccessibility(item)}
-              >
-                <FilterChipText $selected={selected}>
-                  {t(accessibilityFilterLabelKeys[item] ?? item)}
-                </FilterChipText>
-              </FilterChip>
-            );
-          })}
+              return (
+                <FilterChip
+                  key={item}
+                  $selected={selected}
+                  $selectedColor={ACCESSIBILITY_SELECTED_COLOR}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected }}
+                  onPress={() => toggleAccessibility(item)}
+                >
+                  <FilterChipText $selected={selected}>
+                    {translate(accessibilityFilterLabelKeys[item] ?? item)}
+                  </FilterChipText>
+                </FilterChip>
+              );
+            })}
           </AccessibilityFilterRow>
         </AccessibilityRow>
       </FilterGroup>
@@ -191,7 +201,8 @@ const InfoChipText = styled.Text`
 `;
 
 const FilterChipText = styled.Text<{ $selected: boolean }>`
-  color: ${({ $selected }) => ($selected ? colors.textOnColor : colors.textSecondary)};
+  color: ${({ $selected }) =>
+    $selected ? colors.textOnColor : colors.textSecondary};
   font-size: 13px;
   font-weight: 600;
 `;

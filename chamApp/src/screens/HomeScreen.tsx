@@ -171,25 +171,25 @@ function toSMSStepKey(step?: string): SMSStepKey {
 }
 
 /** "12분 전" 같은 상대 시각. 재난문자는 얼마나 최근인지가 중요하다. */
-function formatSMSAgo(dateString: string, t: TFunction) {
+function formatSMSAgo(dateString: string, translate: TFunction) {
   const time = new Date(dateString).getTime();
   if (Number.isNaN(time)) return '';
   const minutes = Math.max(0, Math.floor((Date.now() - time) / 60000));
-  if (minutes < 1) return t('home.smsJustNow');
-  if (minutes < 60) return t('home.smsMinutesAgo', { count: minutes });
+  if (minutes < 1) return translate('home.smsJustNow');
+  if (minutes < 60) return translate('home.smsMinutesAgo', { count: minutes });
   const hours = Math.floor(minutes / 60);
-  if (hours < 24) return t('home.smsHoursAgo', { count: hours });
-  return t('home.smsDaysAgo', { count: Math.floor(hours / 24) });
+  if (hours < 24) return translate('home.smsHoursAgo', { count: hours });
+  return translate('home.smsDaysAgo', { count: Math.floor(hours / 24) });
 }
 
 /** 여러 지역에 함께 발송된 문자는 콤마로 이어져 온다. 첫 지역 + "외 N곳"으로 줄인다. */
-function formatSMSRegion(regionName: string, t: TFunction) {
+function formatSMSRegion(regionName: string, translate: TFunction) {
   const regions = regionName
     .split(',')
     .map(region => region.trim())
     .filter(Boolean);
   if (regions.length <= 1) return regions[0] ?? regionName;
-  return t('home.smsRegionMore', {
+  return translate('home.smsRegionMore', {
     region: regions[0],
     count: regions.length - 1,
   });
@@ -210,7 +210,7 @@ function formatSMSDateTime(dateString?: string) {
 }
 
 export default function HomeScreen() {
-  const { t } = useTranslation();
+  const { t: translate } = useTranslation();
   const navigation = useNavigation<BottomTabNavigationProp<RootTabParamList>>();
   useCurrentLocation();
   useFetchSMS();
@@ -245,9 +245,9 @@ export default function HomeScreen() {
   const latestSMS = smsData[0]?.content ? smsData[0] : undefined;
   const latestStepKey = toSMSStepKey(latestSMS?.emergencyStep);
   const latestStep = SMS_STEPS[latestStepKey];
-  const latestStepLabel = t(`home.smsStep.${latestStepKey}`);
+  const latestStepLabel = translate(`home.smsStep.${latestStepKey}`);
   const latestAgo = latestSMS?.issuedAt
-    ? formatSMSAgo(latestSMS.issuedAt, t)
+    ? formatSMSAgo(latestSMS.issuedAt, translate)
     : '';
   const nearestShelterImages = nearestShelter
     ? getNearestShelterImageSources(nearestShelter)
@@ -256,7 +256,7 @@ export default function HomeScreen() {
     ? Math.min(shelterImageIndex, nearestShelterImages.length - 1)
     : 0;
   const nearestShelterTypeLabel = nearestShelter
-    ? t(
+    ? translate(
         getShelterTypeTranslationKey(nearestShelter.shelterType) ??
           getShelterTypeLabel(nearestShelter.shelterType),
       )
@@ -285,8 +285,8 @@ export default function HomeScreen() {
         <StatusMessage
           compact
           icon={MapPinOff}
-          message={t('home.locationDenied')}
-          actionLabel={t('home.allowLocation')}
+          message={translate('home.locationDenied')}
+          actionLabel={translate('home.allowLocation')}
           onAction={handleRequestLocation}
         />
       );
@@ -296,8 +296,8 @@ export default function HomeScreen() {
         <StatusMessage
           compact
           icon={MapPinOff}
-          message={t('home.locationUnavailable')}
-          actionLabel={t('common.retry')}
+          message={translate('home.locationUnavailable')}
+          actionLabel={translate('common.retry')}
           onAction={handleRequestLocation}
         />
       );
@@ -307,8 +307,8 @@ export default function HomeScreen() {
         <StatusMessage
           compact
           icon={SearchX}
-          message={t('home.noNearbyShelter')}
-          actionLabel={t('home.viewMap')}
+          message={translate('home.noNearbyShelter')}
+          actionLabel={translate('home.viewMap')}
           onAction={() => navigation.navigate('Map')}
         />
       );
@@ -319,15 +319,19 @@ export default function HomeScreen() {
           compact
           tone="error"
           icon={CloudOff}
-          message={t('home.shelterLoadFailed')}
-          actionLabel={t('common.retry')}
+          message={translate('home.shelterLoadFailed')}
+          actionLabel={translate('common.retry')}
           onAction={fetchNearestShelter}
         />
       );
     }
     // 위치 확인 중이거나 첫 요청 전·요청 중
     return (
-      <StatusMessage compact loading message={t('home.shelterLoading')} />
+      <StatusMessage
+        compact
+        loading
+        message={translate('home.shelterLoading')}
+      />
     );
   };
   const closeNoticeModal = () => {
@@ -387,12 +391,15 @@ export default function HomeScreen() {
                   <MessageStepLabel $color={latestStep.color}>
                     {latestStepLabel}
                   </MessageStepLabel>
-                  {latestAgo ? <MessageAgoText>{latestAgo}</MessageAgoText> : null}
+                  {latestAgo ? (
+                    <MessageAgoText>{latestAgo}</MessageAgoText>
+                  ) : null}
                 </MessageMetaRow>
                 {/* 위급·긴급은 한 줄로 자르면 핵심 지시가 잘려서 두 줄까지 보여준다 */}
                 <MessageTitle
                   numberOfLines={
-                    latestStepKey === 'CRITICAL' || latestStepKey === 'EMERGENCY'
+                    latestStepKey === 'CRITICAL' ||
+                    latestStepKey === 'EMERGENCY'
                       ? 2
                       : 1
                   }
@@ -406,13 +413,13 @@ export default function HomeScreen() {
             <MessageBox
               disabled
               accessibilityRole="text"
-              accessibilityLabel={t('home.noActiveDisaster')}
+              accessibilityLabel={translate('home.noActiveDisaster')}
             >
               <MessageStepBar $color={colors.success} />
               <ShieldCheck color={colors.success} size={24} strokeWidth={2.4} />
               <MessageTextBox>
                 <MessageTitle numberOfLines={2} ellipsizeMode="tail">
-                  {t('home.noActiveDisaster')}
+                  {translate('home.noActiveDisaster')}
                 </MessageTitle>
               </MessageTextBox>
             </MessageBox>
@@ -420,7 +427,7 @@ export default function HomeScreen() {
           <MessageBox2>
             <TopBox>
               <MessageTitle2 numberOfLines={1} ellipsizeMode="tail">
-                {t('home.messageTitle2')}
+                {translate('home.messageTitle2')}
               </MessageTitle2>
               <TimeText>{disasterDate}</TimeText>
             </TopBox>
@@ -437,7 +444,7 @@ export default function HomeScreen() {
                 accessibilityRole="link"
                 onPress={handlePressDisaster}
               >
-                <DisasterMoreText>{t('home.more')}</DisasterMoreText>
+                <DisasterMoreText>{translate('home.more')}</DisasterMoreText>
               </DisasterMoreButton>
             ) : null}
           </MessageBox2>
@@ -454,7 +461,7 @@ export default function HomeScreen() {
               {nearestShelterImages.length ? (
                 <ShelterImageFrame
                   accessibilityRole="imagebutton"
-                  accessibilityLabel={t('map.a11y.viewImage')}
+                  accessibilityLabel={translate('map.a11y.viewImage')}
                   onPress={event => {
                     event.stopPropagation();
                     setImageModal({
@@ -473,7 +480,7 @@ export default function HomeScreen() {
                         $position="left"
                         visualSize={IMAGE_NAV_SIZE}
                         backgroundColor={colors.imageViewerControl}
-                        accessibilityLabel={t('common.previousImage')}
+                        accessibilityLabel={translate('common.previousImage')}
                         onPress={event => {
                           event.stopPropagation();
                           setShelterImageIndex(
@@ -493,7 +500,7 @@ export default function HomeScreen() {
                         $position="right"
                         visualSize={IMAGE_NAV_SIZE}
                         backgroundColor={colors.imageViewerControl}
-                        accessibilityLabel={t('common.nextImage')}
+                        accessibilityLabel={translate('common.nextImage')}
                         onPress={event => {
                           event.stopPropagation();
                           setShelterImageIndex(
@@ -552,7 +559,9 @@ export default function HomeScreen() {
                 ) : null}
                 {typeof nearestShelter.capacity !== 'number' &&
                 typeof nearestShelter.area !== 'number' ? (
-                  <ShelterMetaText>{t('home.noScaleInfo')}</ShelterMetaText>
+                  <ShelterMetaText>
+                    {translate('home.noScaleInfo')}
+                  </ShelterMetaText>
                 ) : null}
               </ShelterMetaRow>
               <ShelterMeta>
@@ -561,13 +570,13 @@ export default function HomeScreen() {
                   nearestShelter.managingAuthorityTelNo,
                 ]
                   .filter(Boolean)
-                  .join(' · ') || t('home.noManagingAuthority')}
+                  .join(' · ') || translate('home.noManagingAuthority')}
               </ShelterMeta>
               <ChipRow>
                 {getAccessibilityChips(nearestShelter).map(chip => (
                   <AccessibilityChip
                     key={`${nearestShelter.shelterId}-${chip.key}`}
-                    label={t(chip.labelKey)}
+                    label={translate(chip.labelKey)}
                     active={chip.active}
                   />
                 ))}
@@ -585,11 +594,11 @@ export default function HomeScreen() {
         onRequestClose={closeNoticeModal}
       >
         <ModalOverlay onPress={closeNoticeModal}>
-          <NoticeModalCard onPress={e => e.stopPropagation()}>
+          <NoticeModalCard onPress={event => event.stopPropagation()}>
             <NoticeModalHeader>
               <NoticeModalCategory>{popupContent?.name}</NoticeModalCategory>
               <IconButton
-                accessibilityLabel={t('common.close')}
+                accessibilityLabel={translate('common.close')}
                 onPress={closeNoticeModal}
               >
                 <X color={colors.textMuted} size={22} strokeWidth={2.6} />
@@ -605,14 +614,14 @@ export default function HomeScreen() {
             <NoticeButtonRow>
               {popupContent?.url ? (
                 <Button
-                  label={t('home.noticeDetail')}
+                  label={translate('home.noticeDetail')}
                   onPress={handlePressNoticeLink}
                   accessibilityRole="link"
                   flex
                 />
               ) : null}
               <Button
-                label={t('common.close')}
+                label={translate('common.close')}
                 onPress={closeNoticeModal}
                 variant="secondary"
               />
@@ -627,14 +636,16 @@ export default function HomeScreen() {
         onRequestClose={() => setIsSMSModalVisible(false)}
       >
         <ModalOverlay onPress={() => setIsSMSModalVisible(false)}>
-          <SMSCard onPress={e => e.stopPropagation()}>
+          <SMSCard onPress={event => event.stopPropagation()}>
             <SMSHeader style={{ backgroundColor: smsStep.color }}>
               <smsStep.Icon
                 color={colors.textOnColor}
                 size={22}
                 strokeWidth={2.4}
               />
-              <SMSStepText>{t(`home.smsStep.${smsStepKey}`)}</SMSStepText>
+              <SMSStepText>
+                {translate(`home.smsStep.${smsStepKey}`)}
+              </SMSStepText>
               {selectedSMS?.category ? (
                 <SMSCategoryChip>
                   <SMSCategoryText numberOfLines={1}>
@@ -644,7 +655,7 @@ export default function HomeScreen() {
               ) : null}
               <SMSHeaderSpacer />
               <IconButton
-                accessibilityLabel={t('common.close')}
+                accessibilityLabel={translate('common.close')}
                 onPress={() => setIsSMSModalVisible(false)}
               >
                 <X color={colors.textOnColor} size={22} strokeWidth={2.4} />
@@ -660,7 +671,7 @@ export default function HomeScreen() {
                     strokeWidth={2.2}
                   />
                   <SMSMetaText numberOfLines={1}>
-                    {formatSMSRegion(selectedSMS.regionName, t)}
+                    {formatSMSRegion(selectedSMS.regionName, translate)}
                   </SMSMetaText>
                 </SMSMetaRow>
               ) : null}
@@ -668,7 +679,7 @@ export default function HomeScreen() {
                 <SMSMetaRow>
                   <Clock color={colors.textMuted} size={16} strokeWidth={2.2} />
                   <SMSMetaText>
-                    {formatSMSAgo(selectedSMS.issuedAt, t)} ·{' '}
+                    {formatSMSAgo(selectedSMS.issuedAt, translate)} ·{' '}
                     {formatSMSDateTime(selectedSMS.issuedAt)}
                   </SMSMetaText>
                 </SMSMetaRow>
@@ -676,7 +687,7 @@ export default function HomeScreen() {
               <SMSContentBox style={{ borderLeftColor: smsStep.color }}>
                 <SMSContentScroll>
                   <SMSContentText>
-                    {selectedSMS?.content ?? t('home.noSms')}
+                    {selectedSMS?.content ?? translate('home.noSms')}
                   </SMSContentText>
                 </SMSContentScroll>
               </SMSContentBox>
@@ -684,7 +695,7 @@ export default function HomeScreen() {
               {smsData.length > 1 ? (
                 <SMSPager>
                   <IconButton
-                    accessibilityLabel={t('home.smsPrev')}
+                    accessibilityLabel={translate('home.smsPrev')}
                     disabled={selectedSMSIndex === 0}
                     onPress={() =>
                       setSelectedSMSIndex(index => Math.max(index - 1, 0))
@@ -704,7 +715,7 @@ export default function HomeScreen() {
                     {selectedSMSIndex + 1} / {smsData.length}
                   </SMSPagerText>
                   <IconButton
-                    accessibilityLabel={t('home.smsNext')}
+                    accessibilityLabel={translate('home.smsNext')}
                     disabled={selectedSMSIndex >= smsData.length - 1}
                     onPress={() =>
                       setSelectedSMSIndex(index =>
@@ -727,7 +738,7 @@ export default function HomeScreen() {
 
               <SMSActions>
                 <Button
-                  label={t('home.smsFindShelter')}
+                  label={translate('home.smsFindShelter')}
                   onPress={() => {
                     setIsSMSModalVisible(false);
                     if (nearestShelter) handlePressNearestShelter();
@@ -736,7 +747,7 @@ export default function HomeScreen() {
                   flex
                 />
                 <Button
-                  label={t('common.close')}
+                  label={translate('common.close')}
                   onPress={() => setIsSMSModalVisible(false)}
                   variant="secondary"
                 />

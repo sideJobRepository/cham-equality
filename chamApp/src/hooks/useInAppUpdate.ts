@@ -13,7 +13,7 @@ import { useDialogUtil } from '../utils/dialog';
 // 업데이트 화면으로 막으면 안 되기 때문. 받는 동안에도 앱은 그대로 쓸 수 있다.
 // iOS 는 Play In-App Updates 가 없어 대상에서 뺀다.
 export function useInAppUpdate() {
-  const { t } = useTranslation();
+  const { t: translate } = useTranslation();
   const { confirm } = useDialogUtil();
 
   useEffect(() => {
@@ -23,7 +23,10 @@ export function useInAppUpdate() {
 
     const onStatus = async (event: StatusUpdateEvent) => {
       if (event.status !== IAUInstallStatus.DOWNLOADED) return;
-      const restart = await confirm(t('update.readyTitle'), t('update.readyDescription'));
+      const restart = await confirm(
+        translate('update.readyTitle'),
+        translate('update.readyDescription'),
+      );
       // 거절하면 받아 둔 파일은 남아 있고, 다음에 앱을 완전히 닫았다 열 때 Play 가 적용한다.
       if (restart) inAppUpdates.installUpdate();
     };
@@ -36,7 +39,9 @@ export function useInAppUpdate() {
       .checkNeedsUpdate()
       .then(result => {
         if (result.shouldUpdate) {
-          return inAppUpdates.startUpdate({ updateType: IAUUpdateKind.FLEXIBLE });
+          return inAppUpdates.startUpdate({
+            updateType: IAUUpdateKind.FLEXIBLE,
+          });
         }
       })
       .catch(() => {});

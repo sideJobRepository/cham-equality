@@ -54,7 +54,7 @@ interface SplashOverlayProps {
 
 export default function SplashOverlay({ ready, onFinish }: SplashOverlayProps) {
   // i18n 은 index.js 에서 리소스를 직접 넘겨 동기로 초기화되므로 첫 렌더부터 번역이 준비돼 있다.
-  const { t } = useTranslation();
+  const { t: translate } = useTranslation();
   const opacity = useRef(new Animated.Value(1)).current;
   // 네이티브 스플래시엔 없는 꾸밈(하늘 그라데이션·부제·일러스트)은 이어받은 뒤 살며시 띄운다.
   const decorOpacity = useRef(new Animated.Value(0)).current;
@@ -136,7 +136,7 @@ export default function SplashOverlay({ ready, onFinish }: SplashOverlayProps) {
                 top: layout.iconTop + ICON_BOX * TITLE_BOTTOM_RATIO + 10,
               }}
             >
-              {t('splash.tagline')}
+              {translate('splash.tagline')}
             </Subtitle>
           </Animated.View>
           <Icon source={splashIcon} style={{ top: layout.iconTop }} />

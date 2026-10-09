@@ -14,13 +14,13 @@ export default function AccessibilityChip({
   label,
   active,
 }: AccessibilityChipProps) {
-  const { t } = useTranslation();
+  const { t: translate } = useTranslation();
 
   return (
     <Chip
       $active={active}
       accessible
-      accessibilityLabel={t(
+      accessibilityLabel={translate(
         active ? 'map.a11y.facilityAvailable' : 'map.a11y.facilityUnavailable',
         { name: label },
       )}

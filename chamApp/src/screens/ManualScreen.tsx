@@ -100,7 +100,7 @@ function buildManualHtml(content?: string) {
 }
 
 export default function ManualScreen() {
-  const { t } = useTranslation();
+  const { t: translate } = useTranslation();
   const navigation = useNavigation<BottomTabNavigationProp<RootTabParamList>>();
   const [searchText, setSearchText] = useState('');
   const [query, setQuery] = useState('');
@@ -163,20 +163,20 @@ export default function ManualScreen() {
           value={searchText}
           onChangeText={setSearchText}
           onSubmitEditing={handleSubmitSearch}
-          placeholder={t('manual.searchPlaceholder')}
+          placeholder={translate('manual.searchPlaceholder')}
           placeholderTextColor={colors.textDisabled}
           returnKeyType="search"
         />
         {searchText ? (
           <IconButton
-            accessibilityLabel={t('manual.clearSearch')}
+            accessibilityLabel={translate('manual.clearSearch')}
             onPress={handleClearSearch}
           >
             <X color={colors.textMuted} size={18} strokeWidth={2.6} />
           </IconButton>
         ) : null}
         <IconButton
-          accessibilityLabel={t('manual.search')}
+          accessibilityLabel={translate('manual.search')}
           backgroundColor={colors.brand}
           borderRadius={radius.sm}
           onPress={handleSubmitSearch}
@@ -187,16 +187,16 @@ export default function ManualScreen() {
 
       <Board>
         <BoardHeader>
-          <HeaderTitle>{t('manual.subject')}</HeaderTitle>
-          <HeaderDate>{t('manual.createdAt')}</HeaderDate>
+          <HeaderTitle>{translate('manual.subject')}</HeaderTitle>
+          <HeaderDate>{translate('manual.createdAt')}</HeaderDate>
         </BoardHeader>
 
         {manualsStatus === 'error' ? (
           <StatusMessage
             tone="error"
             icon={CloudOff}
-            message={t('manual.loadFailed')}
-            actionLabel={t('common.retry')}
+            message={translate('manual.loadFailed')}
+            actionLabel={translate('common.retry')}
             onAction={fetchManuals}
           />
         ) : pagedManuals.length ? (
@@ -213,11 +213,13 @@ export default function ManualScreen() {
             </ManualRow>
           ))
         ) : manualsStatus === 'loading' ? (
-          <StatusMessage loading message={t('manual.loading')} />
+          <StatusMessage loading message={translate('manual.loading')} />
         ) : (
           <EmptyBox accessibilityLiveRegion="polite">
             <EmptyText>
-              {query ? t('manual.searchEmpty') : t('manual.empty')}
+              {query
+                ? translate('manual.searchEmpty')
+                : translate('manual.empty')}
             </EmptyText>
           </EmptyBox>
         )}
@@ -225,7 +227,7 @@ export default function ManualScreen() {
 
       <Pagination>
         <IconButton
-          accessibilityLabel={t('common.prevPage')}
+          accessibilityLabel={translate('common.prevPage')}
           visualSize={PAGE_BUTTON_SIZE}
           backgroundColor={colors.surface}
           borderColor={colors.border}
@@ -242,7 +244,7 @@ export default function ManualScreen() {
           {currentPage} / {totalPages}
         </PageText>
         <IconButton
-          accessibilityLabel={t('common.nextPage')}
+          accessibilityLabel={translate('common.nextPage')}
           visualSize={PAGE_BUTTON_SIZE}
           backgroundColor={colors.surface}
           borderColor={colors.border}
@@ -270,7 +272,7 @@ export default function ManualScreen() {
             <ModalHeader>
               <ModalTitle numberOfLines={2}>{manualDetail?.title}</ModalTitle>
               <CloseButton
-                accessibilityLabel={t('common.close')}
+                accessibilityLabel={translate('common.close')}
                 onPress={clearManualDetail}
               >
                 <X color={colors.text} size={20} strokeWidth={2.7} />
@@ -285,7 +287,7 @@ export default function ManualScreen() {
                 onPress={handleGoToMap}
               >
                 <MapShortcutText numberOfLines={1}>
-                  {t('manual.goToMap')}
+                  {translate('manual.goToMap')}
                 </MapShortcutText>
                 <MapShortcutIcon>
                   <ChevronRight

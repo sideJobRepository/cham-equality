@@ -41,7 +41,7 @@ interface MapFilterBarProps {
 export default function MapFilterBar({
   onPressAccessibilityInfo,
 }: MapFilterBarProps) {
-  const { t } = useTranslation();
+  const { t: translate } = useTranslation();
   const insets = useSafeAreaInsets();
   const { height: windowHeight } = useWindowDimensions();
   const selectedShelterTypes = useMapFilterStore(
@@ -90,13 +90,13 @@ export default function MapFilterBar({
   const summaryItems = [
     ...activeShelterTypes.map(item => ({
       key: `type-${item}`,
-      label: t(shelterTypeFilterLabelKeys[item] ?? item),
+      label: translate(shelterTypeFilterLabelKeys[item] ?? item),
       color: SHELTER_SELECTED_COLOR,
       onRemove: () => toggleShelterType(item),
     })),
     ...activeAccessibility.map(item => ({
       key: `a11y-${item}`,
-      label: t(accessibilityFilterLabelKeys[item] ?? item),
+      label: translate(accessibilityFilterLabelKeys[item] ?? item),
       color: ACCESSIBILITY_SELECTED_COLOR,
       onRemove: () => toggleAccessibility(item),
     })),
@@ -108,8 +108,10 @@ export default function MapFilterBar({
         accessibilityRole="button"
         accessibilityLabel={
           selectedCount
-            ? t('map.filterSheet.buttonSelected', { count: selectedCount })
-            : t('map.filterSheet.button')
+            ? translate('map.filterSheet.buttonSelected', {
+                count: selectedCount,
+              })
+            : translate('map.filterSheet.button')
         }
         $active={selectedCount > 0}
         onPress={openSheet}
@@ -120,7 +122,7 @@ export default function MapFilterBar({
           strokeWidth={2.4}
         />
         <FilterButtonText $active={selectedCount > 0}>
-          {t('map.filterSheet.button')}
+          {translate('map.filterSheet.button')}
         </FilterButtonText>
         {selectedCount ? (
           <CountBadge>
@@ -132,11 +134,11 @@ export default function MapFilterBar({
       {onPressAccessibilityInfo ? (
         <InfoChip
           accessibilityRole="button"
-          accessibilityLabel={t('map.accessibilityInfo.title')}
+          accessibilityLabel={translate('map.accessibilityInfo.title')}
           onPress={onPressAccessibilityInfo}
         >
           <InfoChipText numberOfLines={1}>
-            {t('map.accessibilityInfo.label')}
+            {translate('map.accessibilityInfo.label')}
           </InfoChipText>
           <CircleHelp
             color={colors.primaryPressed}
@@ -156,7 +158,7 @@ export default function MapFilterBar({
             <SummaryChip
               key={item.key}
               accessibilityRole="button"
-              accessibilityLabel={t('map.filterSheet.remove', {
+              accessibilityLabel={translate('map.filterSheet.remove', {
                 label: item.label,
               })}
               onPress={item.onRemove}
@@ -171,7 +173,7 @@ export default function MapFilterBar({
           ))
         ) : (
           <EmptySummaryText numberOfLines={1}>
-            {t('map.filterSheet.noneSelected')}
+            {translate('map.filterSheet.noneSelected')}
           </EmptySummaryText>
         )}
       </SummaryScroll>
@@ -198,10 +200,10 @@ export default function MapFilterBar({
           >
             <SheetHeader>
               <SheetTitle accessibilityRole="header">
-                {t('map.filterSheet.title')}
+                {translate('map.filterSheet.title')}
               </SheetTitle>
               <IconButton
-                accessibilityLabel={t('common.close')}
+                accessibilityLabel={translate('common.close')}
                 onPress={closeSheet}
               >
                 <X color={colors.textSecondary} size={22} />
@@ -210,7 +212,7 @@ export default function MapFilterBar({
 
             <SheetBody>
               <SectionTitle accessibilityRole="header">
-                {t('map.filterSheet.shelterType')}
+                {translate('map.filterSheet.shelterType')}
               </SectionTitle>
               <ChipWrap>
                 {shelterTypeOptions.map(item => {
@@ -229,7 +231,7 @@ export default function MapFilterBar({
                       }
                     >
                       <SheetChipText $selected={selected}>
-                        {t(shelterTypeFilterLabelKeys[item] ?? item)}
+                        {translate(shelterTypeFilterLabelKeys[item] ?? item)}
                       </SheetChipText>
                     </SheetChip>
                   );
@@ -237,10 +239,10 @@ export default function MapFilterBar({
               </ChipWrap>
 
               <SectionTitle accessibilityRole="header">
-                {t('map.filterSheet.accessibility')}
+                {translate('map.filterSheet.accessibility')}
               </SectionTitle>
               <SectionDescription>
-                {t('map.accessibilityInfo.description')}
+                {translate('map.accessibilityInfo.description')}
               </SectionDescription>
               <ChipWrap>
                 {accessibilityChoices.map(item => {
@@ -259,7 +261,7 @@ export default function MapFilterBar({
                       }
                     >
                       <SheetChipText $selected={selected}>
-                        {t(accessibilityFilterLabelKeys[item] ?? item)}
+                        {translate(accessibilityFilterLabelKeys[item] ?? item)}
                       </SheetChipText>
                     </SheetChip>
                   );
@@ -269,11 +271,15 @@ export default function MapFilterBar({
 
             <SheetFooter>
               <Button
-                label={t('map.filterSheet.reset')}
+                label={translate('map.filterSheet.reset')}
                 variant="outline"
                 onPress={resetDraft}
               />
-              <Button label={t('map.filterSheet.apply')} flex onPress={apply} />
+              <Button
+                label={translate('map.filterSheet.apply')}
+                flex
+                onPress={apply}
+              />
             </SheetFooter>
           </Sheet>
         </Overlay>

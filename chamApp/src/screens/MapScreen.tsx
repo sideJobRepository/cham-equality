@@ -236,10 +236,13 @@ function getShelterTypeCounts(shelters: ShelterSummary[]) {
       label: getShelterTypeLabel(type),
       count,
     }))
-    .sort((a, b) => {
-      const aIndex = shelterTypeOrder.indexOf(a.type);
-      const bIndex = shelterTypeOrder.indexOf(b.type);
-      return (aIndex === -1 ? 999 : aIndex) - (bIndex === -1 ? 999 : bIndex);
+    .sort((firstType, secondType) => {
+      const firstOrder = shelterTypeOrder.indexOf(firstType.type);
+      const secondOrder = shelterTypeOrder.indexOf(secondType.type);
+      return (
+        (firstOrder === -1 ? 999 : firstOrder) -
+        (secondOrder === -1 ? 999 : secondOrder)
+      );
     });
 }
 
@@ -440,15 +443,18 @@ function getDistanceMeters(
   from: { lat: number; lng: number },
   to: { lat: number; lng: number },
 ) {
-  const toRad = (value: number) => (value * Math.PI) / 180;
-  const dLat = toRad(to.lat - from.lat);
-  const dLng = toRad(to.lng - from.lng);
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(toRad(from.lat)) *
-      Math.cos(toRad(to.lat)) *
-      Math.sin(dLng / 2) ** 2;
-  return 6371000 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  const toRadians = (degrees: number) => (degrees * Math.PI) / 180;
+  const latitudeDelta = toRadians(to.lat - from.lat);
+  const longitudeDelta = toRadians(to.lng - from.lng);
+  // 하버사인 공식의 중간값(두 점 사이 중심각의 반에 대한 sin² 합)
+  const haversine =
+    Math.sin(latitudeDelta / 2) ** 2 +
+    Math.cos(toRadians(from.lat)) *
+      Math.cos(toRadians(to.lat)) *
+      Math.sin(longitudeDelta / 2) ** 2;
+  return (
+    6371000 * 2 * Math.atan2(Math.sqrt(haversine), Math.sqrt(1 - haversine))
+  );
 }
 
 function formatDistance(meters: number) {
@@ -1332,8 +1338,8 @@ function buildMapHtml(
             }
           }
 
-          visible.sort(function(a, b) {
-            return a.distance - b.distance;
+          visible.sort(function(firstPlace, secondPlace) {
+            return firstPlace.distance - secondPlace.distance;
           });
           const visiblePlaceIds = visible.map(function(item) {
             return item.placeId;
@@ -1525,7 +1531,7 @@ const PlaceListItem = memo(function PlaceListItem({
   distanceText: string | null;
   onPress: (place: SelectedPlace) => void;
 }) {
-  const { t } = useTranslation();
+  const { t: translate } = useTranslation();
   const typeCounts = useMemo(
     () => getShelterTypeCounts(place.shelters),
     [place.shelters],
@@ -1542,20 +1548,20 @@ const PlaceListItem = memo(function PlaceListItem({
           <MatchBadge $color={match.color}>
             <MatchIcon color={match.color} size={12} strokeWidth={3} />
             <MatchBadgeText $color={match.color}>
-              {t(match.labelKey)}
+              {translate(match.labelKey)}
             </MatchBadgeText>
           </MatchBadge>
         ) : null}
         {distanceText ? <PlaceDistance>{distanceText}</PlaceDistance> : null}
       </PlaceTitleRow>
       <PlaceAddress numberOfLines={1}>
-        {place.address || t('map.labels.noAddress')}
+        {place.address || translate('map.labels.noAddress')}
       </PlaceAddress>
       <ChipRow>
         {typeCounts.map(item => (
           <TypeCountChip key={`${place.placeId}-${item.type}`}>
             <TypeCountText>
-              {t(getShelterTypeTranslationKey(item.type) ?? item.label)}{' '}
+              {translate(getShelterTypeTranslationKey(item.type) ?? item.label)}{' '}
               {item.count}
             </TypeCountText>
           </TypeCountChip>
@@ -1566,7 +1572,7 @@ const PlaceListItem = memo(function PlaceListItem({
 });
 
 export default function MapScreen() {
-  const { t } = useTranslation();
+  const { t: translate } = useTranslation();
   const { alert, confirm } = useDialogUtil();
   const { height: screenHeight } = useWindowDimensions();
   const route = useRoute<RouteProp<RootTabParamList, 'Map'>>();
@@ -1640,7 +1646,7 @@ export default function MapScreen() {
   // 지도는 보이는 장소의 id 만 보내므로, 목록에 그릴 정보는 여기서 찾는다.
   const placesById = useMemo(() => {
     const places = new Map<number, SelectedPlace>();
-    const fallbackName = t('map.labels.shelter');
+    const fallbackName = translate('map.labels.shelter');
     Object.values(mapData?.details ?? {}).forEach((item: any) => {
       const place = normalizeSelectedPlace(item, fallbackName);
       place.accessibilityMatchStatus =
@@ -1648,13 +1654,15 @@ export default function MapScreen() {
       places.set(Number(item?.placeId), place);
     });
     return places;
-  }, [mapData, matchStatusByPlaceId, t]);
+  }, [mapData, matchStatusByPlaceId, translate]);
   // 좌표가 없어 지도에 못 찍는 장소. 목록 맨 아래 접힘 섹션으로 따로 보여 준다.
   const unlocatedPlaces = useMemo(
     () =>
       Array.from(placesById.values())
         .filter(place => !place.coords)
-        .sort((a, b) => a.name.localeCompare(b.name)),
+        .sort((firstPlace, secondPlace) =>
+          firstPlace.name.localeCompare(secondPlace.name),
+        ),
     [placesById],
   );
   const unlocatedShelterCount = useMemo(
@@ -2166,7 +2174,7 @@ export default function MapScreen() {
       return;
     }
     if (locationStatus === 'checking') {
-      alert(t('map.location.checking'), undefined, { tone: 'info' });
+      alert(translate('map.location.checking'), undefined, { tone: 'info' });
       return;
     }
 
@@ -2177,22 +2185,27 @@ export default function MapScreen() {
 
     if (result === 'blocked') {
       const shouldOpen = await confirm(
-        t('map.location.permissionRequired'),
-        t('map.location.openSettingsDescription'),
-        { tone: 'warning', confirmLabel: t('map.location.openSettings') },
+        translate('map.location.permissionRequired'),
+        translate('map.location.openSettingsDescription'),
+        {
+          tone: 'warning',
+          confirmLabel: translate('map.location.openSettings'),
+        },
       );
       if (shouldOpen) Linking.openSettings().catch(() => undefined);
       return;
     }
     if (result === 'denied') {
       alert(
-        t('map.location.permissionRequired'),
-        t('map.location.permissionDescription'),
+        translate('map.location.permissionRequired'),
+        translate('map.location.permissionDescription'),
         { tone: 'warning' },
       );
       return;
     }
-    alert(t('map.location.unavailable'), undefined, { tone: 'warning' });
+    alert(translate('map.location.unavailable'), undefined, {
+      tone: 'warning',
+    });
   };
 
   // syncMapPage effect 다음에 선언해야 위치가 먼저 주입된 뒤 이동한다.
@@ -2287,12 +2300,14 @@ export default function MapScreen() {
       // 유형 필터로 빠졌는지, 애초에 지도에 위치가 없는 대피소인지 나눠 안내한다(한 번만).
       if (mapRequestBody.shelterTypes?.length) {
         alert(
-          t('map.labels.focusHidden'),
-          t('map.labels.focusHiddenDescription'),
+          translate('map.labels.focusHidden'),
+          translate('map.labels.focusHiddenDescription'),
           { tone: 'warning' },
         );
       } else {
-        alert(t('map.labels.focusNoLocation'), undefined, { tone: 'warning' });
+        alert(translate('map.labels.focusNoLocation'), undefined, {
+          tone: 'warning',
+        });
       }
       return;
     }
@@ -2315,7 +2330,7 @@ export default function MapScreen() {
     route.params?.focusPlaceId,
     route.params?.focusShelterId,
     selectPlaceMarker,
-    t,
+    translate,
   ]);
 
   const handleBackToPlaceList = useCallback(() => {
@@ -2385,11 +2400,13 @@ export default function MapScreen() {
       if (item.kind === 'empty') {
         return (
           <EmptyList>
-            <EmptyPanelText>{t('map.labels.noVisiblePlaces')}</EmptyPanelText>
+            <EmptyPanelText>
+              {translate('map.labels.noVisiblePlaces')}
+            </EmptyPanelText>
             {/* 필터 결과가 있는데 화면 밖에만 있을 때 한 번에 데려온다. */}
             {hasLocatedPlaces ? (
               <Button
-                label={t('map.labels.showAllResults')}
+                label={translate('map.labels.showAllResults')}
                 onPress={handleShowAllResults}
                 size="sm"
               />
@@ -2405,7 +2422,7 @@ export default function MapScreen() {
             onPress={() => setIsUnlocatedExpanded(expanded => !expanded)}
           >
             <UnlocatedToggleText>
-              {t('map.labels.unlocatedShelters', {
+              {translate('map.labels.unlocatedShelters', {
                 count: unlocatedShelterCount,
               })}
             </UnlocatedToggleText>
@@ -2445,7 +2462,7 @@ export default function MapScreen() {
       handleShowAllResults,
       hasLocatedPlaces,
       isUnlocatedExpanded,
-      t,
+      translate,
       unlocatedShelterCount,
     ],
   );
@@ -2476,7 +2493,9 @@ export default function MapScreen() {
     try {
       await Linking.openURL(webUrl);
     } catch {
-      alert(t('map.detail.directionsFailed'), undefined, { tone: 'error' });
+      alert(translate('map.detail.directionsFailed'), undefined, {
+        tone: 'error',
+      });
     }
   };
 
@@ -2496,7 +2515,7 @@ export default function MapScreen() {
     try {
       await Share.share({ message });
     } catch {
-      alert(t('map.detail.shareFailed'), undefined, { tone: 'error' });
+      alert(translate('map.detail.shareFailed'), undefined, { tone: 'error' });
     }
   };
 
@@ -2504,7 +2523,7 @@ export default function MapScreen() {
     const url = getTelUrl(telNo);
     if (!url) return;
     Linking.openURL(url).catch(() => {
-      alert(t('map.detail.callFailed'), undefined, { tone: 'error' });
+      alert(translate('map.detail.callFailed'), undefined, { tone: 'error' });
     });
   };
 
@@ -2600,7 +2619,7 @@ export default function MapScreen() {
         })),
       });
       setReportShelter(null);
-      alert(t('map.report.success'), undefined, { tone: 'success' });
+      alert(translate('map.report.success'), undefined, { tone: 'success' });
     } catch (error: any) {
       if (__DEV__) {
         console.log('[report-submit] failed', {
@@ -2610,7 +2629,7 @@ export default function MapScreen() {
         });
       }
       alert(
-        error?.response?.data?.message ?? t('map.report.failed'),
+        error?.response?.data?.message ?? translate('map.report.failed'),
         undefined,
         {
           tone: 'error',
@@ -2735,7 +2754,7 @@ export default function MapScreen() {
     <Screen edges={['top', 'left', 'right']}>
       <Header>
         <CurrentLocationBar
-          actionLabel={t('map.labels.nearbyLocation')}
+          actionLabel={translate('map.labels.nearbyLocation')}
           onAction={handleMoveToUserLocation}
         />
       </Header>
@@ -2771,7 +2790,7 @@ export default function MapScreen() {
             )}
           />
         ) : (
-          <EmptyText>{t('map.labels.noMapKey')}</EmptyText>
+          <EmptyText>{translate('map.labels.noMapKey')}</EmptyText>
         )}
 
         {regionTrail.length ? (
@@ -2814,9 +2833,9 @@ export default function MapScreen() {
         {mapError ? (
           <MapErrorOverlay>
             <MapErrorCard>
-              <ErrorText>{t('map.labels.mapLoadFailed')}</ErrorText>
+              <ErrorText>{translate('map.labels.mapLoadFailed')}</ErrorText>
               <Button
-                label={t('map.labels.retry')}
+                label={translate('map.labels.retry')}
                 onPress={handleRetryMapLoad}
                 size="sm"
               />
@@ -2836,14 +2855,14 @@ export default function MapScreen() {
         >
           <MapControlButton
             accessibilityRole="button"
-            accessibilityLabel={t('map.a11y.zoomIn')}
+            accessibilityLabel={translate('map.a11y.zoomIn')}
             onPress={() => handleZoom(-1)}
           >
             <Plus color={colors.text} size={20} strokeWidth={2.6} />
           </MapControlButton>
           <MapControlButton
             accessibilityRole="button"
-            accessibilityLabel={t('map.a11y.zoomOut')}
+            accessibilityLabel={translate('map.a11y.zoomOut')}
             onPress={() => handleZoom(1)}
           >
             <Minus color={colors.text} size={20} strokeWidth={2.6} />
@@ -2851,7 +2870,7 @@ export default function MapScreen() {
           {/* 위치가 없어도 보여 준다. 누르면 권한 재요청·안내로 이어진다. */}
           <MapControlButton
             accessibilityRole="button"
-            accessibilityLabel={t('map.labels.nearbyLocation')}
+            accessibilityLabel={translate('map.labels.nearbyLocation')}
             onPress={handleMoveToUserLocation}
           >
             <LocateFixed
@@ -2877,7 +2896,7 @@ export default function MapScreen() {
             {/* 상세 열기와 닫기는 나란한 버튼 둘. 버튼 안에 버튼을 넣으면 스크린리더가 안쪽을 놓친다. */}
             <PreviewOpenButton
               accessibilityRole="button"
-              accessibilityLabel={t('map.a11y.openPreview', {
+              accessibilityLabel={translate('map.a11y.openPreview', {
                 name: previewPlace.name,
               })}
               onPress={handleOpenPreviewDetail}
@@ -2893,21 +2912,23 @@ export default function MapScreen() {
                         strokeWidth={3}
                       />
                       <MatchBadgeText $color={previewMatch.color}>
-                        {t(previewMatch.labelKey)}
+                        {translate(previewMatch.labelKey)}
                       </MatchBadgeText>
                     </MatchBadge>
                   ) : null}
                 </PlaceTitleRow>
                 <PlaceAddress numberOfLines={1}>
-                  {previewPlace.address || t('map.labels.noAddress')}
+                  {previewPlace.address || translate('map.labels.noAddress')}
                 </PlaceAddress>
                 <PreviewMeta numberOfLines={1}>
-                  {t('map.labels.shelter')} {previewPlace.shelterCount}
+                  {translate('map.labels.shelter')} {previewPlace.shelterCount}
                   {previewDistanceText ? ` · ${previewDistanceText}` : ''}
                 </PreviewMeta>
               </PreviewBody>
               <PreviewMore>
-                <PreviewMoreText>{t('map.detail.more')}</PreviewMoreText>
+                <PreviewMoreText>
+                  {translate('map.detail.more')}
+                </PreviewMoreText>
                 <ChevronRight
                   color={colors.textOnColor}
                   size={14}
@@ -2917,7 +2938,7 @@ export default function MapScreen() {
             </PreviewOpenButton>
             <PreviewCloseButton
               accessibilityRole="button"
-              accessibilityLabel={t('map.a11y.closePreview')}
+              accessibilityLabel={translate('map.a11y.closePreview')}
               onPress={handleClosePreview}
             >
               <X color={colors.textMuted} size={20} strokeWidth={2.6} />
@@ -2937,7 +2958,7 @@ export default function MapScreen() {
           {...panelPanResponder.panHandlers}
           accessible
           accessibilityRole="button"
-          accessibilityLabel={t(
+          accessibilityLabel={translate(
             panelStop === 'full'
               ? 'map.a11y.collapseList'
               : 'map.a11y.expandList',
@@ -2964,7 +2985,7 @@ export default function MapScreen() {
           >
             <PanelHeader>
               <PanelCount>
-                {t('map.labels.visibleSummary', {
+                {translate('map.labels.visibleSummary', {
                   places: visiblePlaces.length,
                   shelters: visibleShelterCount,
                 })}
@@ -2974,9 +2995,11 @@ export default function MapScreen() {
             {/* 옛 데이터가 있으면 목록은 그대로 두고 위에 오류 줄만, 없으면 스피너 대신 오류 상태. */}
             {mapFetchError && mapData ? (
               <PanelErrorRow>
-                <PanelErrorText>{t('map.labels.loadFailed')}</PanelErrorText>
+                <PanelErrorText>
+                  {translate('map.labels.loadFailed')}
+                </PanelErrorText>
                 <Button
-                  label={t('map.labels.retry')}
+                  label={translate('map.labels.retry')}
                   onPress={fetchMap}
                   size="sm"
                 />
@@ -2985,9 +3008,11 @@ export default function MapScreen() {
 
             {mapFetchError && !mapData ? (
               <PanelLoading style={panelHiddenPadStyle}>
-                <PanelErrorText>{t('map.labels.loadFailed')}</PanelErrorText>
+                <PanelErrorText>
+                  {translate('map.labels.loadFailed')}
+                </PanelErrorText>
                 <Button
-                  label={t('map.labels.retry')}
+                  label={translate('map.labels.retry')}
                   onPress={fetchMap}
                   size="sm"
                 />
@@ -2996,7 +3021,7 @@ export default function MapScreen() {
               <PanelLoading style={panelHiddenPadStyle}>
                 <ActivityIndicator color={colors.primary} />
                 <PanelLoadingText>
-                  {t('map.labels.loadingShelters')}
+                  {translate('map.labels.loadingShelters')}
                 </PanelLoadingText>
               </PanelLoading>
             ) : (
@@ -3018,7 +3043,7 @@ export default function MapScreen() {
               <PanelHeader>
                 <BackButton
                   accessibilityRole="button"
-                  accessibilityLabel={t('map.a11y.back')}
+                  accessibilityLabel={translate('map.a11y.back')}
                   hitSlop={12}
                   onPress={handleBackToPlaceList}
                 >
@@ -3032,39 +3057,39 @@ export default function MapScreen() {
               </PanelHeader>
 
               <DetailAddress numberOfLines={2}>
-                {selectedPlace.address || t('map.labels.noAddress')}
+                {selectedPlace.address || translate('map.labels.noAddress')}
               </DetailAddress>
               {/* 길찾기는 설치된 앱을 먼저 연다(없으면 웹). 좌표 없는 장소는 공유만. */}
               <DetailActionRow>
                 {selectedPlace.coords ? (
                   <>
                     <Button
-                      label={t('map.detail.kakaoMap')}
+                      label={translate('map.detail.kakaoMap')}
                       icon={Navigation}
                       size="sm"
-                      accessibilityLabel={`${t('map.detail.directions')} ${t(
-                        'map.detail.kakaoMap',
-                      )}`}
+                      accessibilityLabel={`${translate(
+                        'map.detail.directions',
+                      )} ${translate('map.detail.kakaoMap')}`}
                       onPress={() => handleOpenKakaoMap(selectedPlace)}
                     />
                     <Button
-                      label={t('map.detail.naverMap')}
+                      label={translate('map.detail.naverMap')}
                       icon={Navigation}
                       size="sm"
                       variant="soft"
-                      accessibilityLabel={`${t('map.detail.directions')} ${t(
-                        'map.detail.naverMap',
-                      )}`}
+                      accessibilityLabel={`${translate(
+                        'map.detail.directions',
+                      )} ${translate('map.detail.naverMap')}`}
                       onPress={() => handleOpenNaverMap(selectedPlace)}
                     />
                   </>
                 ) : null}
                 <Button
-                  label={t('map.detail.share')}
+                  label={translate('map.detail.share')}
                   icon={Share2}
                   size="sm"
                   variant="soft"
-                  accessibilityLabel={`${t('map.detail.share')} ${
+                  accessibilityLabel={`${translate('map.detail.share')} ${
                     selectedPlace.name
                   }`}
                   onPress={() => handleSharePlace(selectedPlace)}
@@ -3076,7 +3101,7 @@ export default function MapScreen() {
                 </DetailDescription>
               ) : null}
               <DetailMeta>
-                {t('map.labels.shelter')} {selectedPlace.shelterCount}
+                {translate('map.labels.shelter')} {selectedPlace.shelterCount}
               </DetailMeta>
 
               <PanelScroll
@@ -3093,7 +3118,7 @@ export default function MapScreen() {
                         shelterImages.length - 1,
                       ),
                     );
-                    const shelterTypeLabel = t(
+                    const shelterTypeLabel = translate(
                       getShelterTypeTranslationKey(shelter.shelterType) ??
                         getShelterTypeLabel(shelter.shelterType),
                     );
@@ -3103,7 +3128,7 @@ export default function MapScreen() {
                         {shelterImages.length ? (
                           <ShelterImageFrame
                             accessibilityRole="imagebutton"
-                            accessibilityLabel={t('map.a11y.viewImage')}
+                            accessibilityLabel={translate('map.a11y.viewImage')}
                             onPress={() =>
                               setImageModal({
                                 images: shelterImages,
@@ -3125,7 +3150,7 @@ export default function MapScreen() {
                                 <ImageNavButton
                                   $position="left"
                                   accessibilityRole="button"
-                                  accessibilityLabel={t(
+                                  accessibilityLabel={translate(
                                     'map.a11y.previousImage',
                                   )}
                                   hitSlop={7}
@@ -3146,7 +3171,9 @@ export default function MapScreen() {
                                 <ImageNavButton
                                   $position="right"
                                   accessibilityRole="button"
-                                  accessibilityLabel={t('map.a11y.nextImage')}
+                                  accessibilityLabel={translate(
+                                    'map.a11y.nextImage',
+                                  )}
                                   hitSlop={7}
                                   onPress={() =>
                                     handleChangeShelterImage(
@@ -3207,7 +3234,7 @@ export default function MapScreen() {
                           {typeof shelter.capacity !== 'number' &&
                           typeof shelter.area !== 'number' ? (
                             <ShelterMetaText>
-                              {t('map.labels.noScaleInfo')}
+                              {translate('map.labels.noScaleInfo')}
                             </ShelterMetaText>
                           ) : null}
                         </ShelterMetaRow>
@@ -3217,7 +3244,7 @@ export default function MapScreen() {
                           !shelter.managingAuthorityTelNo ? (
                             <ShelterMeta>
                               {shelter.managingAuthorityName ||
-                                t('map.labels.noManagingAuthority')}
+                                translate('map.labels.noManagingAuthority')}
                             </ShelterMeta>
                           ) : null}
                           {shelter.managingAuthorityTelNo ? (
@@ -3225,9 +3252,9 @@ export default function MapScreen() {
                               <PhoneButton
                                 hitSlop={phoneHitSlop}
                                 accessibilityRole="button"
-                                accessibilityLabel={`${t('map.detail.call')} ${
-                                  shelter.managingAuthorityTelNo
-                                }`}
+                                accessibilityLabel={`${translate(
+                                  'map.detail.call',
+                                )} ${shelter.managingAuthorityTelNo}`}
                                 onPress={() =>
                                   handleCall(shelter.managingAuthorityTelNo)
                                 }
@@ -3252,14 +3279,14 @@ export default function MapScreen() {
                           {getAccessibilityChips(shelter).map(chip => (
                             <AccessibilityChip
                               key={`${shelter.shelterId}-${chip.key}`}
-                              label={t(chip.labelKey)}
+                              label={translate(chip.labelKey)}
                               active={chip.active}
                             />
                           ))}
                         </ChipRow>
                         {shelter.etcFacilities?.trim() ? (
                           <ShelterMeta>
-                            {t('map.report.etcFacilities')}:{' '}
+                            {translate('map.report.etcFacilities')}:{' '}
                             {shelter.etcFacilities.trim()}
                           </ShelterMeta>
                         ) : null}
@@ -3267,12 +3294,12 @@ export default function MapScreen() {
                         {shelter.surveyStatus === 'INVESTIGATED' ? (
                           <ReportDoneBadge>
                             <ReportDoneBadgeText>
-                              {t('map.detail.investigated')}
+                              {translate('map.detail.investigated')}
                             </ReportDoneBadgeText>
                           </ReportDoneBadge>
                         ) : user ? (
                           <Button
-                            label={t('map.report.button')}
+                            label={translate('map.report.button')}
                             icon={Camera}
                             size="sm"
                             variant="soft"
@@ -3285,7 +3312,7 @@ export default function MapScreen() {
                             onPress={() => navigation.navigate('More')}
                           >
                             <ReportLoginButtonText>
-                              {t('map.detail.loginToReport')}
+                              {translate('map.detail.loginToReport')}
                             </ReportLoginButtonText>
                           </ReportLoginButton>
                         )}
@@ -3293,7 +3320,9 @@ export default function MapScreen() {
                     );
                   })
                 ) : (
-                  <EmptyPanelText>{t('map.labels.noShelters')}</EmptyPanelText>
+                  <EmptyPanelText>
+                    {translate('map.labels.noShelters')}
+                  </EmptyPanelText>
                 )}
               </PanelScroll>
             </DetailLayer>
@@ -3320,50 +3349,50 @@ export default function MapScreen() {
           >
             <AccessibilityInfoHeader>
               <AccessibilityInfoTitle accessibilityRole="header">
-                {t('map.accessibilityInfo.title')}
+                {translate('map.accessibilityInfo.title')}
               </AccessibilityInfoTitle>
               <AccessibilityInfoCloseButton
                 accessibilityRole="button"
-                accessibilityLabel={t('common.close')}
+                accessibilityLabel={translate('common.close')}
                 onPress={closeAccessibilityInfo}
               >
                 <X color={colors.textMuted} size={22} strokeWidth={2.6} />
               </AccessibilityInfoCloseButton>
             </AccessibilityInfoHeader>
             <AccessibilityInfoDescription>
-              {t('map.accessibilityInfo.description')}
+              {translate('map.accessibilityInfo.description')}
             </AccessibilityInfoDescription>
             <AccessibilityInfoList>
               <AccessibilityInfoText>
-                {t('map.accessibilityInfo.ramp')}
+                {translate('map.accessibilityInfo.ramp')}
               </AccessibilityInfoText>
               <AccessibilityInfoText>
-                {t('map.accessibilityInfo.elevator')}
+                {translate('map.accessibilityInfo.elevator')}
               </AccessibilityInfoText>
               <AccessibilityInfoText>
-                {t('map.accessibilityInfo.brailleBlock')}
+                {translate('map.accessibilityInfo.brailleBlock')}
               </AccessibilityInfoText>
               <AccessibilityInfoText>
-                {t('map.accessibilityInfo.accessibleToilet')}
+                {translate('map.accessibilityInfo.accessibleToilet')}
               </AccessibilityInfoText>
             </AccessibilityInfoList>
             <AccessibilityLegendList>
               <AccessibilityLegendRow>
                 <AccessibilityLegendDot $color={colors.primary} />
                 <AccessibilityLegendText>
-                  {t('map.accessibilityInfo.blue')}
+                  {translate('map.accessibilityInfo.blue')}
                 </AccessibilityLegendText>
               </AccessibilityLegendRow>
               <AccessibilityLegendRow>
                 <AccessibilityLegendDot $color={colors.a11yMatch.accessible} />
                 <AccessibilityLegendText>
-                  {t('map.accessibilityInfo.green')}
+                  {translate('map.accessibilityInfo.green')}
                 </AccessibilityLegendText>
               </AccessibilityLegendRow>
               <AccessibilityLegendRow>
                 <AccessibilityLegendDot $color={colors.a11yMatch.partial} />
                 <AccessibilityLegendText>
-                  {t('map.accessibilityInfo.orange')}
+                  {translate('map.accessibilityInfo.orange')}
                 </AccessibilityLegendText>
               </AccessibilityLegendRow>
               <AccessibilityLegendRow>
@@ -3371,12 +3400,12 @@ export default function MapScreen() {
                   $color={colors.a11yMatch.inaccessible}
                 />
                 <AccessibilityLegendText>
-                  {t('map.accessibilityInfo.red')}
+                  {translate('map.accessibilityInfo.red')}
                 </AccessibilityLegendText>
               </AccessibilityLegendRow>
             </AccessibilityLegendList>
             <Button
-              label={t('map.accessibilityInfo.close')}
+              label={translate('map.accessibilityInfo.close')}
               onPress={closeAccessibilityInfo}
               variant="secondary"
               size="sm"
@@ -3398,9 +3427,11 @@ export default function MapScreen() {
           >
             <ReportModalCard onPress={event => event.stopPropagation()}>
               <ReportModalHeader>
-                <ReportModalTitle>{t('map.report.title')}</ReportModalTitle>
+                <ReportModalTitle>
+                  {translate('map.report.title')}
+                </ReportModalTitle>
                 <IconButton
-                  accessibilityLabel={t('common.close')}
+                  accessibilityLabel={translate('common.close')}
                   onPress={closeReportModal}
                 >
                   <X color={colors.textMuted} size={22} strokeWidth={2.6} />
@@ -3417,7 +3448,9 @@ export default function MapScreen() {
                 showsVerticalScrollIndicator={false}
               >
                 <ReportField>
-                  <ReportLabel>{t('map.report.accessibility')}</ReportLabel>
+                  <ReportLabel>
+                    {translate('map.report.accessibility')}
+                  </ReportLabel>
                   <ReportToggleGrid>
                     <ReportToggle
                       $active={reportForm.ramp}
@@ -3426,7 +3459,7 @@ export default function MapScreen() {
                       onPress={() => updateReportForm('ramp', !reportForm.ramp)}
                     >
                       <ReportToggleText $active={reportForm.ramp}>
-                        {t('map.filters.ramp')}
+                        {translate('map.filters.ramp')}
                       </ReportToggleText>
                     </ReportToggle>
                     <ReportToggle
@@ -3438,7 +3471,7 @@ export default function MapScreen() {
                       }
                     >
                       <ReportToggleText $active={reportForm.elevator}>
-                        {t('map.filters.elevator')}
+                        {translate('map.filters.elevator')}
                       </ReportToggleText>
                     </ReportToggle>
                     <ReportToggle
@@ -3453,7 +3486,7 @@ export default function MapScreen() {
                       }
                     >
                       <ReportToggleText $active={reportForm.brailleBlock}>
-                        {t('map.filters.brailleBlock')}
+                        {translate('map.filters.brailleBlock')}
                       </ReportToggleText>
                     </ReportToggle>
                     <ReportToggle
@@ -3470,16 +3503,16 @@ export default function MapScreen() {
                       }
                     >
                       <ReportToggleText $active={reportForm.accessibleToilet}>
-                        {t('map.filters.accessibleToilet')}
+                        {translate('map.filters.accessibleToilet')}
                       </ReportToggleText>
                     </ReportToggle>
                   </ReportToggleGrid>
                 </ReportField>
 
                 <ReportField>
-                  <ReportLabel>{t('map.report.images')}</ReportLabel>
+                  <ReportLabel>{translate('map.report.images')}</ReportLabel>
                   <ImageAttachButton
-                    label={t('map.report.addImage')}
+                    label={translate('map.report.addImage')}
                     onPress={addReportImages}
                   />
 
@@ -3492,7 +3525,9 @@ export default function MapScreen() {
                             {image.fileName}
                           </ReportImageName>
                           <IconButton
-                            accessibilityLabel={t('map.a11y.removeImage')}
+                            accessibilityLabel={translate(
+                              'map.a11y.removeImage',
+                            )}
                             visualSize={32}
                             backgroundColor={colors.dangerSoft}
                             onPress={() => removeReportImage(image.id)}
@@ -3523,7 +3558,7 @@ export default function MapScreen() {
                               <ReportCategoryText
                                 $active={image.category === category.value}
                               >
-                                {t(category.labelKey)}
+                                {translate(category.labelKey)}
                               </ReportCategoryText>
                             </ReportCategoryChip>
                           ))}
@@ -3535,7 +3570,7 @@ export default function MapScreen() {
                               description: value,
                             })
                           }
-                          placeholder={t(
+                          placeholder={translate(
                             'map.report.imageDescriptionPlaceholder',
                           )}
                           placeholderTextColor={colors.textDisabled}
@@ -3546,13 +3581,17 @@ export default function MapScreen() {
                 </ReportField>
 
                 <ReportEtcField>
-                  <ReportLabel>{t('map.report.etcFacilities')}</ReportLabel>
+                  <ReportLabel>
+                    {translate('map.report.etcFacilities')}
+                  </ReportLabel>
                   <ReportTextArea
                     value={reportForm.etcFacilities}
                     onChangeText={value =>
                       updateReportForm('etcFacilities', value)
                     }
-                    placeholder={t('map.report.etcFacilitiesPlaceholder')}
+                    placeholder={translate(
+                      'map.report.etcFacilitiesPlaceholder',
+                    )}
                     placeholderTextColor={colors.textDisabled}
                     multiline
                     textAlignVertical="top"
@@ -3561,7 +3600,7 @@ export default function MapScreen() {
               </ReportModalScroll>
 
               <SubmitButton
-                label={t('map.report.submit')}
+                label={translate('map.report.submit')}
                 loading={isReportSubmitting}
                 onPress={submitShelterReport}
               />

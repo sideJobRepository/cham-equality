@@ -220,7 +220,7 @@ function toAccessibilityChips(report: ShelterReportDetail) {
 }
 
 export default function MoreScreen() {
-  const { t, i18n } = useTranslation();
+  const { t: translate, i18n } = useTranslation();
   const { alert, confirm } = useDialogUtil();
   const user = useUserStore(state => state.user);
   const kakaoLogin = useKakaoLogin();
@@ -315,7 +315,7 @@ export default function MoreScreen() {
         });
       }
       alert(
-        error?.response?.data?.message ?? t('moreReports.detailFailed'),
+        error?.response?.data?.message ?? translate('moreReports.detailFailed'),
         undefined,
         { tone: 'error' },
       );
@@ -335,10 +335,12 @@ export default function MoreScreen() {
   const onKakao = async () => {
     try {
       await kakaoLogin();
-      alert(t('auth.loginDone'), undefined, { tone: 'success' });
+      alert(translate('auth.loginDone'), undefined, { tone: 'success' });
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : t('auth.kakaoLoginFailed');
+        error instanceof Error
+          ? error.message
+          : translate('auth.kakaoLoginFailed');
       alert(message, undefined, { tone: 'error' });
     }
   };
@@ -346,13 +348,15 @@ export default function MoreScreen() {
   const onNaver = async () => {
     try {
       await naverLogin();
-      alert(t('auth.loginDone'), undefined, { tone: 'success' });
+      alert(translate('auth.loginDone'), undefined, { tone: 'success' });
     } catch (error) {
       if (error instanceof Error && error.message === 'NAVER_LOGIN_CANCELLED') {
         return;
       }
       const message =
-        error instanceof Error ? error.message : t('auth.naverLoginFailed');
+        error instanceof Error
+          ? error.message
+          : translate('auth.naverLoginFailed');
       alert(message, undefined, { tone: 'error' });
     }
   };
@@ -360,31 +364,33 @@ export default function MoreScreen() {
   const onApple = async () => {
     try {
       await appleLogin();
-      alert(t('auth.loginDone'), undefined, { tone: 'success' });
+      alert(translate('auth.loginDone'), undefined, { tone: 'success' });
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : t('auth.appleLoginFailed');
+        error instanceof Error
+          ? error.message
+          : translate('auth.appleLoginFailed');
       alert(message, undefined, { tone: 'error' });
     }
   };
 
   const onLogout = async () => {
     await logout();
-    alert(t('auth.logoutDone'), undefined, { tone: 'success' });
+    alert(translate('auth.logoutDone'), undefined, { tone: 'success' });
   };
 
   const onWithdraw = async () => {
     const ok = await confirm(
-      t('auth.withdrawConfirmTitle'),
-      t('auth.withdrawConfirmDesc'),
+      translate('auth.withdrawConfirmTitle'),
+      translate('auth.withdrawConfirmDesc'),
       { tone: 'warning', destructive: true },
     );
     if (!ok) return;
     try {
       await withdraw();
-      alert(t('auth.withdrawDone'), undefined, { tone: 'success' });
+      alert(translate('auth.withdrawDone'), undefined, { tone: 'success' });
     } catch {
-      alert(t('auth.withdrawFailed'), undefined, { tone: 'error' });
+      alert(translate('auth.withdrawFailed'), undefined, { tone: 'error' });
     }
   };
 
@@ -402,7 +408,7 @@ export default function MoreScreen() {
 
   const addFeedbackImages = async () => {
     if (feedbackImages.length >= 5) {
-      alert(t('feedback.maxImages'), undefined, { tone: 'warning' });
+      alert(translate('feedback.maxImages'), undefined, { tone: 'warning' });
       return;
     }
 
@@ -429,11 +435,15 @@ export default function MoreScreen() {
     const contact = feedbackContact.trim();
 
     if (!content) {
-      alert(t('feedback.contentRequired'), undefined, { tone: 'warning' });
+      alert(translate('feedback.contentRequired'), undefined, {
+        tone: 'warning',
+      });
       return;
     }
     if (content.length > 2000) {
-      alert(t('feedback.contentTooLong'), undefined, { tone: 'warning' });
+      alert(translate('feedback.contentTooLong'), undefined, {
+        tone: 'warning',
+      });
       return;
     }
 
@@ -450,7 +460,7 @@ export default function MoreScreen() {
       });
       resetFeedbackForm();
       setIsFeedbackVisible(false);
-      alert(t('feedback.submitted'), undefined, { tone: 'success' });
+      alert(translate('feedback.submitted'), undefined, { tone: 'success' });
     } catch (error: any) {
       if (__DEV__) {
         console.log('[feedback] submit failed', {
@@ -460,7 +470,7 @@ export default function MoreScreen() {
         });
       }
       alert(
-        error?.response?.data?.message ?? t('feedback.submitFailed'),
+        error?.response?.data?.message ?? translate('feedback.submitFailed'),
         undefined,
         { tone: 'error' },
       );
@@ -490,7 +500,7 @@ export default function MoreScreen() {
         </IntroHero>
 
         <Section>
-          <SectionTitle>{t('more.citizenServices')}</SectionTitle>
+          <SectionTitle>{translate('more.citizenServices')}</SectionTitle>
           <ServiceList>
             {citizenServices.map(service => (
               <ServiceButton
@@ -505,7 +515,7 @@ export default function MoreScreen() {
                     $width={service.iconWidth}
                     $aspectRatio={service.iconAspectRatio}
                   />
-                  <ServiceText>{t(service.titleKey)}</ServiceText>
+                  <ServiceText>{translate(service.titleKey)}</ServiceText>
                 </ServiceLabel>
                 <ChevronRight
                   color={colors.textMuted}
@@ -518,7 +528,7 @@ export default function MoreScreen() {
         </Section>
 
         <Section>
-          <SectionTitle>{t('more.appSettings')}</SectionTitle>
+          <SectionTitle>{translate('more.appSettings')}</SectionTitle>
           <SettingBlock>
             <LanguageRow>
               {LANGUAGE_OPTIONS.map(item => {
@@ -541,19 +551,19 @@ export default function MoreScreen() {
         </Section>
 
         <Section>
-          <SectionTitle>{t('more.notifications.title')}</SectionTitle>
+          <SectionTitle>{translate('more.notifications.title')}</SectionTitle>
           <SettingBlock>
             <NotificationRow>
               <NotificationTextBox>
                 <NotificationLabel>
-                  {t('more.notifications.disaster')}
+                  {translate('more.notifications.disaster')}
                 </NotificationLabel>
                 <NotificationDescription>
-                  {t('more.notifications.disasterDescription')}
+                  {translate('more.notifications.disasterDescription')}
                 </NotificationDescription>
               </NotificationTextBox>
               <Switch
-                accessibilityLabel={t('more.notifications.disaster')}
+                accessibilityLabel={translate('more.notifications.disaster')}
                 value={disasterEnabled}
                 onValueChange={value =>
                   updatePushPreferences({ disasterEnabled: value })
@@ -568,14 +578,14 @@ export default function MoreScreen() {
             <NotificationRow>
               <NotificationTextBox>
                 <NotificationLabel>
-                  {t('more.notifications.personal')}
+                  {translate('more.notifications.personal')}
                 </NotificationLabel>
                 <NotificationDescription>
-                  {t('more.notifications.personalDescription')}
+                  {translate('more.notifications.personalDescription')}
                 </NotificationDescription>
               </NotificationTextBox>
               <Switch
-                accessibilityLabel={t('more.notifications.personal')}
+                accessibilityLabel={translate('more.notifications.personal')}
                 value={personalEnabled}
                 onValueChange={value =>
                   updatePushPreferences({ personalEnabled: value })
@@ -589,14 +599,14 @@ export default function MoreScreen() {
             {!notificationAllowed ? (
               <NotificationPermissionBox>
                 <NotificationPermissionText>
-                  {t('more.notifications.permissionOff')}
+                  {translate('more.notifications.permissionOff')}
                 </NotificationPermissionText>
                 <NotificationSettingsButton
                   accessibilityRole="button"
                   onPress={() => Linking.openSettings()}
                 >
                   <NotificationSettingsText>
-                    {t('more.notifications.openSettings')}
+                    {translate('more.notifications.openSettings')}
                   </NotificationSettingsText>
                 </NotificationSettingsButton>
               </NotificationPermissionBox>
@@ -605,7 +615,7 @@ export default function MoreScreen() {
         </Section>
 
         <Section>
-          <SectionTitle>{t('feedback.title')}</SectionTitle>
+          <SectionTitle>{translate('feedback.title')}</SectionTitle>
           <FeedbackEntryButton
             onPress={() => setIsFeedbackVisible(true)}
             accessibilityRole="button"
@@ -618,7 +628,7 @@ export default function MoreScreen() {
                   strokeWidth={2.5}
                 />
               </FeedbackIconBox>
-              <ServiceText>{t('feedback.entry')}</ServiceText>
+              <ServiceText>{translate('feedback.entry')}</ServiceText>
             </ServiceLabel>
             <ChevronRight
               color={colors.textDisabled}
@@ -630,21 +640,21 @@ export default function MoreScreen() {
 
         {user ? (
           <Section>
-            <SectionTitle>{t('moreReports.title')}</SectionTitle>
+            <SectionTitle>{translate('moreReports.title')}</SectionTitle>
             <ReportListBlock>
               {reportsLoading ? (
                 <StatusMessage
                   compact
                   loading
-                  message={t('moreReports.loading')}
+                  message={translate('moreReports.loading')}
                 />
               ) : reportsFailed ? (
                 <StatusMessage
                   compact
                   tone="error"
                   icon={CloudOff}
-                  message={t('moreReports.loadFailed')}
-                  actionLabel={t('common.retry')}
+                  message={translate('moreReports.loadFailed')}
+                  actionLabel={translate('common.retry')}
                   onAction={loadReports}
                 />
               ) : reports.length ? (
@@ -663,11 +673,14 @@ export default function MoreScreen() {
                     </ReportListIconBox>
                     <ReportListBody>
                       <ReportListTitle numberOfLines={1}>
-                        {report.shelterName || t('moreReports.unknownShelter')}
+                        {report.shelterName ||
+                          translate('moreReports.unknownShelter')}
                       </ReportListTitle>
                       <ReportListMeta numberOfLines={1}>
                         {formatReportDate(report.createDate)} ·{' '}
-                        {t(`moreReports.status.${report.requestStatus}`)}
+                        {translate(
+                          `moreReports.status.${report.requestStatus}`,
+                        )}
                       </ReportListMeta>
                     </ReportListBody>
                     <ChevronRight
@@ -679,7 +692,7 @@ export default function MoreScreen() {
                 ))
               ) : (
                 <ReportEmptyText accessibilityLiveRegion="polite">
-                  {t('moreReports.empty')}
+                  {translate('moreReports.empty')}
                 </ReportEmptyText>
               )}
             </ReportListBlock>
@@ -687,34 +700,38 @@ export default function MoreScreen() {
         ) : null}
 
         <Section>
-          {!user ? <SectionTitle>{t('more.login')}</SectionTitle> : null}
+          {!user ? (
+            <SectionTitle>{translate('more.login')}</SectionTitle>
+          ) : null}
           {user ? (
             <LoginBlock>
-              <Greeting>{t('auth.greeting', { name: user.name })}</Greeting>
+              <Greeting>
+                {translate('auth.greeting', { name: user.name })}
+              </Greeting>
               <Button
-                label={t('auth.logout')}
+                label={translate('auth.logout')}
                 onPress={onLogout}
                 variant="outline"
                 fullWidth
               />
               <WithdrawButton accessibilityRole="button" onPress={onWithdraw}>
-                <WithdrawText>{t('auth.withdraw')}</WithdrawText>
+                <WithdrawText>{translate('auth.withdraw')}</WithdrawText>
               </WithdrawButton>
             </LoginBlock>
           ) : (
             <LoginBlock>
               <KakaoButton accessibilityRole="button" onPress={onKakao}>
                 <LoginIcon source={kakaoIcon} resizeMode="contain" />
-                <KakaoText>{t('auth.kakao')}</KakaoText>
+                <KakaoText>{translate('auth.kakao')}</KakaoText>
               </KakaoButton>
               <NaverButton accessibilityRole="button" onPress={onNaver}>
                 <NaverIconText>N</NaverIconText>
-                <NaverText>{t('auth.naver')}</NaverText>
+                <NaverText>{translate('auth.naver')}</NaverText>
               </NaverButton>
               {Platform.OS === 'ios' ? (
                 <AppleButton accessibilityRole="button" onPress={onApple}>
                   <AppleLoginIcon source={appleIcon} resizeMode="contain" />
-                  <AppleText>{t('auth.apple')}</AppleText>
+                  <AppleText>{translate('auth.apple')}</AppleText>
                 </AppleButton>
               ) : null}
             </LoginBlock>
@@ -734,10 +751,12 @@ export default function MoreScreen() {
           >
             <FeedbackModalCard onPress={event => event.stopPropagation()}>
               <ReportModalHeader>
-                <ReportModalTitle>{t('feedback.title')}</ReportModalTitle>
+                <ReportModalTitle>
+                  {translate('feedback.title')}
+                </ReportModalTitle>
                 <IconButton
                   onPress={closeFeedbackModal}
-                  accessibilityLabel={t('common.close')}
+                  accessibilityLabel={translate('common.close')}
                 >
                   <X color={colors.textMuted} size={22} strokeWidth={2.6} />
                 </IconButton>
@@ -745,7 +764,9 @@ export default function MoreScreen() {
 
               <FeedbackModalScroll showsVerticalScrollIndicator={false}>
                 <FeedbackField>
-                  <FeedbackLabel>{t('feedback.category')}</FeedbackLabel>
+                  <FeedbackLabel>
+                    {translate('feedback.category')}
+                  </FeedbackLabel>
                   <FeedbackChipRow>
                     {feedbackCategoryOptions.map(option => (
                       <FeedbackCategoryChip
@@ -760,7 +781,7 @@ export default function MoreScreen() {
                         <FeedbackCategoryText
                           $active={feedbackCategory === option.value}
                         >
-                          {t(option.labelKey)}
+                          {translate(option.labelKey)}
                         </FeedbackCategoryText>
                       </FeedbackCategoryChip>
                     ))}
@@ -768,11 +789,11 @@ export default function MoreScreen() {
                 </FeedbackField>
 
                 <FeedbackField>
-                  <FeedbackLabel>{t('feedback.content')}</FeedbackLabel>
+                  <FeedbackLabel>{translate('feedback.content')}</FeedbackLabel>
                   <FeedbackTextArea
                     value={feedbackContent}
                     onChangeText={setFeedbackContent}
-                    placeholder={t('feedback.contentPlaceholder')}
+                    placeholder={translate('feedback.contentPlaceholder')}
                     placeholderTextColor={colors.textDisabled}
                     multiline
                     maxLength={2000}
@@ -782,19 +803,19 @@ export default function MoreScreen() {
                 </FeedbackField>
 
                 <FeedbackField>
-                  <FeedbackLabel>{t('feedback.contact')}</FeedbackLabel>
+                  <FeedbackLabel>{translate('feedback.contact')}</FeedbackLabel>
                   <FeedbackInput
                     value={feedbackContact}
                     onChangeText={setFeedbackContact}
-                    placeholder={t('feedback.contactPlaceholder')}
+                    placeholder={translate('feedback.contactPlaceholder')}
                     placeholderTextColor={colors.textDisabled}
                   />
                 </FeedbackField>
 
                 <FeedbackField>
-                  <FeedbackLabel>{t('feedback.photo')}</FeedbackLabel>
+                  <FeedbackLabel>{translate('feedback.photo')}</FeedbackLabel>
                   <ImageAttachButton
-                    label={t('feedback.addPhoto')}
+                    label={translate('feedback.addPhoto')}
                     onPress={addFeedbackImages}
                   />
 
@@ -806,7 +827,7 @@ export default function MoreScreen() {
                       </FeedbackImageName>
                       <IconButton
                         onPress={() => removeFeedbackImage(image.id)}
-                        accessibilityLabel={t('map.a11y.removeImage')}
+                        accessibilityLabel={translate('map.a11y.removeImage')}
                         visualSize={32}
                         backgroundColor={colors.dangerSoft}
                       >
@@ -822,7 +843,7 @@ export default function MoreScreen() {
               </FeedbackModalScroll>
 
               <SubmitButton
-                label={t('feedback.submit')}
+                label={translate('feedback.submit')}
                 loading={isFeedbackSubmitting}
                 onPress={submitFeedback}
               />
@@ -841,10 +862,10 @@ export default function MoreScreen() {
           <ReportModalCard onPress={event => event.stopPropagation()}>
             <ReportModalHeader>
               <ReportModalTitle>
-                {t('moreReports.detailTitle')}
+                {translate('moreReports.detailTitle')}
               </ReportModalTitle>
               <IconButton
-                accessibilityLabel={t('common.close')}
+                accessibilityLabel={translate('common.close')}
                 onPress={() => setSelectedReport(null)}
               >
                 <X color={colors.textMuted} size={22} strokeWidth={2.6} />
@@ -859,7 +880,7 @@ export default function MoreScreen() {
               <ReportDetailScroll showsVerticalScrollIndicator={false}>
                 <ReportDetailName>
                   {selectedReport.shelterName ||
-                    t('moreReports.unknownShelter')}
+                    translate('moreReports.unknownShelter')}
                 </ReportDetailName>
                 {selectedReport.shelterAddress ? (
                   <ReportDetailAddress>
@@ -867,12 +888,14 @@ export default function MoreScreen() {
                   </ReportDetailAddress>
                 ) : null}
                 <ReportDetailStatus>
-                  {t(`moreReports.status.${selectedReport.requestStatus}`)}
+                  {translate(
+                    `moreReports.status.${selectedReport.requestStatus}`,
+                  )}
                 </ReportDetailStatus>
 
                 <ReportDetailSection>
                   <ReportDetailSectionTitle>
-                    {t('map.report.accessibility')}
+                    {translate('map.report.accessibility')}
                   </ReportDetailSectionTitle>
                   <ReportChipRow>
                     {toAccessibilityChips(selectedReport).map(chip => (
@@ -881,7 +904,7 @@ export default function MoreScreen() {
                         $active={chip.active === true}
                       >
                         <ReportAccessChipText $active={chip.active === true}>
-                          {t(chip.labelKey)}
+                          {translate(chip.labelKey)}
                         </ReportAccessChipText>
                       </ReportAccessChip>
                     ))}
@@ -891,7 +914,7 @@ export default function MoreScreen() {
                 {selectedReport.etcFacilities ? (
                   <ReportDetailSection>
                     <ReportDetailSectionTitle>
-                      {t('map.report.etcFacilities')}
+                      {translate('map.report.etcFacilities')}
                     </ReportDetailSectionTitle>
                     <ReportDetailText>
                       {selectedReport.etcFacilities}
@@ -901,7 +924,7 @@ export default function MoreScreen() {
 
                 <ReportDetailSection>
                   <ReportDetailSectionTitle>
-                    {t('map.report.images')}
+                    {translate('map.report.images')}
                   </ReportDetailSectionTitle>
                   {selectedReport.images?.length ? (
                     selectedReport.images.map(image => (
@@ -919,7 +942,7 @@ export default function MoreScreen() {
                         )}
                         <ReportDetailImageInfo>
                           <ReportDetailImageCategory>
-                            {t(
+                            {translate(
                               `map.report.categories.${
                                 image.category ?? 'ETC'
                               }`,
@@ -935,7 +958,7 @@ export default function MoreScreen() {
                     ))
                   ) : (
                     <ReportDetailText>
-                      {t('moreReports.noImages')}
+                      {translate('moreReports.noImages')}
                     </ReportDetailText>
                   )}
                 </ReportDetailSection>

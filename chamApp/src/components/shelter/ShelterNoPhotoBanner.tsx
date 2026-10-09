@@ -19,7 +19,7 @@ interface ShelterNoPhotoBannerProps {
 export default function ShelterNoPhotoBanner({
   typeLabel,
 }: ShelterNoPhotoBannerProps) {
-  const { t } = useTranslation();
+  const { t: translate } = useTranslation();
 
   return (
     <Banner
@@ -32,7 +32,9 @@ export default function ShelterNoPhotoBanner({
       </IconCircle>
       <TextBox>
         <TypeText numberOfLines={1}>{typeLabel}</TypeText>
-        <NoPhotoText numberOfLines={1}>{t('map.labels.noPhoto')}</NoPhotoText>
+        <NoPhotoText numberOfLines={1}>
+          {translate('map.labels.noPhoto')}
+        </NoPhotoText>
       </TextBox>
     </Banner>
   );

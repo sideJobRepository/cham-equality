@@ -15,13 +15,13 @@ interface RequestOptions {
 
 export function useRequest() {
   const { alert } = useDialogUtil();
-  const setLoading = useLoadingStore((state) => state.setLoading);
+  const setLoading = useLoadingStore(state => state.setLoading);
 
   const request = useCallback(
     async <T>(
       requestFn: () => Promise<T>,
       onSuccess?: (data: T) => void,
-      options?: RequestOptions
+      options?: RequestOptions,
     ): Promise<T | undefined> => {
       if (!options?.disableLoading) {
         setLoading(true);
@@ -40,15 +40,24 @@ export function useRequest() {
           const errData = err.response?.data;
 
           //벨리데이터 형식 에러 검증
-          if (Array.isArray(errData?.validation) && errData.validation.length > 0) {
+          if (
+            Array.isArray(errData?.validation) &&
+            errData.validation.length > 0
+          ) {
             const messages = errData.validation
-              .map((v: any) => Object.values(v).join('\n'))
+              .map((validationError: any) =>
+                Object.values(validationError).join('\n'),
+              )
               .join('\n');
             alert(messages, undefined, { tone: 'error' });
           } else {
-            alert(err.response?.data?.message ?? i18n.t('common.error'), undefined, {
-              tone: 'error',
-            });
+            alert(
+              err.response?.data?.message ?? i18n.t('common.error'),
+              undefined,
+              {
+                tone: 'error',
+              },
+            );
           }
         }
         throw error;

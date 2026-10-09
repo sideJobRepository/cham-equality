@@ -24,7 +24,7 @@ export default function FullscreenImageViewer({
   resolveSource,
   onImageError,
 }: FullscreenImageViewerProps) {
-  const { t } = useTranslation();
+  const { t: translate } = useTranslation();
   const close = () => onChange(null);
   const current = value ? value.images[value.index] : null;
 
@@ -46,7 +46,7 @@ export default function FullscreenImageViewer({
               />
               <CloseButton
                 accessibilityRole="button"
-                accessibilityLabel={t('common.close')}
+                accessibilityLabel={translate('common.close')}
                 onPress={close}
               >
                 <X color={colors.textOnColor} size={24} strokeWidth={2.8} />
@@ -56,7 +56,7 @@ export default function FullscreenImageViewer({
                   <NavButton
                     $position="left"
                     accessibilityRole="button"
-                    accessibilityLabel={t('common.previousImage')}
+                    accessibilityLabel={translate('common.previousImage')}
                     onPress={() =>
                       onChange(prev =>
                         prev
@@ -79,7 +79,7 @@ export default function FullscreenImageViewer({
                   <NavButton
                     $position="right"
                     accessibilityRole="button"
-                    accessibilityLabel={t('common.nextImage')}
+                    accessibilityLabel={translate('common.nextImage')}
                     onPress={() =>
                       onChange(prev =>
                         prev

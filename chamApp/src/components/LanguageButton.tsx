@@ -19,7 +19,7 @@ import {
 // 홈 상단에 언어 칩 5개를 나란히 두면 360dp 에서 넘치고 칩이 44보다 작았다.
 // 버튼 하나로 줄이되, 언어를 모르는 사람도 알아보게 지구본과 현재 언어의 원어명을 같이 보인다.
 export default function LanguageButton() {
-  const { t, i18n } = useTranslation();
+  const { t: translate, i18n } = useTranslation();
   const insets = useSafeAreaInsets();
   const [visible, setVisible] = useState(false);
   const current =
@@ -35,7 +35,9 @@ export default function LanguageButton() {
     <>
       <Trigger
         accessibilityRole="button"
-        accessibilityLabel={`${t('common.changeLanguage')}, ${current.label}`}
+        accessibilityLabel={`${translate('common.changeLanguage')}, ${
+          current.label
+        }`}
         onPress={() => setVisible(true)}
       >
         <Globe color={colors.textSecondary} size={18} strokeWidth={2.2} />
@@ -64,10 +66,10 @@ export default function LanguageButton() {
           >
             <SheetHeader>
               <SheetTitle accessibilityRole="header">
-                {t('common.changeLanguage')}
+                {translate('common.changeLanguage')}
               </SheetTitle>
               <IconButton
-                accessibilityLabel={t('common.close')}
+                accessibilityLabel={translate('common.close')}
                 onPress={() => setVisible(false)}
               >
                 <X color={colors.textSecondary} size={22} />

@@ -13,7 +13,7 @@ export default function CurrentLocationBar({
   actionLabel,
   onAction,
 }: CurrentLocationBarProps) {
-  const { t } = useTranslation();
+  const { t: translate } = useTranslation();
   const status = useLocationStore(state => state.status);
   const location = useLocationStore(state => state.location);
 
@@ -21,13 +21,13 @@ export default function CurrentLocationBar({
   const errorMessage = useLocationStore(state => state.errorMessage);
   const locationStatusText =
     status === 'checking'
-      ? t('map.location.checking')
+      ? translate('map.location.checking')
       : status === 'granted'
-      ? address || t('map.location.addressChecking')
+      ? address || translate('map.location.addressChecking')
       : status === 'denied'
-      ? t('map.location.permissionRequired')
+      ? translate('map.location.permissionRequired')
       : // errorMessage 는 번역 키다(useCurrentLocation 참고).
-        t(errorMessage || 'map.location.unavailable');
+        translate(errorMessage || 'map.location.unavailable');
 
   return (
     <HeaderRow>

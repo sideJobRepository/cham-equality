@@ -56,7 +56,7 @@ const tabIcons: Record<keyof RootTabParamList, LucideIcon> = {
 };
 
 export default function AppNavigator() {
-  const { t } = useTranslation();
+  const { t: translate } = useTranslation();
   const insets = useSafeAreaInsets();
   const tabBarBottomPadding = Math.max(insets.bottom, 8);
 
@@ -93,22 +93,22 @@ export default function AppNavigator() {
         <Tab.Screen
           name="Home"
           component={HomeScreen}
-          options={{ tabBarLabel: t('tabs.home') }}
+          options={{ tabBarLabel: translate('tabs.home') }}
         />
         <Tab.Screen
           name="Map"
           component={MapScreen}
-          options={{ tabBarLabel: t('tabs.map') }}
+          options={{ tabBarLabel: translate('tabs.map') }}
         />
         <Tab.Screen
           name="Manual"
           component={ManualScreen}
-          options={{ tabBarLabel: t('tabs.manual') }}
+          options={{ tabBarLabel: translate('tabs.manual') }}
         />
         <Tab.Screen
           name="More"
           component={MoreScreen}
-          options={{ tabBarLabel: t('tabs.more') }}
+          options={{ tabBarLabel: translate('tabs.more') }}
         />
       </Tab.Navigator>
     </NavigationContainer>
