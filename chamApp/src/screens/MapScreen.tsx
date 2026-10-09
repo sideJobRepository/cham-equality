@@ -61,6 +61,7 @@ import ShelterNoPhotoBanner from '../components/shelter/ShelterNoPhotoBanner.tsx
 import ImageAttachButton from '../components/ui/ImageAttachButton.tsx';
 import SubmitButton from '../components/ui/SubmitButton.tsx';
 import Button from '../components/ui/Button.tsx';
+import IconButton from '../components/ui/IconButton.tsx';
 import { loadCurrentLocation } from '../hooks/useCurrentLocation.ts';
 import { fetchPlaceBoundary, useFetchMap } from '../services/map.service.ts';
 import type { ShelterImageCategory } from '../services/report.service.ts';
@@ -186,7 +187,6 @@ import {
   ReportModalCard,
   ReportModalHeader,
   ReportModalTitle,
-  ReportCloseButton,
   ReportShelterName,
   ReportModalScroll,
   ReportField,
@@ -201,7 +201,6 @@ import {
   ReportImageBody,
   ReportImageTopRow,
   ReportImageName,
-  ReportImageRemoveButton,
   ReportCategoryRow,
   ReportCategoryChip,
   ReportCategoryText,
@@ -1425,6 +1424,8 @@ const reportButtonStyle = { marginTop: 4 };
 const accessibilityInfoCloseStyle = { alignSelf: 'flex-end' as const };
 // 보이는 크기는 그대로 두고 누르는 영역만 44dp 로 맞춘다. 가로로 붙은 버튼끼리 겹치지 않게 위아래만 넓힌다.
 const phoneHitSlop = { top: 8, bottom: 8 };
+// 칩은 36으로 보이고 위아래 4씩 더해 터치 영역 44를 맞춘다(행 간격 6이라 이웃 칩과 거의 안 겹친다)
+const chipHitSlop = { top: 4, bottom: 4 };
 
 // 하단 패널 정지점. 값은 panelAnimation 의 0~1(접힘~전체) 위치다.
 type PanelStop = 'collapsed' | 'half' | 'full';
@@ -2730,6 +2731,7 @@ export default function MapScreen() {
                 ) : null}
                 <RegionTrailChip
                   $current={index === regionTrail.length - 1}
+                  hitSlop={chipHitSlop}
                   accessibilityRole="button"
                   accessibilityState={{
                     selected: index === regionTrail.length - 1,
@@ -2994,6 +2996,7 @@ export default function MapScreen() {
                   icon={Share2}
                   size="sm"
                   variant="soft"
+                  accessibilityLabel={`${t('map.detail.share')} ${selectedPlace.name}`}
                   onPress={() => handleSharePlace(selectedPlace)}
                 />
               </DetailActionRow>
@@ -3303,14 +3306,12 @@ export default function MapScreen() {
             <ReportModalCard onPress={event => event.stopPropagation()}>
               <ReportModalHeader>
                 <ReportModalTitle>{t('map.report.title')}</ReportModalTitle>
-                <ReportCloseButton
-                  accessibilityRole="button"
+                <IconButton
                   accessibilityLabel={t('common.close')}
-                  hitSlop={5}
                   onPress={closeReportModal}
                 >
                   <X color={colors.textMuted} size={22} strokeWidth={2.6} />
-                </ReportCloseButton>
+                </IconButton>
               </ReportModalHeader>
               {reportShelter ? (
                 <ReportShelterName numberOfLines={2}>
@@ -3395,10 +3396,10 @@ export default function MapScreen() {
                           <ReportImageName numberOfLines={1}>
                             {image.fileName}
                           </ReportImageName>
-                          <ReportImageRemoveButton
-                            accessibilityRole="button"
+                          <IconButton
                             accessibilityLabel={t('map.a11y.removeImage')}
-                            hitSlop={8}
+                            visualSize={32}
+                            backgroundColor={colors.dangerSoft}
                             onPress={() => removeReportImage(image.id)}
                           >
                             <Trash2
@@ -3406,13 +3407,14 @@ export default function MapScreen() {
                               size={16}
                               strokeWidth={2.4}
                             />
-                          </ReportImageRemoveButton>
+                          </IconButton>
                         </ReportImageTopRow>
                         <ReportCategoryRow>
                           {reportImageCategories.map(category => (
                             <ReportCategoryChip
                               key={`${image.id}-${category.value}`}
                               $active={image.category === category.value}
+                              hitSlop={chipHitSlop}
                               accessibilityRole="radio"
                               accessibilityState={{
                                 checked: image.category === category.value,

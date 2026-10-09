@@ -11,7 +11,8 @@ import {
 } from '../services/manual.service.ts';
 import { useManualStore } from '../store/manual.ts';
 import type { RootTabParamList } from '../navigation/AppNavigator.tsx';
-import { colors } from '../theme/index.ts';
+import IconButton from '../components/ui/IconButton.tsx';
+import { colors, radius } from '../theme/index.ts';
 import {
   manualStyles,
   Screen,
@@ -19,8 +20,6 @@ import {
   BannerImage,
   SearchBox,
   SearchInput,
-  IconButton,
-  SearchButton,
   Board,
   BoardHeader,
   HeaderTitle,
@@ -31,7 +30,7 @@ import {
   EmptyBox,
   EmptyText,
   Pagination,
-  PageButton,
+  PAGE_BUTTON_SIZE,
   PageText,
   ModalOverlay,
   ModalCard,
@@ -158,17 +157,25 @@ export default function ManualScreen() {
           onChangeText={setSearchText}
           onSubmitEditing={handleSubmitSearch}
           placeholder={t('manual.searchPlaceholder')}
-          placeholderTextColor="#9ca3af"
+          placeholderTextColor={colors.textDisabled}
           returnKeyType="search"
         />
         {searchText ? (
-          <IconButton onPress={handleClearSearch}>
-            <X color="#6b7280" size={18} strokeWidth={2.6} />
+          <IconButton
+            accessibilityLabel={t('manual.clearSearch')}
+            onPress={handleClearSearch}
+          >
+            <X color={colors.textMuted} size={18} strokeWidth={2.6} />
           </IconButton>
         ) : null}
-        <SearchButton onPress={handleSubmitSearch}>
+        <IconButton
+          accessibilityLabel={t('manual.search')}
+          backgroundColor={colors.brand}
+          borderRadius={radius.sm}
+          onPress={handleSubmitSearch}
+        >
           <Search color={colors.textOnColor} size={18} strokeWidth={2.6} />
-        </SearchButton>
+        </IconButton>
       </SearchBox>
 
       <Board>
@@ -199,26 +206,37 @@ export default function ManualScreen() {
       </Board>
 
       <Pagination>
-        <PageButton disabled={currentPage === 1} onPress={handlePrevPage}>
+        <IconButton
+          accessibilityLabel={t('common.prevPage')}
+          visualSize={PAGE_BUTTON_SIZE}
+          backgroundColor={colors.surface}
+          borderColor={colors.border}
+          disabled={currentPage === 1}
+          onPress={handlePrevPage}
+        >
           <ChevronLeft
-            color={currentPage === 1 ? '#d1d5db' : '#111827'}
+            color={currentPage === 1 ? colors.borderStrong : colors.text}
             size={16}
             strokeWidth={2.6}
           />
-        </PageButton>
+        </IconButton>
         <PageText>
           {currentPage} / {totalPages}
         </PageText>
-        <PageButton
+        <IconButton
+          accessibilityLabel={t('common.nextPage')}
+          visualSize={PAGE_BUTTON_SIZE}
+          backgroundColor={colors.surface}
+          borderColor={colors.border}
           disabled={currentPage === totalPages}
           onPress={handleNextPage}
         >
           <ChevronRight
-            color={currentPage === totalPages ? '#d1d5db' : '#111827'}
+            color={currentPage === totalPages ? colors.borderStrong : colors.text}
             size={16}
             strokeWidth={2.6}
           />
-        </PageButton>
+        </IconButton>
       </Pagination>
 
       <Modal
@@ -231,8 +249,11 @@ export default function ManualScreen() {
           <ModalCard onPress={event => event.stopPropagation()}>
             <ModalHeader>
               <ModalTitle numberOfLines={2}>{manualDetail?.title}</ModalTitle>
-              <CloseButton onPress={clearManualDetail}>
-                <X color="#111827" size={20} strokeWidth={2.7} />
+              <CloseButton
+                accessibilityLabel={t('common.close')}
+                onPress={clearManualDetail}
+              >
+                <X color={colors.text} size={20} strokeWidth={2.7} />
               </CloseButton>
             </ModalHeader>
             <ModalMetaRow>

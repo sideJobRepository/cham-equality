@@ -3,7 +3,7 @@ import { Modal, type ImageSourcePropType } from 'react-native';
 import styled from 'styled-components/native';
 import { useTranslation } from 'react-i18next';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react-native';
-import { colors } from '../../theme/index.ts';
+import { colors, fontSize } from '../../theme/index.ts';
 
 export interface FullscreenImageViewerState {
   images: ImageSourcePropType[];
@@ -169,6 +169,6 @@ const Counter = styled.View`
 
 const CounterText = styled.Text`
   color: ${colors.textOnColor};
-  font-size: 10px;
+  font-size: ${fontSize.caption}px;
   font-weight: 800;
 `;

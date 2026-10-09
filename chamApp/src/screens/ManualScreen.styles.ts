@@ -1,7 +1,8 @@
 import { StyleSheet } from 'react-native';
 import styled from 'styled-components/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { colors } from '../theme/index.ts';
+import IconButton from '../components/ui/IconButton.tsx';
+import { colors, fontSize } from '../theme/index.ts';
 
 export const manualStyles = StyleSheet.create({
   manualWebView: {
@@ -45,22 +46,6 @@ export const SearchInput = styled.TextInput`
   color: ${colors.text};
   font-size: 14px;
   font-weight: 600;
-`;
-
-export const IconButton = styled.Pressable`
-  width: 32px;
-  height: 32px;
-  align-items: center;
-  justify-content: center;
-`;
-
-export const SearchButton = styled.Pressable`
-  width: 34px;
-  height: 34px;
-  align-items: center;
-  justify-content: center;
-  border-radius: 8px;
-  background-color: ${colors.brand};
 `;
 
 export const Board = styled.View`
@@ -109,7 +94,7 @@ export const ManualRow = styled.Pressable`
 export const ManualTitle = styled.Text`
   flex: 1;
   //text-align: center;
-  font-size: 12px;
+  font-size: ${fontSize.body}px;
   font-weight: 700;
   color: #1d1d1f;
 `;
@@ -117,7 +102,7 @@ export const ManualTitle = styled.Text`
 export const ManualDate = styled.Text`
   width: 88px;
   text-align: center;
-  font-size: 12px;
+  font-size: ${fontSize.body}px;
   font-weight: 700;
   color: #1d1d1f;
 `;
@@ -142,16 +127,8 @@ export const Pagination = styled.View`
   margin-top: 16px;
 `;
 
-export const PageButton = styled.Pressable`
-  width: 24px;
-  height: 24px;
-  align-items: center;
-  justify-content: center;
-  border-radius: 999px;
-  background-color: ${colors.surface};
-  border-width: 1px;
-  border-color: ${colors.border};
-`;
+// 페이지 버튼은 보이는 크기만 36. 터치 영역은 IconButton 이 hitSlop 으로 44를 채운다
+export const PAGE_BUTTON_SIZE = 36;
 
 export const PageText = styled.Text`
   min-width: 58px;
@@ -190,12 +167,9 @@ export const ModalTitle = styled.Text`
   font-weight: 800;
 `;
 
-export const CloseButton = styled.Pressable`
-  width: 36px;
-  height: 36px;
-  margin-right: -8px;
-  align-items: center;
-  justify-content: center;
+// 아이콘을 카드 오른쪽 여백선에 맞추려고 터치 영역만큼 바깥으로 민다
+export const CloseButton = styled(IconButton)`
+  margin-right: -12px;
 `;
 
 export const ModalMetaRow = styled.View`

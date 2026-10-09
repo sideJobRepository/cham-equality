@@ -1,7 +1,7 @@
 import { Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import styled from 'styled-components/native';
-import { colors } from '../theme/index.ts';
+import { colors, fontSize } from '../theme/index.ts';
 import { SHELTER_SELECTED_COLOR } from '../store/mapFilters.ts';
 import {
   MAP_CONTROL_SIZE,
@@ -100,7 +100,9 @@ export const RegionTrailItemView = styled.View`
 `;
 
 export const RegionTrailChip = styled.TouchableOpacity<{ $current: boolean }>`
-  padding: 6px 10px;
+  min-height: 36px;
+  justify-content: center;
+  padding: 0 12px;
   border-radius: 999px;
   background-color: ${({ $current }) =>
     $current ? colors.primary : colors.surface};
@@ -385,7 +387,7 @@ export const MatchBadge = styled.View<{ $color: string }>`
 
 export const MatchBadgeText = styled.Text<{ $color: string }>`
   color: ${({ $color }) => $color};
-  font-size: 11px;
+  font-size: ${fontSize.caption}px;
   font-weight: 800;
 `;
 
@@ -468,7 +470,7 @@ export const ImageCounter = styled.View`
 
 export const ImageCounterText = styled.Text`
   color: ${colors.textOnColor};
-  font-size: 10px;
+  font-size: ${fontSize.caption}px;
   font-weight: 800;
 `;
 
@@ -526,7 +528,7 @@ export const TypeChip = styled.View`
 
 export const TypeChipText = styled.Text`
   color: ${colors.textOnColor};
-  font-size: 10px;
+  font-size: ${fontSize.caption}px;
   font-weight: 800;
 `;
 
@@ -538,7 +540,7 @@ export const TypeCountChip = styled.View`
 
 export const TypeCountText = styled.Text`
   color: ${colors.textOnColor};
-  font-size: 11px;
+  font-size: ${fontSize.caption}px;
   font-weight: 800;
 `;
 
@@ -704,13 +706,6 @@ export const ReportModalTitle = styled.Text`
   font-weight: 800;
 `;
 
-export const ReportCloseButton = styled.Pressable`
-  width: 34px;
-  height: 34px;
-  align-items: center;
-  justify-content: center;
-`;
-
 export const ReportShelterName = styled.Text`
   color: ${colors.textSecondary};
   font-size: 14px;
@@ -813,15 +808,6 @@ export const ReportImageName = styled.Text`
   font-weight: 700;
 `;
 
-export const ReportImageRemoveButton = styled.Pressable`
-  width: 28px;
-  height: 28px;
-  border-radius: 999px;
-  align-items: center;
-  justify-content: center;
-  background-color: ${colors.dangerSoft};
-`;
-
 export const ReportCategoryRow = styled.View`
   flex-direction: row;
   flex-wrap: wrap;
@@ -829,7 +815,7 @@ export const ReportCategoryRow = styled.View`
 `;
 
 export const ReportCategoryChip = styled.Pressable<{ $active: boolean }>`
-  min-height: 28px;
+  min-height: 36px;
   padding: 0 8px;
   border-radius: 999px;
   align-items: center;
@@ -843,7 +829,7 @@ export const ReportCategoryChip = styled.Pressable<{ $active: boolean }>`
 export const ReportCategoryText = styled.Text<{ $active: boolean }>`
   color: ${({ $active }) =>
     $active ? colors.textOnColor : colors.textTertiary};
-  font-size: 11px;
+  font-size: ${fontSize.caption}px;
   font-weight: 800;
 `;
 

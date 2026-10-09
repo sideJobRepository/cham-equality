@@ -12,6 +12,8 @@ const resources = {
         close: '닫기',
         previousImage: '이전 사진',
         nextImage: '다음 사진',
+        prevPage: '이전 페이지',
+        nextPage: '다음 페이지',
         error: '오류가 발생했습니다.',
       },
       update: {
@@ -55,6 +57,8 @@ const resources = {
         searchPlaceholder: '제목을 입력해주세요.',
         searchEmpty: '검색 결과가 없습니다.',
         goToMap: '대피소 지도 보기',
+        search: '검색',
+        clearSearch: '검색어 지우기',
       },
       auth: {
         loginTitle: '로그인하고 제보를 시작하세요',
@@ -261,6 +265,8 @@ const resources = {
         close: 'Close',
         previousImage: 'Previous photo',
         nextImage: 'Next photo',
+        prevPage: 'Previous page',
+        nextPage: 'Next page',
         error: 'Something went wrong.',
       },
       update: {
@@ -304,6 +310,8 @@ const resources = {
         searchPlaceholder: 'Please enter a title.',
         searchEmpty: 'No search results.',
         goToMap: 'View Shelter Map',
+        search: 'Search',
+        clearSearch: 'Clear search',
       },
       auth: {
         loginTitle: 'Log in to start reporting',
@@ -511,6 +519,8 @@ const resources = {
         close: '关闭',
         previousImage: '上一张照片',
         nextImage: '下一张照片',
+        prevPage: '上一页',
+        nextPage: '下一页',
         error: '发生错误。',
       },
       update: {
@@ -554,6 +564,8 @@ const resources = {
         searchPlaceholder: '请输入标题。',
         searchEmpty: '没有搜索结果。',
         goToMap: '查看避难所地图',
+        search: '搜索',
+        clearSearch: '清除搜索内容',
       },
       auth: {
         loginTitle: '登录后开始举报',
@@ -759,6 +771,8 @@ const resources = {
         close: '閉じる',
         previousImage: '前の写真',
         nextImage: '次の写真',
+        prevPage: '前のページ',
+        nextPage: '次のページ',
         error: 'エラーが発生しました。',
       },
       update: {
@@ -802,6 +816,8 @@ const resources = {
         searchPlaceholder: 'タイトルを入力してください。',
         searchEmpty: '検索結果がありません。',
         goToMap: '避難所マップを見る',
+        search: '検索',
+        clearSearch: '検索語を消去',
       },
       auth: {
         loginTitle: 'ログインして提報を始める',
@@ -1009,6 +1025,8 @@ const resources = {
         close: 'Đóng',
         previousImage: 'Ảnh trước',
         nextImage: 'Ảnh tiếp theo',
+        prevPage: 'Trang trước',
+        nextPage: 'Trang sau',
         error: 'Đã xảy ra lỗi.',
       },
       update: {
@@ -1052,6 +1070,8 @@ const resources = {
         searchPlaceholder: 'Vui lòng nhập tiêu đề.',
         searchEmpty: 'Không có kết quả tìm kiếm.',
         goToMap: 'Xem bản đồ nơi trú ẩn',
+        search: 'Tìm kiếm',
+        clearSearch: 'Xóa từ khóa',
       },
       auth: {
         loginTitle: 'Đăng nhập để bắt đầu báo cáo',

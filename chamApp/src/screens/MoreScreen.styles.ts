@@ -1,7 +1,7 @@
 import styled from 'styled-components/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
-import { colors, externalBrand } from '../theme/index.ts';
+import { colors, externalBrand, fontSize, size } from '../theme/index.ts';
 
 export const Screen = styled(SafeAreaView)`
   flex: 1;
@@ -66,9 +66,9 @@ export const Section = styled.View`
 `;
 
 export const SectionTitle = styled.Text`
-  color: ${colors.textMuted};
+  color: ${colors.text};
   font-size: 16px;
-  font-weight: 600;
+  font-weight: 700;
 `;
 
 export const ServiceList = styled.View`
@@ -222,13 +222,13 @@ export const AppleText = styled.Text`
 `;
 
 export const WithdrawButton = styled.Pressable`
-  height: 36px;
+  min-height: ${size.touchMin}px;
   align-items: center;
   justify-content: center;
 `;
 
 export const WithdrawText = styled.Text`
-  color: ${colors.textDisabled};
+  color: ${colors.textMuted};
   font-size: 13px;
   font-weight: 600;
   text-decoration-line: underline;
@@ -328,8 +328,8 @@ export const FeedbackInput = styled.TextInput`
 `;
 
 export const FeedbackCount = styled.Text`
-  color: ${colors.textDisabled};
-  font-size: 11px;
+  color: ${colors.textMuted};
+  font-size: ${fontSize.caption}px;
   font-weight: 700;
   text-align: right;
 `;
@@ -359,15 +359,6 @@ export const FeedbackImageName = styled.Text`
   color: ${colors.textSecondary};
   font-size: 12px;
   font-weight: 700;
-`;
-
-export const FeedbackImageRemoveButton = styled.Pressable`
-  width: 30px;
-  height: 30px;
-  border-radius: 999px;
-  align-items: center;
-  justify-content: center;
-  background-color: ${colors.dangerSoft};
 `;
 
 export const ReportListBlock = styled.View`
@@ -423,7 +414,7 @@ export const ReportListMeta = styled.Text`
 
 export const ReportEmptyText = styled.Text`
   padding: 18px 14px;
-  color: ${colors.textDisabled};
+  color: ${colors.textMuted};
   font-size: 13px;
   font-weight: 600;
   text-align: center;
@@ -457,13 +448,6 @@ export const ReportModalTitle = styled.Text`
   color: ${colors.text};
   font-size: 18px;
   font-weight: 800;
-`;
-
-export const ReportModalCloseButton = styled.Pressable`
-  width: 34px;
-  height: 34px;
-  align-items: center;
-  justify-content: center;
 `;
 
 export const ReportDetailLoading = styled.View`

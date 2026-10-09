@@ -48,6 +48,7 @@ import { useDialogUtil } from '../utils/dialog';
 import ImageAttachButton from '../components/ui/ImageAttachButton.tsx';
 import SubmitButton from '../components/ui/SubmitButton.tsx';
 import Button from '../components/ui/Button.tsx';
+import IconButton from '../components/ui/IconButton.tsx';
 import { colors } from '../theme/index.ts';
 import {
   Screen,
@@ -95,7 +96,6 @@ import {
   FeedbackImageItem,
   FeedbackImagePreview,
   FeedbackImageName,
-  FeedbackImageRemoveButton,
   ReportListBlock,
   ReportLoadingRow,
   ReportListButton,
@@ -108,7 +108,6 @@ import {
   ReportModalCard,
   ReportModalHeader,
   ReportModalTitle,
-  ReportModalCloseButton,
   ReportDetailLoading,
   ReportDetailScroll,
   ReportDetailName,
@@ -681,7 +680,7 @@ export default function MoreScreen() {
                 variant="outline"
                 fullWidth
               />
-              <WithdrawButton onPress={onWithdraw}>
+              <WithdrawButton accessibilityRole="button" onPress={onWithdraw}>
                 <WithdrawText>{t('auth.withdraw')}</WithdrawText>
               </WithdrawButton>
             </LoginBlock>
@@ -719,13 +718,12 @@ export default function MoreScreen() {
             <FeedbackModalCard onPress={event => event.stopPropagation()}>
               <ReportModalHeader>
                 <ReportModalTitle>{t('feedback.title')}</ReportModalTitle>
-                <ReportModalCloseButton
+                <IconButton
                   onPress={closeFeedbackModal}
-                  accessibilityRole="button"
                   accessibilityLabel={t('common.close')}
                 >
                   <X color={colors.textMuted} size={22} strokeWidth={2.6} />
-                </ReportModalCloseButton>
+                </IconButton>
               </ReportModalHeader>
 
               <FeedbackModalScroll showsVerticalScrollIndicator={false}>
@@ -789,17 +787,18 @@ export default function MoreScreen() {
                       <FeedbackImageName numberOfLines={1}>
                         {image.fileName}
                       </FeedbackImageName>
-                      <FeedbackImageRemoveButton
+                      <IconButton
                         onPress={() => removeFeedbackImage(image.id)}
-                        accessibilityRole="button"
                         accessibilityLabel={t('map.a11y.removeImage')}
+                        visualSize={32}
+                        backgroundColor={colors.dangerSoft}
                       >
                         <Trash2
                           color={colors.danger}
                           size={16}
                           strokeWidth={2.4}
                         />
-                      </FeedbackImageRemoveButton>
+                      </IconButton>
                     </FeedbackImageItem>
                   ))}
                 </FeedbackField>
@@ -827,9 +826,12 @@ export default function MoreScreen() {
               <ReportModalTitle>
                 {t('moreReports.detailTitle')}
               </ReportModalTitle>
-              <ReportModalCloseButton onPress={() => setSelectedReport(null)}>
+              <IconButton
+                accessibilityLabel={t('common.close')}
+                onPress={() => setSelectedReport(null)}
+              >
                 <X color={colors.textMuted} size={22} strokeWidth={2.6} />
-              </ReportModalCloseButton>
+              </IconButton>
             </ReportModalHeader>
 
             {reportDetailLoading && !selectedReport ? (

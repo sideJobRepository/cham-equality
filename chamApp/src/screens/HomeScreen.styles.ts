@@ -1,5 +1,6 @@
 import styled from 'styled-components/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import IconButton from '../components/ui/IconButton.tsx';
 import { SHELTER_SELECTED_COLOR } from '../store/mapFilters.ts';
 import {
   colors,
@@ -59,17 +60,14 @@ export const ShelterImage = styled.Image`
   height: 100%;
 `;
 
-export const ImageNavButton = styled.Pressable<{ $position: 'left' | 'right' }>`
+// 사진을 덜 가리려고 보이는 크기만 줄인다. 터치 영역은 IconButton 이 hitSlop 으로 44를 채운다
+export const IMAGE_NAV_SIZE = 36;
+
+export const ImageNavButton = styled(IconButton)<{ $position: 'left' | 'right' }>`
   position: absolute;
   top: 50%;
   ${({ $position }) => `${$position}: 8px;`}
-  width: 30px;
-  height: 30px;
-  margin-top: -15px;
-  border-radius: 999px;
-  align-items: center;
-  justify-content: center;
-  background-color: ${colors.imageViewerControl};
+  margin-top: -${IMAGE_NAV_SIZE / 2}px;
 `;
 
 export const ImageCounter = styled.View`
@@ -83,7 +81,7 @@ export const ImageCounter = styled.View`
 
 export const ImageCounterText = styled.Text`
   color: ${colors.textOnColor};
-  font-size: 10px;
+  font-size: ${fontSize.caption}px;
   font-weight: 800;
 `;
 
@@ -141,7 +139,7 @@ export const TypeChip = styled.View`
 
 export const TypeChipText = styled.Text`
   color: ${colors.textOnColor};
-  font-size: 10px;
+  font-size: ${fontSize.caption}px;
   font-weight: 800;
 `;
 
@@ -264,7 +262,7 @@ export const MessageTitle2 = styled.Text`
 export const TimeText = styled.Text`
   flex-shrink: 0;
   font-size: 14px;
-  color: #a3a7ac;
+  color: ${colors.textMuted};
 `;
 
 export const CenterBox = styled.View`
@@ -284,12 +282,14 @@ export const SummaryText = styled.Text`
 
 export const DisasterMoreButton = styled.Pressable`
   align-self: flex-end;
-  margin-top: 10px;
-  padding: 4px 0 0 12px;
+  min-height: ${size.touchMin}px;
+  justify-content: center;
+  margin-top: 4px;
+  padding: 0 0 0 12px;
 `;
 
 export const DisasterMoreText = styled.Text`
-  color: #a3a7ac;
+  color: ${colors.textMuted};
   font-size: 13px;
   font-weight: 600;
 `;
@@ -327,13 +327,6 @@ export const NoticeModalCategory = styled.Text`
   font-weight: 800;
 `;
 
-export const NoticeCloseButton = styled.Pressable`
-  width: 36px;
-  height: 36px;
-  align-items: center;
-  justify-content: center;
-`;
-
 export const NoticeImage = styled.Image`
   width: 100%;
   aspect-ratio: 16 / 9;
@@ -353,13 +346,6 @@ export const NoticeButtonRow = styled.View`
   justify-content: flex-end;
   align-items: center;
   gap: 8px;
-`;
-
-export const IconButton = styled.Pressable`
-  width: 44px;
-  height: 44px;
-  align-items: center;
-  justify-content: center;
 `;
 
 export const SMSCard = styled.Pressable`
@@ -396,13 +382,6 @@ export const SMSCategoryText = styled.Text`
 
 export const SMSHeaderSpacer = styled.View`
   flex: 1;
-`;
-
-export const SMSCloseButton = styled.Pressable`
-  width: 44px;
-  height: 44px;
-  align-items: center;
-  justify-content: center;
 `;
 
 export const SMSBody = styled.View`

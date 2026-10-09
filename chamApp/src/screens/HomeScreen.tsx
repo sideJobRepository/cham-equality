@@ -22,6 +22,7 @@ import CurrentLocationBar from '../components/CurrentLocationBar.tsx';
 import MapSearchFilters from '../components/MapSearchFilters.tsx';
 import FullscreenImageViewer from '../components/ui/FullscreenImageViewer.tsx';
 import Button from '../components/ui/Button.tsx';
+import IconButton from '../components/ui/IconButton.tsx';
 import AccessibilityChip from '../components/shelter/AccessibilityChip.tsx';
 import ShelterNoPhotoBanner from '../components/shelter/ShelterNoPhotoBanner.tsx';
 import { useCurrentLocation } from '../hooks/useCurrentLocation.ts';
@@ -54,6 +55,7 @@ import {
   ShelterImageFrame,
   ShelterImage,
   ImageNavButton,
+  IMAGE_NAV_SIZE,
   ImageCounter,
   ImageCounterText,
   ShelterTitleRow,
@@ -89,18 +91,15 @@ import {
   NoticeModalCard,
   NoticeModalHeader,
   NoticeModalCategory,
-  NoticeCloseButton,
   NoticeImage,
   NoticeContent,
   NoticeButtonRow,
-  IconButton,
   SMSCard,
   SMSHeader,
   SMSStepText,
   SMSCategoryChip,
   SMSCategoryText,
   SMSHeaderSpacer,
-  SMSCloseButton,
   SMSBody,
   SMSMetaRow,
   SMSMetaText,
@@ -386,7 +385,10 @@ export default function HomeScreen() {
               ))}
             </CenterBox>
             {disasterData?.originUrl ? (
-              <DisasterMoreButton onPress={handlePressDisaster}>
+              <DisasterMoreButton
+                accessibilityRole="link"
+                onPress={handlePressDisaster}
+              >
                 <DisasterMoreText>{t('home.more')}</DisasterMoreText>
               </DisasterMoreButton>
             ) : null}
@@ -421,6 +423,9 @@ export default function HomeScreen() {
                     <>
                       <ImageNavButton
                         $position="left"
+                        visualSize={IMAGE_NAV_SIZE}
+                        backgroundColor={colors.imageViewerControl}
+                        accessibilityLabel={t('common.previousImage')}
                         onPress={event => {
                           event.stopPropagation();
                           setShelterImageIndex(
@@ -438,6 +443,9 @@ export default function HomeScreen() {
                       </ImageNavButton>
                       <ImageNavButton
                         $position="right"
+                        visualSize={IMAGE_NAV_SIZE}
+                        backgroundColor={colors.imageViewerControl}
+                        accessibilityLabel={t('common.nextImage')}
                         onPress={event => {
                           event.stopPropagation();
                           setShelterImageIndex(
@@ -530,9 +538,12 @@ export default function HomeScreen() {
           <NoticeModalCard onPress={e => e.stopPropagation()}>
             <NoticeModalHeader>
               <NoticeModalCategory>{popupContent?.name}</NoticeModalCategory>
-              <NoticeCloseButton onPress={closeNoticeModal}>
+              <IconButton
+                accessibilityLabel={t('common.close')}
+                onPress={closeNoticeModal}
+              >
                 <X color={colors.textMuted} size={22} strokeWidth={2.6} />
-              </NoticeCloseButton>
+              </IconButton>
             </NoticeModalHeader>
             {popupContent?.imageUrl ? (
               <NoticeImage source={{ uri: popupContent.imageUrl }} />
@@ -582,13 +593,12 @@ export default function HomeScreen() {
                 </SMSCategoryChip>
               ) : null}
               <SMSHeaderSpacer />
-              <SMSCloseButton
-                accessibilityRole="button"
+              <IconButton
                 accessibilityLabel={t('common.close')}
                 onPress={() => setIsSMSModalVisible(false)}
               >
                 <X color={colors.textOnColor} size={22} strokeWidth={2.4} />
-              </SMSCloseButton>
+              </IconButton>
             </SMSHeader>
 
             <SMSBody>
@@ -624,7 +634,6 @@ export default function HomeScreen() {
               {smsData.length > 1 ? (
                 <SMSPager>
                   <IconButton
-                    accessibilityRole="button"
                     accessibilityLabel={t('home.smsPrev')}
                     disabled={selectedSMSIndex === 0}
                     onPress={() =>
@@ -645,7 +654,6 @@ export default function HomeScreen() {
                     {selectedSMSIndex + 1} / {smsData.length}
                   </SMSPagerText>
                   <IconButton
-                    accessibilityRole="button"
                     accessibilityLabel={t('home.smsNext')}
                     disabled={selectedSMSIndex >= smsData.length - 1}
                     onPress={() =>

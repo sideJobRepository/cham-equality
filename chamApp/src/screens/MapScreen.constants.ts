@@ -1,5 +1,5 @@
 // 스타일과 화면 계산(패널 inset·컨트롤 배치)이 같이 쓰는 값이라 한 곳에 둔다
-export const MAP_CONTROL_SIZE = 40;
+export const MAP_CONTROL_SIZE = 44;
 export const MAP_CONTROL_GAP = 8;
 export const MAP_CONTROL_MARGIN = 12;
 
