@@ -2,7 +2,7 @@ import { StyleSheet } from 'react-native';
 import styled from 'styled-components/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import IconButton from '../components/ui/IconButton.tsx';
-import { colors, fontSize } from '../theme/index.ts';
+import { colors, fontSize, size } from '../theme/index.ts';
 
 export const manualStyles = StyleSheet.create({
   manualWebView: {
@@ -200,6 +200,7 @@ export const ManualWebViewFrame = styled.View`
 `;
 
 export const MapShortcutButton = styled.Pressable`
+  min-height: ${size.touchMin}px;
   padding: 8px 12px;
   flex-direction: row;
   align-items: center;

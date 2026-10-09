@@ -47,10 +47,7 @@ import {
   Users,
   X,
 } from 'lucide-react-native';
-import {
-  launchImageLibrary,
-  type Asset,
-} from 'react-native-image-picker';
+import { launchImageLibrary, type Asset } from 'react-native-image-picker';
 import { useTranslation } from 'react-i18next';
 import i18nInstance from '../i18n';
 import CurrentLocationBar from '../components/CurrentLocationBar.tsx';
@@ -209,7 +206,8 @@ import {
   EmptyPanelText,
 } from './MapScreen.styles.ts';
 
-const defaultShelterImage = require('../assets/images/shelter.png') as ImageSourcePropType;
+const defaultShelterImage =
+  require('../assets/images/shelter.png') as ImageSourcePropType;
 const reportModalScrollContentStyle = { flexGrow: 1 };
 
 function getShelterTypeLabel(type?: string) {
@@ -322,7 +320,10 @@ interface WebMessagePayload {
   visiblePlaceIds?: number[];
 }
 
-function normalizeSelectedPlace(item: any, fallbackName: string): SelectedPlace {
+function normalizeSelectedPlace(
+  item: any,
+  fallbackName: string,
+): SelectedPlace {
   const shelters = Array.isArray(item?.shelters) ? item.shelters : [];
   // x 가 경도, y 가 위도. 좌표 없는 장소는 null(Number(null) 이 0 이 되지 않게 먼저 거른다).
   const lat = item?.y == null ? NaN : Number(item.y);
@@ -387,7 +388,9 @@ function toReportLocalImage(asset: Asset): ReportLocalImage | null {
   };
 }
 
-function getShelterImageSources(shelter: ShelterSummary): ImageSourcePropType[] {
+function getShelterImageSources(
+  shelter: ShelterSummary,
+): ImageSourcePropType[] {
   const sources =
     shelter.images
       ?.map(image => image.url)
@@ -417,7 +420,12 @@ function toMapPayload(
 }
 
 // 대전 대략 범위. 내 위치가 이 안일 때만 목록에 거리를 붙인다(밖이면 수십 km 라 의미가 없다).
-const DAEJEON_BOUNDS = { south: 36.18, north: 36.51, west: 127.24, east: 127.56 };
+const DAEJEON_BOUNDS = {
+  south: 36.18,
+  north: 36.51,
+  west: 127.24,
+  east: 127.56,
+};
 
 function isInDaejeon(location: { lat: number; lng: number }) {
   return (
@@ -437,7 +445,9 @@ function getDistanceMeters(
   const dLng = toRad(to.lng - from.lng);
   const a =
     Math.sin(dLat / 2) ** 2 +
-    Math.cos(toRad(from.lat)) * Math.cos(toRad(to.lat)) * Math.sin(dLng / 2) ** 2;
+    Math.cos(toRad(from.lat)) *
+      Math.cos(toRad(to.lat)) *
+      Math.sin(dLng / 2) ** 2;
   return 6371000 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
@@ -624,7 +634,7 @@ function buildMapHtml(
           'height:' + (isSelected ? '20px' : '14px'),
           'border-radius:999px',
           'background:' + markerColor,
-          'border:' + (isSelected ? '4px' : '2px') + ' solid #ffffff',
+          'border:' + (isSelected ? '4px' : '2px') + ' solid ${colors.surface}',
           'box-shadow:0 0 0 ' + (isSelected ? '5px' : '0') + ' ' + markerColor + '33,0 2px 10px ' + markerColor + '80',
           'cursor:pointer',
           'transition:width .12s ease,height .12s ease,box-shadow .12s ease,transform .08s ease',
@@ -642,8 +652,8 @@ function buildMapHtml(
           'height:32px',
           'padding:0 12px',
           'border-radius:999px',
-          'background:#2563eb',
-          'color:#ffffff',
+          'background:${colors.primary}',
+          'color:${colors.textOnColor}',
           'font-size:12px',
           'font-weight:700',
           'box-shadow:0 4px 12px rgba(37,99,235,.28)',
@@ -916,7 +926,7 @@ function buildMapHtml(
           ].join(';');
           // 빨강은 접근성 '불가' 마커·위급 표시와 겹쳐 오인되므로 내 위치는 파란 점으로 그린다
           markerEl.innerHTML =
-            '<div style="width:22px;height:22px;border-radius:999px;background:${colors.primary};border:4px solid #ffffff;box-shadow:0 0 0 6px rgba(37,99,235,.18),0 3px 12px rgba(37,99,235,.45);"></div>';
+            '<div style="width:22px;height:22px;border-radius:999px;background:${colors.primary};border:4px solid ${colors.surface};box-shadow:0 0 0 6px rgba(37,99,235,.18),0 3px 12px rgba(37,99,235,.45);"></div>';
 
           userLocationOverlay = new window.kakao.maps.CustomOverlay({
             map: map,
@@ -1203,9 +1213,9 @@ function buildMapHtml(
               map: map,
               path: path,
               strokeWeight: 2,
-              strokeColor: '#2563eb',
+              strokeColor: '${colors.primary}',
               strokeOpacity: 0.9,
-              fillColor: '#2563eb',
+              fillColor: '${colors.primary}',
               fillOpacity: 0.18,
               zIndex: 1,
             }));
@@ -1455,11 +1465,14 @@ function pickPanelStop(
 ): PanelStop {
   if (Math.abs(velocityY) > PANEL_FLICK_SPEED) {
     if (velocityY < 0) {
-      return PANEL_STOP_ORDER.find(stop => values[stop] > position + 0.01) ?? 'full';
+      return (
+        PANEL_STOP_ORDER.find(stop => values[stop] > position + 0.01) ?? 'full'
+      );
     }
     return (
-      [...PANEL_STOP_ORDER].reverse().find(stop => values[stop] < position - 0.01) ??
-      'collapsed'
+      [...PANEL_STOP_ORDER]
+        .reverse()
+        .find(stop => values[stop] < position - 0.01) ?? 'collapsed'
     );
   }
   return PANEL_STOP_ORDER.reduce((nearest, stop) =>
@@ -1474,9 +1487,21 @@ const matchBadges: Record<
   string,
   { labelKey: string; color: string; Icon: typeof Check }
 > = {
-  ACCESSIBLE: { labelKey: 'map.detail.matchAccessible', color: colors.a11yMatch.accessible, Icon: Check },
-  PARTIAL: { labelKey: 'map.detail.matchPartial', color: colors.a11yMatch.partial, Icon: Minus },
-  INACCESSIBLE: { labelKey: 'map.detail.matchInaccessible', color: colors.a11yMatch.inaccessible, Icon: X },
+  ACCESSIBLE: {
+    labelKey: 'map.detail.matchAccessible',
+    color: colors.a11yMatch.accessible,
+    Icon: Check,
+  },
+  PARTIAL: {
+    labelKey: 'map.detail.matchPartial',
+    color: colors.a11yMatch.partial,
+    Icon: Minus,
+  },
+  INACCESSIBLE: {
+    labelKey: 'map.detail.matchInaccessible',
+    color: colors.a11yMatch.inaccessible,
+    Icon: X,
+  },
 };
 
 function getMatchBadge(status?: string) {
@@ -1516,7 +1541,9 @@ const PlaceListItem = memo(function PlaceListItem({
         {match && MatchIcon ? (
           <MatchBadge $color={match.color}>
             <MatchIcon color={match.color} size={12} strokeWidth={3} />
-            <MatchBadgeText $color={match.color}>{t(match.labelKey)}</MatchBadgeText>
+            <MatchBadgeText $color={match.color}>
+              {t(match.labelKey)}
+            </MatchBadgeText>
           </MatchBadge>
         ) : null}
         {distanceText ? <PlaceDistance>{distanceText}</PlaceDistance> : null}
@@ -1543,8 +1570,7 @@ export default function MapScreen() {
   const { alert, confirm } = useDialogUtil();
   const { height: screenHeight } = useWindowDimensions();
   const route = useRoute<RouteProp<RootTabParamList, 'Map'>>();
-  const navigation =
-    useNavigation<BottomTabNavigationProp<RootTabParamList>>();
+  const navigation = useNavigation<BottomTabNavigationProp<RootTabParamList>>();
   // 기본은 반: 지도와 목록을 같이 본다. 실제 반 위치 값은 레이아웃을 잰 뒤 아래 effect 가 맞춘다.
   const [panelStop, setPanelStop] = useState<PanelStop>('half');
   const panelAnimation = useRef(new Animated.Value(0.5)).current;
@@ -1559,9 +1585,7 @@ export default function MapScreen() {
   const locationStatus = useLocationStore(state => state.status);
   const user = useUserStore(state => state.user);
   const submitReport = useShelterReportStore(state => state.submitReport);
-  const isReportSubmitting = useShelterReportStore(
-    state => state.isSubmitting,
-  );
+  const isReportSubmitting = useShelterReportStore(state => state.isSubmitting);
   const [reportShelter, setReportShelter] = useState<ShelterSummary | null>(
     null,
   );
@@ -1916,14 +1940,18 @@ export default function MapScreen() {
 
   // 카카오 로고 등 링크를 누르면 앱 지도 자리가 외부 페이지로 바뀌었다. 지도 페이지(about:blank·data:)
   // 외의 이동은 막고 브라우저로 넘긴다. 타일·스크립트 요청은 이 콜백을 타지 않는다.
-  const handleShouldStartLoad = useCallback((request: ShouldStartLoadRequest) => {
-    const url = request.url ?? '';
-    if (!url || url.startsWith('about:') || url.startsWith('data:')) return true;
-    // iOS 는 iframe 로드도 여기로 온다. 최상위 이동만 막는다(Android 는 늘 true).
-    if (request.isTopFrame === false) return true;
-    Linking.openURL(url).catch(() => undefined);
-    return false;
-  }, []);
+  const handleShouldStartLoad = useCallback(
+    (request: ShouldStartLoadRequest) => {
+      const url = request.url ?? '';
+      if (!url || url.startsWith('about:') || url.startsWith('data:'))
+        return true;
+      // iOS 는 iframe 로드도 여기로 온다. 최상위 이동만 막는다(Android 는 늘 true).
+      if (request.isTopFrame === false) return true;
+      Linking.openURL(url).catch(() => undefined);
+      return false;
+    },
+    [],
+  );
 
   // target=_blank 새 창도 같은 방식으로 브라우저에 넘긴다.
   const handleOpenWindow = useCallback((event: WebViewOpenWindowEvent) => {
@@ -1973,7 +2001,8 @@ export default function MapScreen() {
   // 반 위치는 지도 영역 높이로 정해진다. 레이아웃을 재고 나면(첫 렌더·회전) 반에 있는 패널을 새 위치로 붙인다.
   // 접힘(0)·전체(1)는 범위가 바뀌어도 값이 같아 그대로 둔다.
   useEffect(() => {
-    if (panelStopRef.current === 'half') panelAnimation.setValue(halfPanelValue);
+    if (panelStopRef.current === 'half')
+      panelAnimation.setValue(halfPanelValue);
   }, [halfPanelValue, panelAnimation]);
 
   const handleMapFrameLayout = (event: LayoutChangeEvent) => {
@@ -1984,12 +2013,15 @@ export default function MapScreen() {
   };
 
   // 미리보기·상세로 고른 장소의 부지 경계를 지도에 칠한다. 한 번 받은 경계는 화면이 살아 있는 동안 재사용한다.
-  const boundaryPlaceId = selectedPlace?.placeId ?? previewPlace?.placeId ?? null;
+  const boundaryPlaceId =
+    selectedPlace?.placeId ?? previewPlace?.placeId ?? null;
   const boundaryCacheRef = useRef(new Map<number, string | null>());
   useEffect(() => {
     const apply = (geoJson: string | null) =>
       injectMapScript(
-        `if (window.__setBoundary) window.__setBoundary(${JSON.stringify(geoJson)});`,
+        `if (window.__setBoundary) window.__setBoundary(${JSON.stringify(
+          geoJson,
+        )});`,
       );
     if (boundaryPlaceId == null) {
       apply(null);
@@ -2128,7 +2160,9 @@ export default function MapScreen() {
   // 위치가 없을 때 아무 반응이 없던 것 → 권한을 다시 묻거나, 막혀 있으면 설정으로 안내한다.
   const handleMoveToUserLocation = async () => {
     if (userLocation) {
-      injectMapScript('if (window.__moveToUserLocation) window.__moveToUserLocation();');
+      injectMapScript(
+        'if (window.__moveToUserLocation) window.__moveToUserLocation();',
+      );
       return;
     }
     if (locationStatus === 'checking') {
@@ -2165,7 +2199,9 @@ export default function MapScreen() {
   useEffect(() => {
     if (!userLocation || !pendingMoveToUserRef.current) return;
     pendingMoveToUserRef.current = false;
-    injectMapScript('if (window.__moveToUserLocation) window.__moveToUserLocation();');
+    injectMapScript(
+      'if (window.__moveToUserLocation) window.__moveToUserLocation();',
+    );
   }, [injectMapScript, userLocation]);
 
   const handleShowAllResults = useCallback(() => {
@@ -2178,9 +2214,9 @@ export default function MapScreen() {
 
   const handleRegionTrailPress = (item: RegionTrailItem) => {
     injectMapScript(
-      `if (window.__fitRegion) window.__fitRegion(${item.depth}, ${JSON.stringify(
-        item.regionId,
-      )});`,
+      `if (window.__fitRegion) window.__fitRegion(${
+        item.depth
+      }, ${JSON.stringify(item.regionId)});`,
     );
   };
 
@@ -2374,9 +2410,17 @@ export default function MapScreen() {
               })}
             </UnlocatedToggleText>
             {isUnlocatedExpanded ? (
-              <ChevronUp color={colors.textTertiary} size={18} strokeWidth={2.6} />
+              <ChevronUp
+                color={colors.textTertiary}
+                size={18}
+                strokeWidth={2.6}
+              />
             ) : (
-              <ChevronDown color={colors.textTertiary} size={18} strokeWidth={2.6} />
+              <ChevronDown
+                color={colors.textTertiary}
+                size={18}
+                strokeWidth={2.6}
+              />
             )}
           </UnlocatedToggle>
         );
@@ -2565,9 +2609,13 @@ export default function MapScreen() {
           data: error?.response?.data,
         });
       }
-      alert(error?.response?.data?.message ?? t('map.report.failed'), undefined, {
-        tone: 'error',
-      });
+      alert(
+        error?.response?.data?.message ?? t('map.report.failed'),
+        undefined,
+        {
+          tone: 'error',
+        },
+      );
     }
   };
 
@@ -2628,7 +2676,8 @@ export default function MapScreen() {
   // 줌·내 위치 버튼은 패널 윗변을 따라 올라가고, 패널 위에 남은 자리가 모자라면 숨긴다.
   const mapControlCount = 3;
   const mapControlsHeight =
-    mapControlCount * MAP_CONTROL_SIZE + (mapControlCount - 1) * MAP_CONTROL_GAP;
+    mapControlCount * MAP_CONTROL_SIZE +
+    (mapControlCount - 1) * MAP_CONTROL_GAP;
   const mapControlsTranslateY = panelAnimation.interpolate({
     inputRange: [0, 1],
     outputRange: [0, -panelRange],
@@ -2730,7 +2779,11 @@ export default function MapScreen() {
             {regionTrail.map((item, index) => (
               <RegionTrailItemView key={`${item.depth}-${item.regionId}`}>
                 {index > 0 ? (
-                  <ChevronRight color={colors.textMuted} size={14} strokeWidth={2.6} />
+                  <ChevronRight
+                    color={colors.textMuted}
+                    size={14}
+                    strokeWidth={2.6}
+                  />
                 ) : null}
                 <RegionTrailChip
                   $current={index === regionTrail.length - 1}
@@ -2855,7 +2908,11 @@ export default function MapScreen() {
               </PreviewBody>
               <PreviewMore>
                 <PreviewMoreText>{t('map.detail.more')}</PreviewMoreText>
-                <ChevronRight color={colors.textOnColor} size={14} strokeWidth={2.8} />
+                <ChevronRight
+                  color={colors.textOnColor}
+                  size={14}
+                  strokeWidth={2.8}
+                />
               </PreviewMore>
             </PreviewOpenButton>
             <PreviewCloseButton
@@ -2881,7 +2938,9 @@ export default function MapScreen() {
           accessible
           accessibilityRole="button"
           accessibilityLabel={t(
-            panelStop === 'full' ? 'map.a11y.collapseList' : 'map.a11y.expandList',
+            panelStop === 'full'
+              ? 'map.a11y.collapseList'
+              : 'map.a11y.expandList',
           )}
           // 라벨이 '펼치기'인 반 정지점에서 '펼쳐짐'이라 읽히지 않게 전체일 때만 펼쳐진 것으로 둔다.
           accessibilityState={{ expanded: panelStop === 'full' }}
@@ -2899,7 +2958,9 @@ export default function MapScreen() {
           <PanelLayer
             pointerEvents={selectedPlace ? 'none' : 'auto'}
             accessibilityElementsHidden={!!selectedPlace}
-            importantForAccessibility={selectedPlace ? 'no-hide-descendants' : 'auto'}
+            importantForAccessibility={
+              selectedPlace ? 'no-hide-descendants' : 'auto'
+            }
           >
             <PanelHeader>
               <PanelCount>
@@ -2961,7 +3022,11 @@ export default function MapScreen() {
                   hitSlop={12}
                   onPress={handleBackToPlaceList}
                 >
-                  <ChevronLeft color={colors.text} size={20} strokeWidth={2.8} />
+                  <ChevronLeft
+                    color={colors.text}
+                    size={20}
+                    strokeWidth={2.8}
+                  />
                 </BackButton>
                 <PanelTitle numberOfLines={1}>{selectedPlace.name}</PanelTitle>
               </PanelHeader>
@@ -2999,7 +3064,9 @@ export default function MapScreen() {
                   icon={Share2}
                   size="sm"
                   variant="soft"
-                  accessibilityLabel={`${t('map.detail.share')} ${selectedPlace.name}`}
+                  accessibilityLabel={`${t('map.detail.share')} ${
+                    selectedPlace.name
+                  }`}
                   onPress={() => handleSharePlace(selectedPlace)}
                 />
               </DetailActionRow>
@@ -3045,7 +3112,9 @@ export default function MapScreen() {
                             }
                           >
                             <ShelterImage
-                              source={resolveImageSource(shelterImages[imageIndex])}
+                              source={resolveImageSource(
+                                shelterImages[imageIndex],
+                              )}
                               onError={() =>
                                 handleImageError(shelterImages[imageIndex])
                               }
@@ -3056,7 +3125,9 @@ export default function MapScreen() {
                                 <ImageNavButton
                                   $position="left"
                                   accessibilityRole="button"
-                                  accessibilityLabel={t('map.a11y.previousImage')}
+                                  accessibilityLabel={t(
+                                    'map.a11y.previousImage',
+                                  )}
                                   hitSlop={7}
                                   onPress={() =>
                                     handleChangeShelterImage(
@@ -3102,106 +3173,123 @@ export default function MapScreen() {
                         ) : (
                           <ShelterNoPhotoBanner typeLabel={shelterTypeLabel} />
                         )}
-                      <ShelterTitleRow>
-                        <ShelterName>{shelter.name}</ShelterName>
-                        <TypeChip>
-                          <TypeChipText>{shelterTypeLabel}</TypeChipText>
-                        </TypeChip>
-                      </ShelterTitleRow>
-                      <ShelterMetaRow>
-                        {typeof shelter.capacity === 'number' ? (
-                          <ShelterMetaIconText>
-                            <Users color={colors.textTertiary} size={14} strokeWidth={2.4} />
+                        <ShelterTitleRow>
+                          <ShelterName>{shelter.name}</ShelterName>
+                          <TypeChip>
+                            <TypeChipText>{shelterTypeLabel}</TypeChipText>
+                          </TypeChip>
+                        </ShelterTitleRow>
+                        <ShelterMetaRow>
+                          {typeof shelter.capacity === 'number' ? (
+                            <ShelterMetaIconText>
+                              <Users
+                                color={colors.textTertiary}
+                                size={14}
+                                strokeWidth={2.4}
+                              />
+                              <ShelterMetaText>
+                                {shelter.capacity.toLocaleString()}
+                              </ShelterMetaText>
+                            </ShelterMetaIconText>
+                          ) : null}
+                          {typeof shelter.area === 'number' ? (
+                            <ShelterMetaIconText>
+                              <Square
+                                color={colors.textTertiary}
+                                size={13}
+                                strokeWidth={2.4}
+                              />
+                              <ShelterMetaText>
+                                {shelter.area.toLocaleString()}㎡
+                              </ShelterMetaText>
+                            </ShelterMetaIconText>
+                          ) : null}
+                          {typeof shelter.capacity !== 'number' &&
+                          typeof shelter.area !== 'number' ? (
                             <ShelterMetaText>
-                              {shelter.capacity.toLocaleString()}
+                              {t('map.labels.noScaleInfo')}
                             </ShelterMetaText>
-                          </ShelterMetaIconText>
-                        ) : null}
-                        {typeof shelter.area === 'number' ? (
-                          <ShelterMetaIconText>
-                            <Square color={colors.textTertiary} size={13} strokeWidth={2.4} />
-                            <ShelterMetaText>
-                              {shelter.area.toLocaleString()}㎡
-                            </ShelterMetaText>
-                          </ShelterMetaIconText>
-                        ) : null}
-                        {typeof shelter.capacity !== 'number' &&
-                        typeof shelter.area !== 'number' ? (
-                          <ShelterMetaText>
-                            {t('map.labels.noScaleInfo')}
-                          </ShelterMetaText>
-                        ) : null}
-                      </ShelterMetaRow>
-                      {/* 기관명과 전화번호를 나눠 번호만 눌러서 걸 수 있게 한다. */}
-                      <ShelterContactRow>
-                        {shelter.managingAuthorityName ||
-                        !shelter.managingAuthorityTelNo ? (
+                          ) : null}
+                        </ShelterMetaRow>
+                        {/* 기관명과 전화번호를 나눠 번호만 눌러서 걸 수 있게 한다. */}
+                        <ShelterContactRow>
+                          {shelter.managingAuthorityName ||
+                          !shelter.managingAuthorityTelNo ? (
+                            <ShelterMeta>
+                              {shelter.managingAuthorityName ||
+                                t('map.labels.noManagingAuthority')}
+                            </ShelterMeta>
+                          ) : null}
+                          {shelter.managingAuthorityTelNo ? (
+                            getTelUrl(shelter.managingAuthorityTelNo) ? (
+                              <PhoneButton
+                                hitSlop={phoneHitSlop}
+                                accessibilityRole="button"
+                                accessibilityLabel={`${t('map.detail.call')} ${
+                                  shelter.managingAuthorityTelNo
+                                }`}
+                                onPress={() =>
+                                  handleCall(shelter.managingAuthorityTelNo)
+                                }
+                              >
+                                <Phone
+                                  color={colors.primary}
+                                  size={12}
+                                  strokeWidth={2.6}
+                                />
+                                <PhoneButtonText>
+                                  {shelter.managingAuthorityTelNo}
+                                </PhoneButtonText>
+                              </PhoneButton>
+                            ) : (
+                              <ShelterMeta>
+                                {shelter.managingAuthorityTelNo}
+                              </ShelterMeta>
+                            )
+                          ) : null}
+                        </ShelterContactRow>
+                        <ChipRow>
+                          {getAccessibilityChips(shelter).map(chip => (
+                            <AccessibilityChip
+                              key={`${shelter.shelterId}-${chip.key}`}
+                              label={t(chip.labelKey)}
+                              active={chip.active}
+                            />
+                          ))}
+                        </ChipRow>
+                        {shelter.etcFacilities?.trim() ? (
                           <ShelterMeta>
-                            {shelter.managingAuthorityName ||
-                              t('map.labels.noManagingAuthority')}
+                            {t('map.report.etcFacilities')}:{' '}
+                            {shelter.etcFacilities.trim()}
                           </ShelterMeta>
                         ) : null}
-                        {shelter.managingAuthorityTelNo ? (
-                          getTelUrl(shelter.managingAuthorityTelNo) ? (
-                            <PhoneButton
-                              hitSlop={phoneHitSlop}
-                              accessibilityRole="button"
-                              accessibilityLabel={`${t('map.detail.call')} ${
-                                shelter.managingAuthorityTelNo
-                              }`}
-                              onPress={() =>
-                                handleCall(shelter.managingAuthorityTelNo)
-                              }
-                            >
-                              <Phone color={colors.primary} size={12} strokeWidth={2.6} />
-                              <PhoneButtonText>
-                                {shelter.managingAuthorityTelNo}
-                              </PhoneButtonText>
-                            </PhoneButton>
-                          ) : (
-                            <ShelterMeta>{shelter.managingAuthorityTelNo}</ShelterMeta>
-                          )
-                        ) : null}
-                      </ShelterContactRow>
-                      <ChipRow>
-                        {getAccessibilityChips(shelter).map(chip => (
-                          <AccessibilityChip
-                            key={`${shelter.shelterId}-${chip.key}`}
-                            label={t(chip.labelKey)}
-                            active={chip.active}
+                        {/* 조사 완료면 서버가 400 으로 거절하므로 미리 막고, 비로그인이면 로그인으로 안내한다. */}
+                        {shelter.surveyStatus === 'INVESTIGATED' ? (
+                          <ReportDoneBadge>
+                            <ReportDoneBadgeText>
+                              {t('map.detail.investigated')}
+                            </ReportDoneBadgeText>
+                          </ReportDoneBadge>
+                        ) : user ? (
+                          <Button
+                            label={t('map.report.button')}
+                            icon={Camera}
+                            size="sm"
+                            variant="soft"
+                            style={reportButtonStyle}
+                            onPress={() => openReportModal(shelter)}
                           />
-                        ))}
-                      </ChipRow>
-                      {shelter.etcFacilities?.trim() ? (
-                        <ShelterMeta>
-                          {t('map.report.etcFacilities')}:{' '}
-                          {shelter.etcFacilities.trim()}
-                        </ShelterMeta>
-                      ) : null}
-                      {/* 조사 완료면 서버가 400 으로 거절하므로 미리 막고, 비로그인이면 로그인으로 안내한다. */}
-                      {shelter.surveyStatus === 'INVESTIGATED' ? (
-                        <ReportDoneBadge>
-                          <ReportDoneBadgeText>
-                            {t('map.detail.investigated')}
-                          </ReportDoneBadgeText>
-                        </ReportDoneBadge>
-                      ) : user ? (
-                        <Button
-                          label={t('map.report.button')}
-                          icon={Camera}
-                          size="sm"
-                          variant="soft"
-                          style={reportButtonStyle}
-                          onPress={() => openReportModal(shelter)}
-                        />
-                      ) : (
-                        <ReportLoginButton onPress={() => navigation.navigate('More')}>
-                          <ReportLoginButtonText>
-                            {t('map.detail.loginToReport')}
-                          </ReportLoginButtonText>
-                        </ReportLoginButton>
-                      )}
-                    </ShelterItem>
+                        ) : (
+                          <ReportLoginButton
+                            accessibilityRole="button"
+                            onPress={() => navigation.navigate('More')}
+                          >
+                            <ReportLoginButtonText>
+                              {t('map.detail.loginToReport')}
+                            </ReportLoginButtonText>
+                          </ReportLoginButton>
+                        )}
+                      </ShelterItem>
                     );
                   })
                 ) : (
@@ -3279,7 +3367,9 @@ export default function MapScreen() {
                 </AccessibilityLegendText>
               </AccessibilityLegendRow>
               <AccessibilityLegendRow>
-                <AccessibilityLegendDot $color={colors.a11yMatch.inaccessible} />
+                <AccessibilityLegendDot
+                  $color={colors.a11yMatch.inaccessible}
+                />
                 <AccessibilityLegendText>
                   {t('map.accessibilityInfo.red')}
                 </AccessibilityLegendText>
@@ -3369,7 +3459,9 @@ export default function MapScreen() {
                     <ReportToggle
                       $active={reportForm.accessibleToilet}
                       accessibilityRole="checkbox"
-                      accessibilityState={{ checked: reportForm.accessibleToilet }}
+                      accessibilityState={{
+                        checked: reportForm.accessibleToilet,
+                      }}
                       onPress={() =>
                         updateReportForm(
                           'accessibleToilet',

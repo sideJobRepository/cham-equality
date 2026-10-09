@@ -38,6 +38,8 @@ export function useFetchManuals(query?: string) {
         ignoreErrorRedirect: true,
         // 목록 자리에 오류와 다시 시도를 직접 보여주므로 공통 알림은 끈다.
         disableAlert: true,
+        // 목록 자리에 스피너를 직접 그리므로 공통 로딩 오버레이와 겹치지 않게 끈다.
+        disableLoading: true,
       },
     ).catch(() => {
       if (seq === requestSeqRef.current) setStatus('error');

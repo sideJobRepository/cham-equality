@@ -42,6 +42,8 @@ export const colors = {
     inaccessible: '#dc2626',
   },
   filter: { shelter: '#4aa199', accessibility: '#5088dc' },
+  // 위 필터색 위에 흰 글자를 올리면 대비가 3:1 남짓이라, 칠한 배경에 흰 글자를 얹는 곳(필터 시트 칩)은 4.5:1 이상인 진한 톤을 쓴다
+  filterStrong: { shelter: '#2b7a72', accessibility: '#3b6fc4' },
   // 웹 SweetAlert(.cham-alert) 색을 맞춘 값이라 다른 토큰과 합치지 않는다(오류·삭제만 앱 danger 를 따른다)
   dialog: { cancel: '#8a94a3', warning: '#f59e0b' },
 } as const;

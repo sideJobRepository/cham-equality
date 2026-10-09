@@ -51,7 +51,8 @@ export default function CurrentLocationBar({
 }
 
 const HeaderRow = styled.View`
-  min-height: 34px;
+  // 위치 버튼(44)이 나타날 때 행 높이가 바뀌어 상단이 흔들리지 않게 처음부터 버튼 높이에 맞춘다
+  min-height: ${size.touchMin}px;
   flex-direction: row;
   align-items: center;
   justify-content: space-between;

@@ -138,7 +138,11 @@ export default function MapFilterBar({
           <InfoChipText numberOfLines={1}>
             {t('map.accessibilityInfo.label')}
           </InfoChipText>
-          <CircleHelp color={colors.primaryPressed} size={17} strokeWidth={2.5} />
+          <CircleHelp
+            color={colors.primaryPressed}
+            size={17}
+            strokeWidth={2.5}
+          />
         </InfoChip>
       ) : null}
 
@@ -158,7 +162,9 @@ export default function MapFilterBar({
               onPress={item.onRemove}
             >
               <SummaryChipBody $color={item.color}>
-                <SummaryChipText numberOfLines={1}>{item.label}</SummaryChipText>
+                <SummaryChipText numberOfLines={1}>
+                  {item.label}
+                </SummaryChipText>
                 <X color={colors.textOnColor} size={14} strokeWidth={2.8} />
               </SummaryChipBody>
             </SummaryChip>
@@ -215,7 +221,7 @@ export default function MapFilterBar({
                       accessibilityRole="checkbox"
                       accessibilityState={{ checked: selected }}
                       $selected={selected}
-                      $selectedColor={SHELTER_SELECTED_COLOR}
+                      $selectedColor={colors.filterStrong.shelter}
                       onPress={() =>
                         setDraftShelterTypes(prev =>
                           toggleWithAll(prev, item, SHELTER_ALL_LABEL),
@@ -245,7 +251,7 @@ export default function MapFilterBar({
                       accessibilityRole="checkbox"
                       accessibilityState={{ checked: selected }}
                       $selected={selected}
-                      $selectedColor={ACCESSIBILITY_SELECTED_COLOR}
+                      $selectedColor={colors.filterStrong.accessibility}
                       onPress={() =>
                         setDraftAccessibility(prev =>
                           toggleWithAll(prev, item, ACCESSIBILITY_ALL_LABEL),
@@ -298,12 +304,15 @@ const FilterButton = styled.Pressable<{ $active: boolean }>`
   padding: 0 ${spacing.lg}px;
   border-radius: ${radius.full}px;
   border-width: 1px;
-  border-color: ${({ $active }) => ($active ? colors.brand : colors.borderStrong)};
-  background-color: ${({ $active }) => ($active ? colors.brand : colors.surface)};
+  border-color: ${({ $active }) =>
+    $active ? colors.primary : colors.borderStrong};
+  background-color: ${({ $active }) =>
+    $active ? colors.primary : colors.surface};
 `;
 
 const FilterButtonText = styled.Text<{ $active: boolean }>`
-  color: ${({ $active }) => ($active ? colors.textOnColor : colors.textSecondary)};
+  color: ${({ $active }) =>
+    $active ? colors.textOnColor : colors.textSecondary};
   font-size: ${fontSize.label}px;
   font-weight: ${fontWeight.heavy};
 `;
@@ -319,7 +328,7 @@ const CountBadge = styled.View`
 `;
 
 const CountBadgeText = styled.Text`
-  color: ${colors.brand};
+  color: ${colors.primary};
   font-size: ${fontSize.caption}px;
   font-weight: ${fontWeight.heavy};
 `;
@@ -383,8 +392,8 @@ const Overlay = styled.Pressable`
 
 const Sheet = styled.Pressable<{ $bottom: number; $maxHeight: number }>`
   max-height: ${({ $maxHeight }) => $maxHeight}px;
-  padding: ${spacing.md}px ${spacing.xl}px ${({ $bottom }) =>
-      $bottom + spacing.xl}px;
+  padding: ${spacing.md}px ${spacing.xl}px
+    ${({ $bottom }) => $bottom + spacing.xl}px;
   border-top-left-radius: ${radius.lg}px;
   border-top-right-radius: ${radius.lg}px;
   background-color: ${colors.surface};
@@ -445,7 +454,8 @@ const SheetChip = styled.Pressable<{
 `;
 
 const SheetChipText = styled.Text<{ $selected: boolean }>`
-  color: ${({ $selected }) => ($selected ? colors.textOnColor : colors.textSecondary)};
+  color: ${({ $selected }) =>
+    $selected ? colors.textOnColor : colors.textSecondary};
   font-size: ${fontSize.label}px;
   font-weight: ${fontWeight.bold};
 `;

@@ -87,7 +87,7 @@ export default function LanguageButton() {
                 >
                   <OptionText $selected={selected}>{item.label}</OptionText>
                   {selected ? (
-                    <Check color={colors.brand} size={20} strokeWidth={2.6} />
+                    <Check color={colors.primary} size={20} strokeWidth={2.6} />
                   ) : null}
                 </Option>
               );
@@ -124,8 +124,8 @@ const Overlay = styled.Pressable`
 `;
 
 const Sheet = styled.Pressable<{ $bottom: number }>`
-  padding: ${spacing.md}px ${spacing.xl}px ${({ $bottom }) =>
-      $bottom + spacing.xl}px;
+  padding: ${spacing.md}px ${spacing.xl}px
+    ${({ $bottom }) => $bottom + spacing.xl}px;
   border-top-left-radius: ${radius.lg}px;
   border-top-right-radius: ${radius.lg}px;
   background-color: ${colors.surface};
@@ -158,7 +158,7 @@ const Option = styled.Pressable<{ $selected: boolean }>`
 `;
 
 const OptionText = styled.Text<{ $selected: boolean }>`
-  color: ${({ $selected }) => ($selected ? colors.brand : colors.text)};
+  color: ${({ $selected }) => ($selected ? colors.primary : colors.text)};
   font-size: ${fontSize.bodyLg}px;
   line-height: ${lineHeight.bodyLg}px;
   font-weight: ${({ $selected }) =>

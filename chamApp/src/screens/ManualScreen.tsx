@@ -2,7 +2,13 @@ import { useMemo, useState } from 'react';
 import { Modal, type ImageSourcePropType } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
-import { ChevronLeft, ChevronRight, CloudOff, Search, X } from 'lucide-react-native';
+import {
+  ChevronLeft,
+  ChevronRight,
+  CloudOff,
+  Search,
+  X,
+} from 'lucide-react-native';
 import { WebView } from 'react-native-webview';
 import { useTranslation } from 'react-i18next';
 import {
@@ -197,6 +203,7 @@ export default function ManualScreen() {
           pagedManuals.map(manual => (
             <ManualRow
               key={manual.id}
+              accessibilityRole="button"
               onPress={() => handlePressManual(manual.id)}
             >
               <ManualTitle numberOfLines={1} ellipsizeMode="tail">
@@ -243,7 +250,9 @@ export default function ManualScreen() {
           onPress={handleNextPage}
         >
           <ChevronRight
-            color={currentPage === totalPages ? colors.borderStrong : colors.text}
+            color={
+              currentPage === totalPages ? colors.borderStrong : colors.text
+            }
             size={16}
             strokeWidth={2.6}
           />
@@ -271,12 +280,19 @@ export default function ManualScreen() {
               <ModalDate>
                 {formatManualDate(manualDetail?.createDate)}
               </ModalDate>
-              <MapShortcutButton onPress={handleGoToMap}>
+              <MapShortcutButton
+                accessibilityRole="button"
+                onPress={handleGoToMap}
+              >
                 <MapShortcutText numberOfLines={1}>
                   {t('manual.goToMap')}
                 </MapShortcutText>
                 <MapShortcutIcon>
-                  <ChevronRight color={colors.textOnColor} size={16} strokeWidth={2.8} />
+                  <ChevronRight
+                    color={colors.textOnColor}
+                    size={16}
+                    strokeWidth={2.8}
+                  />
                 </MapShortcutIcon>
               </MapShortcutButton>
             </ModalMetaRow>

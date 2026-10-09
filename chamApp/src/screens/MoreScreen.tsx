@@ -495,6 +495,7 @@ export default function MoreScreen() {
             {citizenServices.map(service => (
               <ServiceButton
                 key={service.url}
+                accessibilityRole="link"
                 onPress={() => Linking.openURL(service.url)}
               >
                 <ServiceLabel>
@@ -650,6 +651,7 @@ export default function MoreScreen() {
                 reports.map(report => (
                   <ReportListButton
                     key={String(report.id)}
+                    accessibilityRole="button"
                     onPress={() => openReportDetail(report.id)}
                   >
                     <ReportListIconBox>
@@ -701,16 +703,16 @@ export default function MoreScreen() {
             </LoginBlock>
           ) : (
             <LoginBlock>
-              <KakaoButton onPress={onKakao}>
+              <KakaoButton accessibilityRole="button" onPress={onKakao}>
                 <LoginIcon source={kakaoIcon} resizeMode="contain" />
                 <KakaoText>{t('auth.kakao')}</KakaoText>
               </KakaoButton>
-              <NaverButton onPress={onNaver}>
+              <NaverButton accessibilityRole="button" onPress={onNaver}>
                 <NaverIconText>N</NaverIconText>
                 <NaverText>{t('auth.naver')}</NaverText>
               </NaverButton>
               {Platform.OS === 'ios' ? (
-                <AppleButton onPress={onApple}>
+                <AppleButton accessibilityRole="button" onPress={onApple}>
                   <AppleLoginIcon source={appleIcon} resizeMode="contain" />
                   <AppleText>{t('auth.apple')}</AppleText>
                 </AppleButton>
