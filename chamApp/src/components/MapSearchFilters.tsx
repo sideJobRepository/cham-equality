@@ -12,6 +12,7 @@ import {
   shelterTypeOptions,
   useMapFilterStore,
 } from '../store/mapFilters.ts';
+import { colors } from '../theme/index.ts';
 
 interface MapSearchFiltersProps {
   horizontalPadding?: number;
@@ -81,7 +82,7 @@ export default function MapSearchFilters({
               hitSlop={8}
             >
               <InfoChipText>{t('map.accessibilityInfo.label')}</InfoChipText>
-              <CircleHelp color="#1d4ed8" size={17} strokeWidth={2.5} />
+              <CircleHelp color={colors.primaryPressed} size={17} strokeWidth={2.5} />
             </InfoChip>
           ) : null}
           <AccessibilityFilterRow horizontal showsHorizontalScrollIndicator={false}>
@@ -144,7 +145,7 @@ const FilterChip = styled.Pressable<{
   padding: 10px 14px;
   border-radius: 999px;
   background-color: ${({ $selected, $selectedColor }) =>
-    $selected ? $selectedColor : '#ffffff'};
+    $selected ? $selectedColor : colors.surface};
 `;
 
 const InfoChip = styled.Pressable`
@@ -155,18 +156,18 @@ const InfoChip = styled.Pressable`
   padding: 10px 14px;
   border-radius: 999px;
   border-width: 1px;
-  border-color: #bfdbfe;
-  background-color: #eff6ff;
+  border-color: ${colors.primaryBorder};
+  background-color: ${colors.primarySoft};
 `;
 
 const InfoChipText = styled.Text`
-  color: #1d4ed8;
+  color: ${colors.primaryPressed};
   font-size: 13px;
   font-weight: 700;
 `;
 
 const FilterChipText = styled.Text<{ $selected: boolean }>`
-  color: ${({ $selected }) => ($selected ? '#ffffff' : '#374151')};
+  color: ${({ $selected }) => ($selected ? colors.textOnColor : colors.textSecondary)};
   font-size: 13px;
   font-weight: 600;
 `;

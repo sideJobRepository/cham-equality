@@ -6,6 +6,7 @@ import AppNavigator from './src/navigation/AppNavigator';
 import SplashOverlay from './src/components/SplashOverlay';
 import { refreshAccessToken } from './src/lib/axiosInstance';
 import { DialogProvider } from './src/utils/dialog';
+import { colors } from './src/theme';
 import { useInAppUpdate } from './src/hooks/useInAppUpdate';
 import {
   restorePushPreferences,
@@ -41,7 +42,7 @@ function App() {
 
   return (
     <SafeAreaProvider>
-      <StatusBar backgroundColor="#ffffff" barStyle="dark-content" />
+      <StatusBar backgroundColor={colors.surface} barStyle="dark-content" />
       <DialogProvider>
         <InAppUpdateChecker />
         <PushRegistrar />
@@ -71,5 +72,5 @@ export default App;
 
 const SessionLoading = styled.View`
   flex: 1;
-  background: #ffffff;
+  background: ${colors.surface};
 `;

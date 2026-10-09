@@ -2,6 +2,7 @@ import styled from 'styled-components/native';
 import { useTranslation } from 'react-i18next';
 import { LocateFixed } from 'lucide-react-native';
 import { useLocationStore } from '../store/location.ts';
+import { colors } from '../theme/index.ts';
 
 interface CurrentLocationBarProps {
   actionLabel?: string;
@@ -32,7 +33,7 @@ export default function CurrentLocationBar({
     <HeaderRow>
       <LocationLabel>
         <LocationIconBox>
-          <LocateFixed color="#2563eb" size={15} strokeWidth={2.6} />
+          <LocateFixed color={colors.primary} size={15} strokeWidth={2.6} />
         </LocationIconBox>
         <Description numberOfLines={1}>{locationStatusText}</Description>
       </LocationLabel>
@@ -68,13 +69,13 @@ const LocationIconBox = styled.View`
   align-items: center;
   justify-content: center;
   border-radius: 13px;
-  background-color: #eff6ff;
+  background-color: ${colors.primarySoft};
 `;
 
 const Description = styled.Text`
   flex: 1;
   min-width: 0;
-  color: #6b7280;
+  color: ${colors.textMuted};
   font-size: 12px;
 `;
 
@@ -82,11 +83,11 @@ const LocationButton = styled.Pressable`
   flex-shrink: 0;
   padding: 8px 10px;
   border-radius: 999px;
-  background-color: #ef4444;
+  background-color: ${colors.dangerBright};
 `;
 
 const LocationButtonText = styled.Text`
-  color: #ffffff;
+  color: ${colors.textOnColor};
   font-size: 12px;
   font-weight: 800;
 `;
