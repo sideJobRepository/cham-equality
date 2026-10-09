@@ -223,3 +223,5 @@ jobs:
           releaseFiles: chamApp/android/app/build/outputs/bundle/release/app-release.aab
           tracks: alpha
           status: completed
+          # 출시 노트. 큰 업데이트 때 chamApp/distribution/whatsnew/whatsnew-ko-KR 만 고치면 된다(프로덕션 승격 시 같이 넘어감).
+          whatsNewDirectory: chamApp/distribution/whatsnew

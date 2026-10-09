@@ -1,0 +1,96 @@
+name: promote-production
+
+# 비공개 테스트(alpha)에서 확인한 빌드를 프로덕션으로 올린다. 다시 빌드하지 않아 테스트한 것과 출시하는 것이 같다.
+# GitHub Actions 화면에서 직접 실행한다(main 푸시로는 돌지 않음). 서비스 계정에 Play Console '프로덕션 출시' 권한이 필요하다.
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'promote=alpha→프로덕션 승격 / rollout=비율 변경 / complete=100% 출시 / halt=출시 중단'
+        type: choice
+        options:
+          - promote
+          - rollout
+          - complete
+          - halt
+        default: promote
+      rollout:
+        description: '받을 사용자 비율 0~1 (promote·rollout에 사용, 예: 0.2 = 20%)'
+        default: '0.2'
+      versionCode:
+        description: '대상 versionCode (비우면 alpha/프로덕션 최신)'
+        required: false
+
+concurrency:
+  group: promote-production
+  cancel-in-progress: false
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    env:
+      PACKAGE_NAME: kr.or.cham.equality
+      ACTION: ${{ inputs.action }}
+      ROLLOUT: ${{ inputs.rollout }}
+      VERSION_CODE: ${{ inputs.versionCode }}
+
+    steps:
+      - name: 입력값 검증
+        run: |
+          if [ "$ACTION" = "promote" ] || [ "$ACTION" = "rollout" ]; then
+            awk -v r="$ROLLOUT" 'BEGIN { if (!(r > 0 && r <= 1)) { print "rollout 은 0 초과 1 이하여야 합니다: " r; exit 1 } }'
+          fi
+          if [ -n "$VERSION_CODE" ] && ! [[ "$VERSION_CODE" =~ ^[0-9]+$ ]]; then
+            echo "versionCode 는 숫자여야 합니다: $VERSION_CODE"; exit 1
+          fi
+
+      - name: Ruby 설치
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.3'
+
+      - name: fastlane 설치
+        run: gem install fastlane --no-document
+
+      - name: 서비스 계정 키 준비
+        env:
+          PLAY_SA: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+        run: printf '%s' "$PLAY_SA" > "$RUNNER_TEMP/play-sa.json"
+
+      - name: Play 트랙 변경
+        run: |
+          # 업로드는 하지 않고 기존 릴리스만 옮기거나 상태를 바꾼다.
+          COMMON="package_name:$PACKAGE_NAME json_key:$RUNNER_TEMP/play-sa.json skip_upload_apk:true skip_upload_aab:true skip_upload_metadata:true skip_upload_changelogs:true skip_upload_images:true skip_upload_screenshots:true"
+          VERSION_ARG=""
+          if [ -n "$VERSION_CODE" ]; then VERSION_ARG="version_code:$VERSION_CODE"; fi
+
+          case "$ACTION" in
+            promote)
+              # 승격 시 alpha 릴리스의 출시 노트도 함께 넘어간다.
+              fastlane run supply $COMMON track:alpha track_promote_to:production rollout:"$ROLLOUT" release_status:inProgress $VERSION_ARG
+              ;;
+            rollout)
+              fastlane run supply $COMMON track:production rollout:"$ROLLOUT" release_status:inProgress $VERSION_ARG
+              ;;
+            complete)
+              fastlane run supply $COMMON track:production release_status:completed $VERSION_ARG
+              ;;
+            halt)
+              fastlane run supply $COMMON track:production release_status:halted $VERSION_ARG
+              ;;
+          esac
+
+      - name: 결과 요약
+        if: always()
+        run: |
+          {
+            echo "### 프로덕션 트랙 변경"
+            echo "- 동작: \`$ACTION\`"
+            echo "- 비율: \`$ROLLOUT\` (promote·rollout 에만 적용)"
+            echo "- versionCode: \`${VERSION_CODE:-최신}\`"
+            echo "- 결과는 Play Console > 테스트 및 출시 > 프로덕션 에서 확인"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: 키 파일 삭제
+        if: always()
+        run: rm -f "$RUNNER_TEMP/play-sa.json"
