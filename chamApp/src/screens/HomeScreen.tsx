@@ -8,6 +8,7 @@ import {
   Clock,
   Info,
   MapPin,
+  ShieldCheck,
   Siren,
   Square,
   TriangleAlert,
@@ -21,7 +22,6 @@ import CurrentLocationBar from '../components/CurrentLocationBar.tsx';
 import MapSearchFilters from '../components/MapSearchFilters.tsx';
 import FullscreenImageViewer from '../components/ui/FullscreenImageViewer.tsx';
 import { useCurrentLocation } from '../hooks/useCurrentLocation.ts';
-import SpeakerIcon from '../assets/icons/SpeakerIcon';
 import { useFetchSMS } from '../services/sms.service.ts';
 import { useFetchNearestShelter } from '../services/map.service.ts';
 import {
@@ -68,6 +68,11 @@ import {
   LanguageButton,
   LanguageText,
   MessageBox,
+  MessageStepBar,
+  MessageTextBox,
+  MessageMetaRow,
+  MessageStepLabel,
+  MessageAgoText,
   MessageTitle,
   MessageBox2,
   TopBox,
@@ -246,6 +251,13 @@ export default function HomeScreen() {
   const selectedSMS = smsData[selectedSMSIndex];
   const smsStepKey = toSMSStepKey(selectedSMS?.emergencyStep);
   const smsStep = SMS_STEPS[smsStepKey];
+  const latestSMS = smsData[0]?.content ? smsData[0] : undefined;
+  const latestStepKey = toSMSStepKey(latestSMS?.emergencyStep);
+  const latestStep = SMS_STEPS[latestStepKey];
+  const latestStepLabel = t(`home.smsStep.${latestStepKey}`);
+  const latestAgo = latestSMS?.issuedAt
+    ? formatSMSAgo(latestSMS.issuedAt, t)
+    : '';
   const nearestShelterImages = nearestShelter
     ? getNearestShelterImageSources(nearestShelter)
     : [];
@@ -311,19 +323,57 @@ export default function HomeScreen() {
             ))}
           </LanguageRow>
 
-          <MessageBox
-            disabled={!smsData[0]?.content}
-            onPress={() => {
-              if (!smsData[0]?.content) return;
-              setSelectedSMSIndex(0);
-              setIsSMSModalVisible(true);
-            }}
-          >
-            <SpeakerIcon size={32} />
-            <MessageTitle numberOfLines={1} ellipsizeMode="tail">
-              {smsData[0]?.content ?? t('home.noActiveDisaster')}
-            </MessageTitle>
-          </MessageBox>
+          {latestSMS ? (
+            <MessageBox
+              accessibilityRole="button"
+              accessibilityLabel={`${latestStepLabel}, ${latestSMS.content}`}
+              accessibilityHint={latestAgo || undefined}
+              onPress={() => {
+                setSelectedSMSIndex(0);
+                setIsSMSModalVisible(true);
+              }}
+            >
+              <MessageStepBar $color={latestStep.color} />
+              <latestStep.Icon
+                color={latestStep.color}
+                size={24}
+                strokeWidth={2.4}
+              />
+              <MessageTextBox>
+                <MessageMetaRow>
+                  <MessageStepLabel $color={latestStep.color}>
+                    {latestStepLabel}
+                  </MessageStepLabel>
+                  {latestAgo ? <MessageAgoText>{latestAgo}</MessageAgoText> : null}
+                </MessageMetaRow>
+                {/* 위급·긴급은 한 줄로 자르면 핵심 지시가 잘려서 두 줄까지 보여준다 */}
+                <MessageTitle
+                  numberOfLines={
+                    latestStepKey === 'CRITICAL' || latestStepKey === 'EMERGENCY'
+                      ? 2
+                      : 1
+                  }
+                  ellipsizeMode="tail"
+                >
+                  {latestSMS.content}
+                </MessageTitle>
+              </MessageTextBox>
+            </MessageBox>
+          ) : (
+            <MessageBox
+              disabled
+              accessibilityRole="text"
+              accessibilityLabel={t('home.noActiveDisaster')}
+            >
+              <MessageStepBar $color={colors.success} />
+              <ShieldCheck color={colors.success} size={24} strokeWidth={2.4} />
+              <MessageTextBox>
+                <MessageTitle numberOfLines={2} ellipsizeMode="tail">
+                  {t('home.noActiveDisaster')}
+                </MessageTitle>
+              </MessageTextBox>
+            </MessageBox>
+          )}
           <MessageBox2>
             <TopBox>
               <MessageTitle2 numberOfLines={1} ellipsizeMode="tail">

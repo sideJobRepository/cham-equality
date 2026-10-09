@@ -4,7 +4,15 @@ import {
   ACCESSIBILITY_SELECTED_COLOR,
   SHELTER_SELECTED_COLOR,
 } from '../store/mapFilters.ts';
-import { colors } from '../theme/index.ts';
+import {
+  colors,
+  fontSize,
+  fontWeight,
+  lineHeight,
+  radius,
+  size,
+  spacing,
+} from '../theme/index.ts';
 
 export const Screen = styled(SafeAreaView)`
   flex: 1;
@@ -179,19 +187,59 @@ export const LanguageText = styled.Text<{ $active: boolean }>`
 `;
 
 export const MessageBox = styled.Pressable`
-  display: flex;
   flex-direction: row;
-  gap: 12px;
   align-items: center;
-  padding: 12px 0;
+  gap: ${spacing.mdPlus}px;
   width: 100%;
+  min-height: ${size.touchMin}px;
+  margin-top: ${spacing.md}px;
+  padding-right: ${spacing.lg}px;
+  border-width: 1px;
+  border-color: ${colors.border};
+  border-radius: ${radius.sm}px;
+  background-color: ${colors.surface};
+  overflow: hidden;
+`;
+
+// 모달 헤더와 같은 단계색. 색만으로 구분되지 않게 옆에 단계 라벨을 같이 둔다
+export const MessageStepBar = styled.View<{ $color: string }>`
+  width: 4px;
+  align-self: stretch;
+  background-color: ${({ $color }) => $color};
+`;
+
+export const MessageTextBox = styled.View`
+  flex: 1;
+  gap: ${spacing.xxs}px;
+  padding: ${spacing.mdPlus}px 0;
+`;
+
+export const MessageMetaRow = styled.View`
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: ${spacing.sm}px;
+`;
+
+export const MessageStepLabel = styled.Text<{ $color: string }>`
+  color: ${({ $color }) => $color};
+  font-size: ${fontSize.label}px;
+  line-height: ${lineHeight.label}px;
+  font-weight: ${fontWeight.heavy};
+`;
+
+export const MessageAgoText = styled.Text`
+  color: ${colors.textMuted};
+  font-size: ${fontSize.label}px;
+  line-height: ${lineHeight.label}px;
+  font-weight: ${fontWeight.medium};
 `;
 
 export const MessageTitle = styled.Text`
-  flex: 1;
-  color: #999999;
-  font-size: 16px;
-  font-weight: 700;
+  color: ${colors.text};
+  font-size: ${fontSize.bodyLg}px;
+  line-height: ${lineHeight.bodyLg}px;
+  font-weight: ${fontWeight.bold};
 `;
 
 export const MessageBox2 = styled.View`
