@@ -36,13 +36,11 @@ import {
   ChevronRight,
   ChevronUp,
   Camera,
-  ImagePlus,
   LocateFixed,
   Minus,
   Navigation,
   Phone,
   Plus,
-  Send,
   Share2,
   Square,
   Trash2,
@@ -57,6 +55,9 @@ import { useTranslation } from 'react-i18next';
 import i18nInstance from '../i18n';
 import CurrentLocationBar from '../components/CurrentLocationBar.tsx';
 import MapSearchFilters from '../components/MapSearchFilters.tsx';
+import FullscreenImageViewer from '../components/ui/FullscreenImageViewer.tsx';
+import ImageAttachButton from '../components/ui/ImageAttachButton.tsx';
+import SubmitButton from '../components/ui/SubmitButton.tsx';
 import { loadCurrentLocation } from '../hooks/useCurrentLocation.ts';
 import { fetchPlaceBoundary, useFetchMap } from '../services/map.service.ts';
 import type { ShelterImageCategory } from '../services/report.service.ts';
@@ -155,12 +156,6 @@ import {
   ImageNavButton,
   ImageCounter,
   ImageCounterText,
-  ImageModalOverlay,
-  ImageModalContent,
-  ImageModalImage,
-  ImageCloseButton,
-  ModalImageNavButton,
-  ModalImageCounter,
   ShelterTitleRow,
   ShelterName,
   ShelterMetaRow,
@@ -210,8 +205,6 @@ import {
   ReportToggleGrid,
   ReportToggle,
   ReportToggleText,
-  AddImageButton,
-  AddImageButtonText,
   ReportImageItem,
   ReportImagePreview,
   ReportImageBody,
@@ -222,8 +215,6 @@ import {
   ReportCategoryChip,
   ReportCategoryText,
   ReportImageDescriptionInput,
-  ReportSubmitButton,
-  ReportSubmitText,
   EmptyList,
   EmptyPanelText,
 } from './MapScreen.styles.ts';
@@ -3428,12 +3419,10 @@ export default function MapScreen() {
 
                 <ReportField>
                   <ReportLabel>{t('map.report.images')}</ReportLabel>
-                  <AddImageButton onPress={addReportImages}>
-                    <ImagePlus color={colors.primary} size={16} strokeWidth={2.6} />
-                    <AddImageButtonText>
-                      {t('map.report.addImage')}
-                    </AddImageButtonText>
-                  </AddImageButton>
+                  <ImageAttachButton
+                    label={t('map.report.addImage')}
+                    onPress={addReportImages}
+                  />
 
                   {reportForm.images.map(image => (
                     <ReportImageItem key={image.id}>
@@ -3511,110 +3500,22 @@ export default function MapScreen() {
                 </ReportEtcField>
               </ReportModalScroll>
 
-              <ReportSubmitButton
-                disabled={isReportSubmitting}
+              <SubmitButton
+                label={t('map.report.submit')}
+                loading={isReportSubmitting}
                 onPress={submitShelterReport}
-              >
-                {isReportSubmitting ? (
-                  <ActivityIndicator color={colors.textOnColor} />
-                ) : (
-                  <>
-                    <Send color={colors.textOnColor} size={16} strokeWidth={2.6} />
-                    <ReportSubmitText>
-                      {t('map.report.submit')}
-                    </ReportSubmitText>
-                  </>
-                )}
-              </ReportSubmitButton>
+              />
             </ReportModalCard>
           </KeyboardAvoidingView>
         </ReportModalOverlay>
       </Modal>
 
-      <Modal
-        animationType="fade"
-        transparent
-        visible={!!imageModal}
-        onRequestClose={() => setImageModal(null)}
-      >
-        <ImageModalOverlay onPress={() => setImageModal(null)}>
-          <ImageModalContent pointerEvents="box-none">
-            {imageModal ? (
-              <>
-                <ImageModalImage
-                  source={resolveImageSource(
-                    imageModal.images[imageModal.index],
-                  )}
-                  onError={() =>
-                    handleImageError(imageModal.images[imageModal.index])
-                  }
-                  resizeMode="contain"
-                />
-                <ImageCloseButton
-                  accessibilityRole="button"
-                  accessibilityLabel={t('common.close')}
-                  onPress={() => setImageModal(null)}
-                >
-                  <X color={colors.textOnColor} size={24} strokeWidth={2.8} />
-                </ImageCloseButton>
-                {imageModal.images.length > 1 ? (
-                  <>
-                    <ModalImageNavButton
-                      $position="left"
-                      accessibilityRole="button"
-                      accessibilityLabel={t('map.a11y.previousImage')}
-                      onPress={() =>
-                        setImageModal(current =>
-                          current
-                            ? {
-                                ...current,
-                                index:
-                                  (current.index - 1 + current.images.length) %
-                                  current.images.length,
-                              }
-                            : current,
-                        )
-                      }
-                    >
-                      <ChevronLeft
-                        color={colors.textOnColor}
-                        size={26}
-                        strokeWidth={2.8}
-                      />
-                    </ModalImageNavButton>
-                    <ModalImageNavButton
-                      $position="right"
-                      accessibilityRole="button"
-                      accessibilityLabel={t('map.a11y.nextImage')}
-                      onPress={() =>
-                        setImageModal(current =>
-                          current
-                            ? {
-                                ...current,
-                                index: (current.index + 1) % current.images.length,
-                              }
-                            : current,
-                        )
-                      }
-                    >
-                      <ChevronRight
-                        color={colors.textOnColor}
-                        size={26}
-                        strokeWidth={2.8}
-                      />
-                    </ModalImageNavButton>
-                    <ModalImageCounter>
-                      <ImageCounterText>
-                        {imageModal.index + 1}/{imageModal.images.length}
-                      </ImageCounterText>
-                    </ModalImageCounter>
-                  </>
-                ) : null}
-              </>
-            ) : null}
-          </ImageModalContent>
-        </ImageModalOverlay>
-      </Modal>
+      <FullscreenImageViewer
+        value={imageModal}
+        onChange={setImageModal}
+        resolveSource={resolveImageSource}
+        onImageError={handleImageError}
+      />
     </Screen>
   );
 }

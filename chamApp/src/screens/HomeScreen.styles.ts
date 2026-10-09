@@ -82,61 +82,6 @@ export const ImageCounterText = styled.Text`
   font-weight: 800;
 `;
 
-export const ImageModalOverlay = styled.Pressable`
-  flex: 1;
-  align-items: center;
-  justify-content: center;
-  background-color: ${colors.imageViewerBackdrop};
-`;
-
-export const ImageModalContent = styled.Pressable`
-  width: 100%;
-  height: 100%;
-  align-items: center;
-  justify-content: center;
-`;
-
-export const ImageModalImage = styled.Image`
-  width: 100%;
-  height: 100%;
-`;
-
-export const ImageCloseButton = styled.Pressable`
-  position: absolute;
-  top: 46px;
-  right: 16px;
-  width: 44px;
-  height: 44px;
-  border-radius: 999px;
-  align-items: center;
-  justify-content: center;
-  background-color: rgba(17, 24, 39, 0.68);
-`;
-
-export const ModalImageNavButton = styled.Pressable<{
-  $position: 'left' | 'right';
-}>`
-  position: absolute;
-  top: 50%;
-  ${({ $position }) => `${$position}: 16px;`}
-  width: 44px;
-  height: 44px;
-  margin-top: -22px;
-  border-radius: 999px;
-  align-items: center;
-  justify-content: center;
-  background-color: ${colors.imageViewerControl};
-`;
-
-export const ModalImageCounter = styled.View`
-  position: absolute;
-  right: 16px;
-  bottom: 32px;
-  padding: 5px 10px;
-  border-radius: 999px;
-  background-color: rgba(17, 24, 39, 0.72);
-`;
-
 export const ShelterTitleRow = styled.View`
   flex-direction: row;
   flex-wrap: wrap;

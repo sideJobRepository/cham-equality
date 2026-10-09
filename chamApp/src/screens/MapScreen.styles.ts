@@ -503,61 +503,6 @@ export const ImageCounterText = styled.Text`
   font-weight: 800;
 `;
 
-export const ImageModalOverlay = styled.Pressable`
-  flex: 1;
-  align-items: center;
-  justify-content: center;
-  background-color: ${colors.imageViewerBackdrop};
-`;
-
-export const ImageModalContent = styled.Pressable`
-  width: 100%;
-  height: 100%;
-  align-items: center;
-  justify-content: center;
-`;
-
-export const ImageModalImage = styled.Image`
-  width: 100%;
-  height: 100%;
-`;
-
-export const ImageCloseButton = styled.Pressable`
-  position: absolute;
-  top: 46px;
-  right: 16px;
-  width: 44px;
-  height: 44px;
-  border-radius: 999px;
-  align-items: center;
-  justify-content: center;
-  background-color: rgba(17, 24, 39, 0.68);
-`;
-
-export const ModalImageNavButton = styled.Pressable<{
-  $position: 'left' | 'right';
-}>`
-  position: absolute;
-  top: 50%;
-  ${({ $position }) => `${$position}: 16px;`}
-  width: 44px;
-  height: 44px;
-  margin-top: -22px;
-  border-radius: 999px;
-  align-items: center;
-  justify-content: center;
-  background-color: ${colors.imageViewerControl};
-`;
-
-export const ModalImageCounter = styled.View`
-  position: absolute;
-  right: 16px;
-  bottom: 32px;
-  padding: 5px 10px;
-  border-radius: 999px;
-  background-color: rgba(17, 24, 39, 0.72);
-`;
-
 export const ShelterTitleRow = styled.View`
   flex-direction: row;
   flex-wrap: wrap;
@@ -936,24 +881,6 @@ export const ReportToggleText = styled.Text<{ $active: boolean }>`
   font-weight: 800;
 `;
 
-export const AddImageButton = styled.Pressable`
-  min-height: 40px;
-  border-radius: 10px;
-  align-items: center;
-  justify-content: center;
-  flex-direction: row;
-  gap: 6px;
-  background-color: ${colors.primarySoft};
-  border-width: 1px;
-  border-color: ${colors.primaryBorder};
-`;
-
-export const AddImageButtonText = styled.Text`
-  color: ${colors.primary};
-  font-size: 13px;
-  font-weight: 800;
-`;
-
 export const ReportImageItem = styled.View`
   flex-direction: row;
   gap: 10px;
@@ -1033,22 +960,6 @@ export const ReportImageDescriptionInput = styled.TextInput`
   background-color: ${colors.surface};
   border-width: 1px;
   border-color: ${colors.border};
-`;
-
-export const ReportSubmitButton = styled.Pressable`
-  min-height: 46px;
-  border-radius: 12px;
-  align-items: center;
-  justify-content: center;
-  flex-direction: row;
-  gap: 7px;
-  background-color: ${colors.primary};
-`;
-
-export const ReportSubmitText = styled.Text`
-  color: ${colors.textOnColor};
-  font-size: 14px;
-  font-weight: 800;
 `;
 
 export const EmptyList = styled.View`

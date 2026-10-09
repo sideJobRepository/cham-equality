@@ -19,6 +19,7 @@ import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import CurrentLocationBar from '../components/CurrentLocationBar.tsx';
 import MapSearchFilters from '../components/MapSearchFilters.tsx';
+import FullscreenImageViewer from '../components/ui/FullscreenImageViewer.tsx';
 import { useCurrentLocation } from '../hooks/useCurrentLocation.ts';
 import SpeakerIcon from '../assets/icons/SpeakerIcon';
 import { useFetchSMS } from '../services/sms.service.ts';
@@ -52,12 +53,6 @@ import {
   ImageNavButton,
   ImageCounter,
   ImageCounterText,
-  ImageModalOverlay,
-  ImageModalContent,
-  ImageModalImage,
-  ImageCloseButton,
-  ModalImageNavButton,
-  ModalImageCounter,
   ShelterTitleRow,
   ShelterName,
   ShelterMetaRow,
@@ -659,78 +654,7 @@ export default function HomeScreen() {
           </SMSCard>
         </ModalOverlay>
       </Modal>
-      <Modal
-        animationType="fade"
-        transparent
-        visible={!!imageModal}
-        onRequestClose={() => setImageModal(null)}
-      >
-        <ImageModalOverlay onPress={() => setImageModal(null)}>
-          <ImageModalContent pointerEvents="box-none">
-            {imageModal ? (
-              <>
-                <ImageModalImage
-                  source={imageModal.images[imageModal.index]}
-                  resizeMode="contain"
-                />
-                <ImageCloseButton onPress={() => setImageModal(null)}>
-                  <X color={colors.textOnColor} size={24} strokeWidth={2.8} />
-                </ImageCloseButton>
-                {imageModal.images.length > 1 ? (
-                  <>
-                    <ModalImageNavButton
-                      $position="left"
-                      onPress={() =>
-                        setImageModal(current =>
-                          current
-                            ? {
-                                ...current,
-                                index:
-                                  (current.index - 1 + current.images.length) %
-                                  current.images.length,
-                              }
-                            : current,
-                        )
-                      }
-                    >
-                      <ChevronLeft
-                        color={colors.textOnColor}
-                        size={26}
-                        strokeWidth={2.8}
-                      />
-                    </ModalImageNavButton>
-                    <ModalImageNavButton
-                      $position="right"
-                      onPress={() =>
-                        setImageModal(current =>
-                          current
-                            ? {
-                                ...current,
-                                index:
-                                  (current.index + 1) % current.images.length,
-                              }
-                            : current,
-                        )
-                      }
-                    >
-                      <ChevronRight
-                        color={colors.textOnColor}
-                        size={26}
-                        strokeWidth={2.8}
-                      />
-                    </ModalImageNavButton>
-                    <ModalImageCounter>
-                      <ImageCounterText>
-                        {imageModal.index + 1}/{imageModal.images.length}
-                      </ImageCounterText>
-                    </ModalImageCounter>
-                  </>
-                ) : null}
-              </>
-            ) : null}
-          </ImageModalContent>
-        </ImageModalOverlay>
-      </Modal>
+      <FullscreenImageViewer value={imageModal} onChange={setImageModal} />
     </Screen>
   );
 }

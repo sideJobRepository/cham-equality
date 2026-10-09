@@ -13,9 +13,7 @@ import {
   ChevronRight,
   ClipboardList,
   Image as ImageIcon,
-  ImagePlus,
   MessageSquare,
-  Send,
   Trash2,
   X,
 } from 'lucide-react-native';
@@ -47,6 +45,8 @@ import {
   type LocalFeedbackImage,
 } from '../services/feedback.service';
 import { useDialogUtil } from '../utils/dialog';
+import ImageAttachButton from '../components/ui/ImageAttachButton.tsx';
+import SubmitButton from '../components/ui/SubmitButton.tsx';
 import { colors } from '../theme/index.ts';
 import {
   Screen,
@@ -93,14 +93,10 @@ import {
   FeedbackTextArea,
   FeedbackInput,
   FeedbackCount,
-  AddImageButton,
-  AddImageButtonText,
   FeedbackImageItem,
   FeedbackImagePreview,
   FeedbackImageName,
   FeedbackImageRemoveButton,
-  FeedbackSubmitButton,
-  FeedbackSubmitText,
   ReportListBlock,
   ReportLoadingRow,
   ReportListButton,
@@ -769,14 +765,10 @@ export default function MoreScreen() {
 
                 <FeedbackField>
                   <FeedbackLabel>사진</FeedbackLabel>
-                  <AddImageButton onPress={addFeedbackImages}>
-                    <ImagePlus
-                      color={colors.primary}
-                      size={16}
-                      strokeWidth={2.6}
-                    />
-                    <AddImageButtonText>사진 추가</AddImageButtonText>
-                  </AddImageButton>
+                  <ImageAttachButton
+                    label="사진 추가"
+                    onPress={addFeedbackImages}
+                  />
 
                   {feedbackImages.map(image => (
                     <FeedbackImageItem key={image.id}>
@@ -798,23 +790,11 @@ export default function MoreScreen() {
                 </FeedbackField>
               </FeedbackModalScroll>
 
-              <FeedbackSubmitButton
-                disabled={isFeedbackSubmitting}
+              <SubmitButton
+                label="피드백 제출"
+                loading={isFeedbackSubmitting}
                 onPress={submitFeedback}
-              >
-                {isFeedbackSubmitting ? (
-                  <ActivityIndicator color={colors.textOnColor} />
-                ) : (
-                  <>
-                    <Send
-                      color={colors.textOnColor}
-                      size={16}
-                      strokeWidth={2.6}
-                    />
-                    <FeedbackSubmitText>피드백 제출</FeedbackSubmitText>
-                  </>
-                )}
-              </FeedbackSubmitButton>
+              />
             </FeedbackModalCard>
           </KeyboardAvoidingView>
         </ReportModalOverlay>

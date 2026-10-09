@@ -10,6 +10,8 @@ const resources = {
         ok: '확인',
         cancel: '취소',
         close: '닫기',
+        previousImage: '이전 사진',
+        nextImage: '다음 사진',
         error: '오류가 발생했습니다.',
       },
       update: {
@@ -235,6 +237,8 @@ const resources = {
         ok: 'OK',
         cancel: 'Cancel',
         close: 'Close',
+        previousImage: 'Previous photo',
+        nextImage: 'Next photo',
         error: 'Something went wrong.',
       },
       update: {
@@ -461,6 +465,8 @@ const resources = {
         ok: '确认',
         cancel: '取消',
         close: '关闭',
+        previousImage: '上一张照片',
+        nextImage: '下一张照片',
         error: '发生错误。',
       },
       update: {
@@ -685,6 +691,8 @@ const resources = {
         ok: '確認',
         cancel: 'キャンセル',
         close: '閉じる',
+        previousImage: '前の写真',
+        nextImage: '次の写真',
         error: 'エラーが発生しました。',
       },
       update: {
@@ -911,6 +919,8 @@ const resources = {
         ok: 'OK',
         cancel: 'Hủy',
         close: 'Đóng',
+        previousImage: 'Ảnh trước',
+        nextImage: 'Ảnh tiếp theo',
         error: 'Đã xảy ra lỗi.',
       },
       update: {

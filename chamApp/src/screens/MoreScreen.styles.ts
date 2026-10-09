@@ -350,24 +350,6 @@ export const FeedbackCount = styled.Text`
   text-align: right;
 `;
 
-export const AddImageButton = styled.Pressable`
-  min-height: 40px;
-  border-radius: 10px;
-  align-items: center;
-  justify-content: center;
-  flex-direction: row;
-  gap: 6px;
-  background-color: ${colors.primarySoft};
-  border-width: 1px;
-  border-color: ${colors.primaryBorder};
-`;
-
-export const AddImageButtonText = styled.Text`
-  color: ${colors.primary};
-  font-size: 13px;
-  font-weight: 800;
-`;
-
 export const FeedbackImageItem = styled.View`
   min-height: 58px;
   flex-direction: row;
@@ -402,22 +384,6 @@ export const FeedbackImageRemoveButton = styled.Pressable`
   align-items: center;
   justify-content: center;
   background-color: ${colors.dangerSoft};
-`;
-
-export const FeedbackSubmitButton = styled.Pressable`
-  min-height: 46px;
-  border-radius: 12px;
-  align-items: center;
-  justify-content: center;
-  flex-direction: row;
-  gap: 7px;
-  background-color: ${colors.primary};
-`;
-
-export const FeedbackSubmitText = styled.Text`
-  color: ${colors.textOnColor};
-  font-size: 14px;
-  font-weight: 800;
 `;
 
 export const ReportListBlock = styled.View`
