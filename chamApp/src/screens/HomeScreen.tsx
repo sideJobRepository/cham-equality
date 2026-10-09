@@ -1,7 +1,5 @@
 import { useEffect, useState } from 'react';
 import { Linking, Modal, type ImageSourcePropType } from 'react-native';
-import styled from 'styled-components/native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import {
@@ -35,8 +33,6 @@ import {
 } from '../store';
 import type { NearestShelter } from '../store/nearestShelter.ts';
 import {
-  ACCESSIBILITY_SELECTED_COLOR,
-  SHELTER_SELECTED_COLOR,
   accessibilityFilterLabelKeys,
   shelterTypeLabelMap,
   shelterTypeTranslationKeys,
@@ -44,6 +40,84 @@ import {
 import { useFetchDisaster } from '../services/disaster.service.ts';
 import type { RootTabParamList } from '../navigation/AppNavigator.tsx';
 import { useFetchContents } from '../services/content.service.ts';
+import { colors } from '../theme/index.ts';
+import {
+  Screen,
+  HomeScroll,
+  TopSection,
+  MiddleSection,
+  ShelterItem,
+  ShelterImageFrame,
+  ShelterImage,
+  ImageNavButton,
+  ImageCounter,
+  ImageCounterText,
+  ImageModalOverlay,
+  ImageModalContent,
+  ImageModalImage,
+  ImageCloseButton,
+  ModalImageNavButton,
+  ModalImageCounter,
+  ShelterTitleRow,
+  ShelterName,
+  ShelterMetaRow,
+  ShelterMetaIconText,
+  ShelterMetaText,
+  ShelterMeta,
+  ChipRow,
+  TypeChip,
+  TypeChipText,
+  AccessChip,
+  AccessChipText,
+  LanguageRow,
+  LanguageButton,
+  LanguageText,
+  MessageBox,
+  MessageTitle,
+  MessageBox2,
+  TopBox,
+  SummaryRow,
+  SummaryDot,
+  MessageTitle2,
+  TimeText,
+  CenterBox,
+  SummaryText,
+  DisasterMoreButton,
+  DisasterMoreText,
+  ModalOverlay,
+  NoticeModalCard,
+  NoticeModalHeader,
+  NoticeModalCategory,
+  NoticeCloseButton,
+  NoticeImage,
+  NoticeContent,
+  NoticeButtonRow,
+  NoticeButton,
+  NoticePrimaryButton,
+  NoticePrimaryButtonText,
+  IconButton,
+  ModalButtonText,
+  SMSCard,
+  SMSHeader,
+  SMSStepText,
+  SMSCategoryChip,
+  SMSCategoryText,
+  SMSHeaderSpacer,
+  SMSCloseButton,
+  SMSBody,
+  SMSMetaRow,
+  SMSMetaText,
+  SMSContentBox,
+  SMSContentScroll,
+  SMSContentText,
+  SMSPager,
+  SMSPagerText,
+  SMSActions,
+  SMSPrimaryButton,
+  SMSPrimaryText,
+  SMSSecondaryButton,
+  SMSSecondaryText,
+} from './HomeScreen.styles.ts';
 
 const defaultShelterImage =
   require('../assets/images/shelter.png') as ImageSourcePropType;
@@ -104,10 +178,10 @@ type SMSStepKey = 'CRITICAL' | 'EMERGENCY' | 'ADVISORY' | 'ETC';
 
 // 긴급단계별 색·아이콘. 정부 재난문자 체계(위급 > 긴급 > 안전안내)의 심각도를 한눈에 구분하게 한다.
 const SMS_STEPS: Record<SMSStepKey, { color: string; Icon: LucideIcon }> = {
-  CRITICAL: { color: '#dc2626', Icon: Siren },
-  EMERGENCY: { color: '#ea580c', Icon: TriangleAlert },
-  ADVISORY: { color: '#093a6e', Icon: Info },
-  ETC: { color: '#475569', Icon: Info },
+  CRITICAL: { color: colors.alert.critical, Icon: Siren },
+  EMERGENCY: { color: colors.alert.emergency, Icon: TriangleAlert },
+  ADVISORY: { color: colors.alert.advisory, Icon: Info },
+  ETC: { color: colors.alert.etc, Icon: Info },
 };
 
 function toSMSStepKey(step?: string): SMSStepKey {
@@ -322,7 +396,7 @@ export default function HomeScreen() {
                       }}
                     >
                       <ChevronLeft
-                        color="#ffffff"
+                        color={colors.textOnColor}
                         size={18}
                         strokeWidth={2.8}
                       />
@@ -337,7 +411,7 @@ export default function HomeScreen() {
                       }}
                     >
                       <ChevronRight
-                        color="#ffffff"
+                        color={colors.textOnColor}
                         size={18}
                         strokeWidth={2.8}
                       />
@@ -366,7 +440,11 @@ export default function HomeScreen() {
               <ShelterMetaRow>
                 {typeof nearestShelter.capacity === 'number' ? (
                   <ShelterMetaIconText>
-                    <Users color="#4b5563" size={14} strokeWidth={2.4} />
+                    <Users
+                      color={colors.textTertiary}
+                      size={14}
+                      strokeWidth={2.4}
+                    />
                     <ShelterMetaText>
                       {nearestShelter.capacity.toLocaleString()}
                     </ShelterMetaText>
@@ -374,7 +452,11 @@ export default function HomeScreen() {
                 ) : null}
                 {typeof nearestShelter.area === 'number' ? (
                   <ShelterMetaIconText>
-                    <Square color="#4b5563" size={13} strokeWidth={2.4} />
+                    <Square
+                      color={colors.textTertiary}
+                      size={13}
+                      strokeWidth={2.4}
+                    />
                     <ShelterMetaText>
                       {nearestShelter.area.toLocaleString()}㎡
                     </ShelterMetaText>
@@ -422,7 +504,7 @@ export default function HomeScreen() {
             <NoticeModalHeader>
               <NoticeModalCategory>{popupContent?.name}</NoticeModalCategory>
               <NoticeCloseButton onPress={closeNoticeModal}>
-                <X color="#6b7280" size={22} strokeWidth={2.6} />
+                <X color={colors.textMuted} size={22} strokeWidth={2.6} />
               </NoticeCloseButton>
             </NoticeModalHeader>
             {popupContent?.imageUrl ? (
@@ -456,7 +538,11 @@ export default function HomeScreen() {
         <ModalOverlay onPress={() => setIsSMSModalVisible(false)}>
           <SMSCard onPress={e => e.stopPropagation()}>
             <SMSHeader style={{ backgroundColor: smsStep.color }}>
-              <smsStep.Icon color="#ffffff" size={22} strokeWidth={2.4} />
+              <smsStep.Icon
+                color={colors.textOnColor}
+                size={22}
+                strokeWidth={2.4}
+              />
               <SMSStepText>{t(`home.smsStep.${smsStepKey}`)}</SMSStepText>
               {selectedSMS?.category ? (
                 <SMSCategoryChip>
@@ -471,14 +557,18 @@ export default function HomeScreen() {
                 accessibilityLabel={t('common.close')}
                 onPress={() => setIsSMSModalVisible(false)}
               >
-                <X color="#ffffff" size={22} strokeWidth={2.4} />
+                <X color={colors.textOnColor} size={22} strokeWidth={2.4} />
               </SMSCloseButton>
             </SMSHeader>
 
             <SMSBody>
               {selectedSMS?.regionName ? (
                 <SMSMetaRow>
-                  <MapPin color="#6b7280" size={16} strokeWidth={2.2} />
+                  <MapPin
+                    color={colors.textMuted}
+                    size={16}
+                    strokeWidth={2.2}
+                  />
                   <SMSMetaText numberOfLines={1}>
                     {formatSMSRegion(selectedSMS.regionName, t)}
                   </SMSMetaText>
@@ -486,7 +576,7 @@ export default function HomeScreen() {
               ) : null}
               {selectedSMS?.issuedAt ? (
                 <SMSMetaRow>
-                  <Clock color="#6b7280" size={16} strokeWidth={2.2} />
+                  <Clock color={colors.textMuted} size={16} strokeWidth={2.2} />
                   <SMSMetaText>
                     {formatSMSAgo(selectedSMS.issuedAt, t)} ·{' '}
                     {formatSMSDateTime(selectedSMS.issuedAt)}
@@ -512,7 +602,11 @@ export default function HomeScreen() {
                     }
                   >
                     <ChevronLeft
-                      color={selectedSMSIndex === 0 ? '#d1d5db' : '#111827'}
+                      color={
+                        selectedSMSIndex === 0
+                          ? colors.borderStrong
+                          : colors.text
+                      }
                       size={22}
                       strokeWidth={2.5}
                     />
@@ -533,8 +627,8 @@ export default function HomeScreen() {
                     <ChevronRight
                       color={
                         selectedSMSIndex >= smsData.length - 1
-                          ? '#d1d5db'
-                          : '#111827'
+                          ? colors.borderStrong
+                          : colors.text
                       }
                       size={22}
                       strokeWidth={2.5}
@@ -580,7 +674,7 @@ export default function HomeScreen() {
                   resizeMode="contain"
                 />
                 <ImageCloseButton onPress={() => setImageModal(null)}>
-                  <X color="#ffffff" size={24} strokeWidth={2.8} />
+                  <X color={colors.textOnColor} size={24} strokeWidth={2.8} />
                 </ImageCloseButton>
                 {imageModal.images.length > 1 ? (
                   <>
@@ -600,7 +694,7 @@ export default function HomeScreen() {
                       }
                     >
                       <ChevronLeft
-                        color="#ffffff"
+                        color={colors.textOnColor}
                         size={26}
                         strokeWidth={2.8}
                       />
@@ -620,7 +714,7 @@ export default function HomeScreen() {
                       }
                     >
                       <ChevronRight
-                        color="#ffffff"
+                        color={colors.textOnColor}
                         size={26}
                         strokeWidth={2.8}
                       />
@@ -640,537 +734,3 @@ export default function HomeScreen() {
     </Screen>
   );
 }
-
-const Screen = styled(SafeAreaView)`
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  padding: 0 12px;
-  background-color: #ffffff;
-`;
-
-const HomeScroll = styled.ScrollView`
-  flex: 1;
-`;
-
-const TopSection = styled.View`
-  display: flex;
-  width: 100%;
-`;
-
-const MiddleSection = styled.View`
-  display: flex;
-  width: 100%;
-  gap: 10px;
-  margin-top: 16px;
-`;
-
-const ShelterItem = styled.Pressable`
-  gap: 5px;
-  margin-top: 2px;
-  padding: 10px;
-  border-radius: 12px;
-  background-color: #f8fafc;
-  border-width: 1px;
-  border-color: #e5e7eb;
-`;
-
-const ShelterImageFrame = styled.Pressable`
-  position: relative;
-  width: 100%;
-  aspect-ratio: 4 / 3;
-  overflow: hidden;
-  border-radius: 10px;
-  background-color: #e5e7eb;
-`;
-
-const ShelterImage = styled.Image`
-  width: 100%;
-  height: 100%;
-`;
-
-const ImageNavButton = styled.Pressable<{ $position: 'left' | 'right' }>`
-  position: absolute;
-  top: 50%;
-  ${({ $position }) => `${$position}: 8px;`}
-  width: 30px;
-  height: 30px;
-  margin-top: -15px;
-  border-radius: 999px;
-  align-items: center;
-  justify-content: center;
-  background-color: rgba(17, 24, 39, 0.62);
-`;
-
-const ImageCounter = styled.View`
-  position: absolute;
-  right: 8px;
-  bottom: 8px;
-  padding: 3px 7px;
-  border-radius: 999px;
-  background-color: rgba(17, 24, 39, 0.68);
-`;
-
-const ImageCounterText = styled.Text`
-  color: #ffffff;
-  font-size: 10px;
-  font-weight: 800;
-`;
-
-const ImageModalOverlay = styled.Pressable`
-  flex: 1;
-  align-items: center;
-  justify-content: center;
-  background-color: rgba(0, 0, 0, 0.86);
-`;
-
-const ImageModalContent = styled.Pressable`
-  width: 100%;
-  height: 100%;
-  align-items: center;
-  justify-content: center;
-`;
-
-const ImageModalImage = styled.Image`
-  width: 100%;
-  height: 100%;
-`;
-
-const ImageCloseButton = styled.Pressable`
-  position: absolute;
-  top: 46px;
-  right: 16px;
-  width: 44px;
-  height: 44px;
-  border-radius: 999px;
-  align-items: center;
-  justify-content: center;
-  background-color: rgba(17, 24, 39, 0.68);
-`;
-
-const ModalImageNavButton = styled.Pressable<{ $position: 'left' | 'right' }>`
-  position: absolute;
-  top: 50%;
-  ${({ $position }) => `${$position}: 16px;`}
-  width: 44px;
-  height: 44px;
-  margin-top: -22px;
-  border-radius: 999px;
-  align-items: center;
-  justify-content: center;
-  background-color: rgba(17, 24, 39, 0.62);
-`;
-
-const ModalImageCounter = styled.View`
-  position: absolute;
-  right: 16px;
-  bottom: 32px;
-  padding: 5px 10px;
-  border-radius: 999px;
-  background-color: rgba(17, 24, 39, 0.72);
-`;
-
-const ShelterTitleRow = styled.View`
-  flex-direction: row;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-`;
-
-const ShelterName = styled.Text`
-  width: 100%;
-  color: #111827;
-  font-size: 14px;
-  line-height: 19px;
-  font-weight: 800;
-`;
-
-const ShelterMetaRow = styled.View`
-  flex-direction: row;
-  align-items: center;
-  gap: 10px;
-`;
-
-const ShelterMetaIconText = styled.View`
-  flex-direction: row;
-  align-items: center;
-  gap: 4px;
-`;
-
-const ShelterMetaText = styled.Text`
-  color: #4b5563;
-  font-size: 12px;
-  line-height: 18px;
-`;
-
-const ShelterMeta = styled.Text`
-  color: #4b5563;
-  font-size: 12px;
-  line-height: 18px;
-`;
-
-const ChipRow = styled.View`
-  flex-direction: row;
-  flex-wrap: wrap;
-  gap: 5px;
-  margin-top: 2px;
-`;
-
-const TypeChip = styled.View`
-  padding: 4px 7px;
-  border-radius: 999px;
-  background-color: ${SHELTER_SELECTED_COLOR};
-`;
-
-const TypeChipText = styled.Text`
-  color: #ffffff;
-  font-size: 10px;
-  font-weight: 800;
-`;
-
-const AccessChip = styled.View<{ $active: boolean }>`
-  padding: 5px 7px;
-  border-radius: 999px;
-  background-color: ${({ $active }) =>
-    $active ? ACCESSIBILITY_SELECTED_COLOR : '#f3f4f6'};
-  border-width: 1px;
-  border-color: ${({ $active }) =>
-    $active ? ACCESSIBILITY_SELECTED_COLOR : '#e5e7eb'};
-`;
-
-const AccessChipText = styled.Text<{ $active: boolean }>`
-  color: ${({ $active }) => ($active ? '#ffffff' : '#9ca3af')};
-  font-size: 10px;
-  font-weight: 800;
-`;
-
-const LanguageRow = styled.View`
-  display: flex;
-  flex-direction: row;
-  justify-content: flex-end;
-  gap: 8px;
-  padding-top: 8px;
-`;
-
-const LanguageButton = styled.Pressable<{ $active: boolean }>`
-  padding: 6px 10px;
-  border-radius: 8px;
-  background-color: ${({ $active }) => ($active ? '#1d1d1f' : '#f3f4f6')};
-`;
-
-const LanguageText = styled.Text<{ $active: boolean }>`
-  color: ${({ $active }) => ($active ? '#ffffff' : '#6b7280')};
-  font-size: 13px;
-  font-weight: 700;
-`;
-
-const MessageBox = styled.Pressable`
-  display: flex;
-  flex-direction: row;
-  gap: 12px;
-  align-items: center;
-  padding: 12px 0;
-  width: 100%;
-`;
-
-const MessageTitle = styled.Text`
-  flex: 1;
-  color: #999999;
-  font-size: 16px;
-  font-weight: 700;
-`;
-
-const MessageBox2 = styled.View`
-  display: flex;
-  background-color: #edf5ff;
-  margin-top: 14px;
-  margin-left: 24px;
-  padding: 12px;
-  border-radius: 0 8px 8px 8px;
-`;
-
-const TopBox = styled.View`
-  display: flex;
-  flex-direction: row;
-  justify-content: space-between;
-  align-items: center;
-  gap: 8px;
-`;
-
-const SummaryRow = styled.View`
-  display: flex;
-  flex-direction: row;
-  align-items: flex-start;
-  gap: 8px;
-`;
-
-const SummaryDot = styled.View`
-  width: 4px;
-  height: 4px;
-  border-radius: 999px;
-  background-color: #1d1d1f;
-  margin-top: 8px;
-`;
-
-const MessageTitle2 = styled.Text`
-  flex: 1;
-  color: #2776e0;
-  font-size: 16px;
-  font-weight: 600;
-`;
-
-const TimeText = styled.Text`
-  flex-shrink: 0;
-  font-size: 14px;
-  color: #a3a7ac;
-`;
-
-const CenterBox = styled.View`
-  display: flex;
-  gap: 8px;
-  margin-top: 12px;
-  width: 100%;
-`;
-
-const SummaryText = styled.Text`
-  color: #1d1d1f;
-  font-size: 14px;
-  line-height: 20px;
-  flex: 1;
-  font-weight: 500;
-`;
-
-const DisasterMoreButton = styled.Pressable`
-  align-self: flex-end;
-  margin-top: 10px;
-  padding: 4px 0 0 12px;
-`;
-
-const DisasterMoreText = styled.Text`
-  color: #a3a7ac;
-  font-size: 13px;
-  font-weight: 600;
-`;
-
-const ModalOverlay = styled.Pressable`
-  flex: 1;
-  justify-content: center;
-  padding: 24px;
-  background-color: rgba(15, 23, 42, 0.45);
-`;
-
-const ModalCard = styled.Pressable`
-  display: flex;
-  gap: 16px;
-  padding: 20px;
-  border-radius: 18px;
-  background-color: #ffffff;
-`;
-
-const NoticeModalCard = styled(ModalCard)`
-  gap: 14px;
-  padding: 18px;
-`;
-
-const NoticeModalHeader = styled.View`
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-`;
-
-const NoticeModalCategory = styled.Text`
-  color: #1f3a5f;
-  font-size: 16px;
-  font-weight: 800;
-`;
-
-const NoticeCloseButton = styled.Pressable`
-  width: 36px;
-  height: 36px;
-  align-items: center;
-  justify-content: center;
-`;
-
-const NoticeImage = styled.Image`
-  width: 100%;
-  aspect-ratio: 16 / 9;
-  border-radius: 12px;
-  background-color: #e5e7eb;
-`;
-
-const NoticeContent = styled.Text`
-  color: #4b5563;
-  font-size: 14px;
-  line-height: 22px;
-  font-weight: 500;
-`;
-
-const NoticeButtonRow = styled.View`
-  flex-direction: row;
-  justify-content: flex-end;
-  align-items: center;
-  gap: 8px;
-`;
-
-const NoticeButton = styled.Pressable`
-  padding: 10px 14px;
-  border-radius: 10px;
-  background-color: #f3f4f6;
-`;
-
-const NoticePrimaryButton = styled.Pressable`
-  padding: 10px 14px;
-  border-radius: 10px;
-  background-color: #1f3a5f;
-`;
-
-const NoticePrimaryButtonText = styled.Text`
-  color: #ffffff;
-  font-size: 14px;
-  font-weight: 800;
-`;
-
-const IconButton = styled.Pressable`
-  width: 44px;
-  height: 44px;
-  align-items: center;
-  justify-content: center;
-`;
-
-const ModalButtonText = styled.Text`
-  color: #111827;
-  font-size: 14px;
-  font-weight: 700;
-`;
-
-const SMSCard = styled.Pressable`
-  overflow: hidden;
-  border-radius: 20px;
-  background-color: #ffffff;
-`;
-
-const SMSHeader = styled.View`
-  flex-direction: row;
-  align-items: center;
-  gap: 8px;
-  padding: 14px 12px 14px 18px;
-`;
-
-const SMSStepText = styled.Text`
-  color: #ffffff;
-  font-size: 18px;
-  font-weight: 800;
-`;
-
-const SMSCategoryChip = styled.View`
-  flex-shrink: 1;
-  padding: 3px 10px;
-  border-radius: 999px;
-  background-color: rgba(255, 255, 255, 0.22);
-`;
-
-const SMSCategoryText = styled.Text`
-  color: #ffffff;
-  font-size: 13px;
-  font-weight: 700;
-`;
-
-const SMSHeaderSpacer = styled.View`
-  flex: 1;
-`;
-
-const SMSCloseButton = styled.Pressable`
-  width: 44px;
-  height: 44px;
-  align-items: center;
-  justify-content: center;
-`;
-
-const SMSBody = styled.View`
-  gap: 10px;
-  padding: 16px 18px 18px;
-`;
-
-const SMSMetaRow = styled.View`
-  flex-direction: row;
-  align-items: center;
-  gap: 6px;
-`;
-
-const SMSMetaText = styled.Text`
-  flex-shrink: 1;
-  color: #4b5563;
-  font-size: 14px;
-  font-weight: 500;
-`;
-
-const SMSContentBox = styled.View`
-  margin-top: 4px;
-  max-height: 320px;
-  border-left-width: 4px;
-  border-radius: 12px;
-  background-color: #f8fafc;
-`;
-
-const SMSContentScroll = styled.ScrollView`
-  padding: 14px 16px;
-`;
-
-const SMSContentText = styled.Text`
-  color: #111827;
-  font-size: 16px;
-  line-height: 26px;
-  font-weight: 500;
-`;
-
-const SMSPager = styled.View`
-  flex-direction: row;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-`;
-
-const SMSPagerText = styled.Text`
-  min-width: 48px;
-  color: #374151;
-  font-size: 14px;
-  font-weight: 700;
-  text-align: center;
-`;
-
-const SMSActions = styled.View`
-  flex-direction: row;
-  gap: 8px;
-  margin-top: 4px;
-`;
-
-const SMSPrimaryButton = styled.Pressable`
-  flex: 1;
-  min-height: 48px;
-  align-items: center;
-  justify-content: center;
-  border-radius: 12px;
-  background-color: #093a6e;
-`;
-
-const SMSPrimaryText = styled.Text`
-  color: #ffffff;
-  font-size: 15px;
-  font-weight: 800;
-`;
-
-const SMSSecondaryButton = styled.Pressable`
-  min-width: 80px;
-  min-height: 48px;
-  align-items: center;
-  justify-content: center;
-  border-radius: 12px;
-  background-color: #f3f4f6;
-`;
-
-const SMSSecondaryText = styled.Text`
-  color: #111827;
-  font-size: 15px;
-  font-weight: 700;
-`;
