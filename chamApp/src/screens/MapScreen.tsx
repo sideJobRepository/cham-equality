@@ -72,10 +72,10 @@ import {
   type AccessibilityFeature,
   type AccessibilityMatchStatus,
 } from '../utils/accessibilityMatch';
+import { getAccessibilityChips } from '../utils/shelterLabels.ts';
 import {
   ACCESSIBILITY_ALL_LABEL,
   SHELTER_ALL_LABEL,
-  accessibilityFilterLabelKeys,
   accessibilityValueMap,
   shelterTypeLabelMap,
   shelterTypeTranslationKeys,
@@ -231,15 +231,6 @@ function getShelterTypeLabel(type?: string) {
 function getShelterTypeTranslationKey(type?: string) {
   if (!type || type === 'UNKNOWN') return 'map.labels.unknownType';
   return shelterTypeTranslationKeys[type] ?? null;
-}
-
-function getAccessibilityChips(shelter: ShelterSummary) {
-  return [
-    { label: '경사로', active: shelter.ramp === true },
-    { label: '엘리베이터', active: shelter.elevator === true },
-    { label: '점자블록', active: shelter.brailleBlock === true },
-    { label: '장애인 화장실', active: shelter.accessibleToilet === true },
-  ];
 }
 
 const shelterTypeOrder = Object.keys(shelterTypeLabelMap);
@@ -3172,14 +3163,11 @@ export default function MapScreen() {
                       </ShelterContactRow>
                       <ChipRow>
                         {getAccessibilityChips(shelter).map(chip => {
-                          const chipLabel = t(
-                            accessibilityFilterLabelKeys[chip.label] ??
-                              chip.label,
-                          );
+                          const chipLabel = t(chip.labelKey);
                           // 색만으로 있음/없음을 가르지 않게 아이콘과 읽기 라벨을 같이 둔다.
                           return (
                             <AccessChip
-                              key={`${shelter.shelterId}-${chip.label}`}
+                              key={`${shelter.shelterId}-${chip.key}`}
                               $active={chip.active}
                               accessible
                               accessibilityLabel={t(

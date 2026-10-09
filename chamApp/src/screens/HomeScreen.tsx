@@ -34,7 +34,6 @@ import {
 } from '../store';
 import type { NearestShelter } from '../store/nearestShelter.ts';
 import {
-  accessibilityFilterLabelKeys,
   shelterTypeLabelMap,
   shelterTypeTranslationKeys,
 } from '../store/mapFilters.ts';
@@ -42,6 +41,7 @@ import { useFetchDisaster } from '../services/disaster.service.ts';
 import type { RootTabParamList } from '../navigation/AppNavigator.tsx';
 import { useFetchContents } from '../services/content.service.ts';
 import { colors } from '../theme/index.ts';
+import { getAccessibilityChips } from '../utils/shelterLabels.ts';
 import {
   Screen,
   HomeScroll,
@@ -126,22 +126,13 @@ const languageOptions = [
 ];
 
 function getShelterTypeLabel(type?: string) {
-  if (!type) return '유형 정보 없음';
+  if (!type) return 'map.labels.unknownType';
   return shelterTypeLabelMap[type] ?? type;
 }
 
 function getShelterTypeTranslationKey(type?: string) {
   if (!type) return null;
   return shelterTypeTranslationKeys[type] ?? null;
-}
-
-function getAccessibilityChips(shelter: NearestShelter) {
-  return [
-    { label: '경사로', active: shelter.ramp === true },
-    { label: '엘리베이터', active: shelter.elevator === true },
-    { label: '점자블록', active: shelter.brailleBlock === true },
-    { label: '장애인 화장실', active: shelter.accessibleToilet === true },
-  ];
 }
 
 function getNearestShelterImageSources(
@@ -330,7 +321,7 @@ export default function HomeScreen() {
           >
             <SpeakerIcon size={32} />
             <MessageTitle numberOfLines={1} ellipsizeMode="tail">
-              {smsData[0]?.content ?? '현재 발령된 재난이 없습니다.'}
+              {smsData[0]?.content ?? t('home.noActiveDisaster')}
             </MessageTitle>
           </MessageBox>
           <MessageBox2>
@@ -473,13 +464,11 @@ export default function HomeScreen() {
               <ChipRow>
                 {getAccessibilityChips(nearestShelter).map(chip => (
                   <AccessChip
-                    key={`${nearestShelter.shelterId}-${chip.label}`}
+                    key={`${nearestShelter.shelterId}-${chip.key}`}
                     $active={chip.active}
                   >
                     <AccessChipText $active={chip.active}>
-                      {t(
-                        accessibilityFilterLabelKeys[chip.label] ?? chip.label,
-                      )}
+                      {t(chip.labelKey)}
                     </AccessChipText>
                   </AccessChip>
                 ))}

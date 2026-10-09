@@ -170,13 +170,13 @@ const citizenServices = [
 
 const feedbackCategoryOptions: Array<{
   value: AppFeedbackCategory;
-  label: string;
+  labelKey: string;
 }> = [
-  { value: 'BUG', label: '오류/버그' },
-  { value: 'IMPROVEMENT', label: '개선 제안' },
-  { value: 'SHELTER_DATA', label: '대피소 정보 오류' },
-  { value: 'CONTENT', label: '콘텐츠/번역 오류' },
-  { value: 'ETC', label: '기타' },
+  { value: 'BUG', labelKey: 'feedback.categories.BUG' },
+  { value: 'IMPROVEMENT', labelKey: 'feedback.categories.IMPROVEMENT' },
+  { value: 'SHELTER_DATA', labelKey: 'feedback.categories.SHELTER_DATA' },
+  { value: 'CONTENT', labelKey: 'feedback.categories.CONTENT' },
+  { value: 'ETC', labelKey: 'feedback.categories.ETC' },
 ];
 
 function toFeedbackLocalImage(asset: Asset): LocalFeedbackImage | null {
@@ -604,8 +604,11 @@ export default function MoreScreen() {
         </Section>
 
         <Section>
-          <SectionTitle>피드백</SectionTitle>
-          <FeedbackEntryButton onPress={() => setIsFeedbackVisible(true)}>
+          <SectionTitle>{t('feedback.title')}</SectionTitle>
+          <FeedbackEntryButton
+            onPress={() => setIsFeedbackVisible(true)}
+            accessibilityRole="button"
+          >
             <ServiceLabel>
               <FeedbackIconBox>
                 <MessageSquare
@@ -614,7 +617,7 @@ export default function MoreScreen() {
                   strokeWidth={2.5}
                 />
               </FeedbackIconBox>
-              <ServiceText>피드백</ServiceText>
+              <ServiceText>{t('feedback.entry')}</ServiceText>
             </ServiceLabel>
             <ChevronRight
               color={colors.textDisabled}
@@ -713,26 +716,34 @@ export default function MoreScreen() {
           >
             <FeedbackModalCard onPress={event => event.stopPropagation()}>
               <ReportModalHeader>
-                <ReportModalTitle>피드백</ReportModalTitle>
-                <ReportModalCloseButton onPress={closeFeedbackModal}>
+                <ReportModalTitle>{t('feedback.title')}</ReportModalTitle>
+                <ReportModalCloseButton
+                  onPress={closeFeedbackModal}
+                  accessibilityRole="button"
+                  accessibilityLabel={t('common.close')}
+                >
                   <X color={colors.textMuted} size={22} strokeWidth={2.6} />
                 </ReportModalCloseButton>
               </ReportModalHeader>
 
               <FeedbackModalScroll showsVerticalScrollIndicator={false}>
                 <FeedbackField>
-                  <FeedbackLabel>분류</FeedbackLabel>
+                  <FeedbackLabel>{t('feedback.category')}</FeedbackLabel>
                   <FeedbackChipRow>
                     {feedbackCategoryOptions.map(option => (
                       <FeedbackCategoryChip
                         key={option.value}
                         $active={feedbackCategory === option.value}
                         onPress={() => setFeedbackCategory(option.value)}
+                        accessibilityRole="button"
+                        accessibilityState={{
+                          selected: feedbackCategory === option.value,
+                        }}
                       >
                         <FeedbackCategoryText
                           $active={feedbackCategory === option.value}
                         >
-                          {option.label}
+                          {t(option.labelKey)}
                         </FeedbackCategoryText>
                       </FeedbackCategoryChip>
                     ))}
@@ -740,11 +751,11 @@ export default function MoreScreen() {
                 </FeedbackField>
 
                 <FeedbackField>
-                  <FeedbackLabel>내용</FeedbackLabel>
+                  <FeedbackLabel>{t('feedback.content')}</FeedbackLabel>
                   <FeedbackTextArea
                     value={feedbackContent}
                     onChangeText={setFeedbackContent}
-                    placeholder="불편한 점이나 개선 의견을 입력하세요."
+                    placeholder={t('feedback.contentPlaceholder')}
                     placeholderTextColor={colors.textDisabled}
                     multiline
                     maxLength={2000}
@@ -754,19 +765,19 @@ export default function MoreScreen() {
                 </FeedbackField>
 
                 <FeedbackField>
-                  <FeedbackLabel>연락처</FeedbackLabel>
+                  <FeedbackLabel>{t('feedback.contact')}</FeedbackLabel>
                   <FeedbackInput
                     value={feedbackContact}
                     onChangeText={setFeedbackContact}
-                    placeholder="답변을 원하면 이메일이나 연락처를 입력하세요."
+                    placeholder={t('feedback.contactPlaceholder')}
                     placeholderTextColor={colors.textDisabled}
                   />
                 </FeedbackField>
 
                 <FeedbackField>
-                  <FeedbackLabel>사진</FeedbackLabel>
+                  <FeedbackLabel>{t('feedback.photo')}</FeedbackLabel>
                   <ImageAttachButton
-                    label="사진 추가"
+                    label={t('feedback.addPhoto')}
                     onPress={addFeedbackImages}
                   />
 
@@ -778,6 +789,8 @@ export default function MoreScreen() {
                       </FeedbackImageName>
                       <FeedbackImageRemoveButton
                         onPress={() => removeFeedbackImage(image.id)}
+                        accessibilityRole="button"
+                        accessibilityLabel={t('map.a11y.removeImage')}
                       >
                         <Trash2
                           color={colors.dangerBright}
@@ -791,7 +804,7 @@ export default function MoreScreen() {
               </FeedbackModalScroll>
 
               <SubmitButton
-                label="피드백 제출"
+                label={t('feedback.submit')}
                 loading={isFeedbackSubmitting}
                 onPress={submitFeedback}
               />
