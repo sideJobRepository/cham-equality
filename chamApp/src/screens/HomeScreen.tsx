@@ -21,6 +21,8 @@ import type { TFunction } from 'i18next';
 import CurrentLocationBar from '../components/CurrentLocationBar.tsx';
 import MapSearchFilters from '../components/MapSearchFilters.tsx';
 import FullscreenImageViewer from '../components/ui/FullscreenImageViewer.tsx';
+import AccessibilityChip from '../components/shelter/AccessibilityChip.tsx';
+import ShelterNoPhotoBanner from '../components/shelter/ShelterNoPhotoBanner.tsx';
 import { useCurrentLocation } from '../hooks/useCurrentLocation.ts';
 import { useFetchSMS } from '../services/sms.service.ts';
 import { useFetchNearestShelter } from '../services/map.service.ts';
@@ -62,8 +64,6 @@ import {
   ChipRow,
   TypeChip,
   TypeChipText,
-  AccessChip,
-  AccessChipText,
   LanguageRow,
   LanguageButton,
   LanguageText,
@@ -119,9 +119,6 @@ import {
   SMSSecondaryText,
 } from './HomeScreen.styles.ts';
 
-const defaultShelterImage =
-  require('../assets/images/shelter.png') as ImageSourcePropType;
-
 const languageOptions = [
   { code: 'KO', label: '한국어' },
   { code: 'EN', label: 'English' },
@@ -149,7 +146,7 @@ function getNearestShelterImageSources(
       .filter((url): url is string => typeof url === 'string' && !!url.trim())
       .map(url => ({ uri: url })) ?? [];
 
-  return sources.length ? sources : [defaultShelterImage];
+  return sources;
 }
 
 function formatDisasterDate(dateString?: string) {
@@ -264,6 +261,12 @@ export default function HomeScreen() {
   const nearestShelterImageIndex = nearestShelterImages.length
     ? Math.min(shelterImageIndex, nearestShelterImages.length - 1)
     : 0;
+  const nearestShelterTypeLabel = nearestShelter
+    ? t(
+        getShelterTypeTranslationKey(nearestShelter.shelterType) ??
+          getShelterTypeLabel(nearestShelter.shelterType),
+      )
+    : '';
   const handlePressDisaster = () => {
     if (!disasterData?.originUrl) return;
     Linking.openURL(disasterData.originUrl);
@@ -405,72 +408,72 @@ export default function HomeScreen() {
           />
           {nearestShelter ? (
             <ShelterItem onPress={handlePressNearestShelter}>
-              <ShelterImageFrame
-                onPress={event => {
-                  event.stopPropagation();
-                  setImageModal({
-                    images: nearestShelterImages,
-                    index: nearestShelterImageIndex,
-                  });
-                }}
-              >
-                <ShelterImage
-                  source={nearestShelterImages[nearestShelterImageIndex]}
-                  resizeMode="cover"
-                />
-                {nearestShelterImages.length > 1 ? (
-                  <>
-                    <ImageNavButton
-                      $position="left"
-                      onPress={event => {
-                        event.stopPropagation();
-                        setShelterImageIndex(
-                          index =>
-                            (index - 1 + nearestShelterImages.length) %
-                            nearestShelterImages.length,
-                        );
-                      }}
-                    >
-                      <ChevronLeft
-                        color={colors.textOnColor}
-                        size={18}
-                        strokeWidth={2.8}
-                      />
-                    </ImageNavButton>
-                    <ImageNavButton
-                      $position="right"
-                      onPress={event => {
-                        event.stopPropagation();
-                        setShelterImageIndex(
-                          index => (index + 1) % nearestShelterImages.length,
-                        );
-                      }}
-                    >
-                      <ChevronRight
-                        color={colors.textOnColor}
-                        size={18}
-                        strokeWidth={2.8}
-                      />
-                    </ImageNavButton>
-                    <ImageCounter>
-                      <ImageCounterText>
-                        {nearestShelterImageIndex + 1}/
-                        {nearestShelterImages.length}
-                      </ImageCounterText>
-                    </ImageCounter>
-                  </>
-                ) : null}
-              </ShelterImageFrame>
+              {nearestShelterImages.length ? (
+                <ShelterImageFrame
+                  accessibilityRole="imagebutton"
+                  accessibilityLabel={t('map.a11y.viewImage')}
+                  onPress={event => {
+                    event.stopPropagation();
+                    setImageModal({
+                      images: nearestShelterImages,
+                      index: nearestShelterImageIndex,
+                    });
+                  }}
+                >
+                  <ShelterImage
+                    source={nearestShelterImages[nearestShelterImageIndex]}
+                    resizeMode="cover"
+                  />
+                  {nearestShelterImages.length > 1 ? (
+                    <>
+                      <ImageNavButton
+                        $position="left"
+                        onPress={event => {
+                          event.stopPropagation();
+                          setShelterImageIndex(
+                            index =>
+                              (index - 1 + nearestShelterImages.length) %
+                              nearestShelterImages.length,
+                          );
+                        }}
+                      >
+                        <ChevronLeft
+                          color={colors.textOnColor}
+                          size={18}
+                          strokeWidth={2.8}
+                        />
+                      </ImageNavButton>
+                      <ImageNavButton
+                        $position="right"
+                        onPress={event => {
+                          event.stopPropagation();
+                          setShelterImageIndex(
+                            index => (index + 1) % nearestShelterImages.length,
+                          );
+                        }}
+                      >
+                        <ChevronRight
+                          color={colors.textOnColor}
+                          size={18}
+                          strokeWidth={2.8}
+                        />
+                      </ImageNavButton>
+                      <ImageCounter>
+                        <ImageCounterText>
+                          {nearestShelterImageIndex + 1}/
+                          {nearestShelterImages.length}
+                        </ImageCounterText>
+                      </ImageCounter>
+                    </>
+                  ) : null}
+                </ShelterImageFrame>
+              ) : (
+                <ShelterNoPhotoBanner typeLabel={nearestShelterTypeLabel} />
+              )}
               <ShelterTitleRow>
                 <ShelterName>{nearestShelter.name}</ShelterName>
                 <TypeChip>
-                  <TypeChipText>
-                    {t(
-                      getShelterTypeTranslationKey(
-                        nearestShelter.shelterType,
-                      ) ?? getShelterTypeLabel(nearestShelter.shelterType),
-                    )}
-                  </TypeChipText>
+                  <TypeChipText>{nearestShelterTypeLabel}</TypeChipText>
                 </TypeChip>
               </ShelterTitleRow>
               <ShelterMetaRow>
@@ -513,14 +516,11 @@ export default function HomeScreen() {
               </ShelterMeta>
               <ChipRow>
                 {getAccessibilityChips(nearestShelter).map(chip => (
-                  <AccessChip
+                  <AccessibilityChip
                     key={`${nearestShelter.shelterId}-${chip.key}`}
-                    $active={chip.active}
-                  >
-                    <AccessChipText $active={chip.active}>
-                      {t(chip.labelKey)}
-                    </AccessChipText>
-                  </AccessChip>
+                    label={t(chip.labelKey)}
+                    active={chip.active}
+                  />
                 ))}
               </ChipRow>
             </ShelterItem>

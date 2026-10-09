@@ -56,6 +56,8 @@ import i18nInstance from '../i18n';
 import CurrentLocationBar from '../components/CurrentLocationBar.tsx';
 import MapSearchFilters from '../components/MapSearchFilters.tsx';
 import FullscreenImageViewer from '../components/ui/FullscreenImageViewer.tsx';
+import AccessibilityChip from '../components/shelter/AccessibilityChip.tsx';
+import ShelterNoPhotoBanner from '../components/shelter/ShelterNoPhotoBanner.tsx';
 import ImageAttachButton from '../components/ui/ImageAttachButton.tsx';
 import SubmitButton from '../components/ui/SubmitButton.tsx';
 import { loadCurrentLocation } from '../hooks/useCurrentLocation.ts';
@@ -167,8 +169,6 @@ import {
   TypeChipText,
   TypeCountChip,
   TypeCountText,
-  AccessChip,
-  AccessChipText,
   ReportButton,
   ReportButtonText,
   ReportDoneBadge,
@@ -404,7 +404,7 @@ function getShelterImageSources(shelter: ShelterSummary): ImageSourcePropType[] 
       .filter((url): url is string => typeof url === 'string' && !!url.trim())
       .map(url => ({ uri: url })) ?? [];
 
-  return sources.length ? sources : [defaultShelterImage];
+  return sources;
 }
 
 // 지도 페이지에는 점을 찍는 데 필요한 값만 넘긴다. 대피소 상세·사진 URL 까지 넣으면
@@ -3023,87 +3023,93 @@ export default function MapScreen() {
                 {selectedPlace.shelters.length ? (
                   selectedPlace.shelters.map(shelter => {
                     const shelterImages = getShelterImageSources(shelter);
-                    const imageIndex = Math.min(
-                      shelterImageIndexes[shelter.shelterId] ?? 0,
-                      shelterImages.length - 1,
+                    const imageIndex = Math.max(
+                      0,
+                      Math.min(
+                        shelterImageIndexes[shelter.shelterId] ?? 0,
+                        shelterImages.length - 1,
+                      ),
+                    );
+                    const shelterTypeLabel = t(
+                      getShelterTypeTranslationKey(shelter.shelterType) ??
+                        getShelterTypeLabel(shelter.shelterType),
                     );
 
                     return (
                       <ShelterItem key={String(shelter.shelterId)}>
-                        <ShelterImageFrame
-                          accessibilityRole="imagebutton"
-                          accessibilityLabel={t('map.a11y.viewImage')}
-                          onPress={() =>
-                            setImageModal({
-                              images: shelterImages,
-                              index: imageIndex,
-                            })
-                          }
-                        >
-                          <ShelterImage
-                            source={resolveImageSource(shelterImages[imageIndex])}
-                            onError={() =>
-                              handleImageError(shelterImages[imageIndex])
+                        {shelterImages.length ? (
+                          <ShelterImageFrame
+                            accessibilityRole="imagebutton"
+                            accessibilityLabel={t('map.a11y.viewImage')}
+                            onPress={() =>
+                              setImageModal({
+                                images: shelterImages,
+                                index: imageIndex,
+                              })
                             }
-                            resizeMode="cover"
-                          />
-                          {shelterImages.length > 1 ? (
-                            <>
-                              <ImageNavButton
-                                $position="left"
-                                accessibilityRole="button"
-                                accessibilityLabel={t('map.a11y.previousImage')}
-                                hitSlop={7}
-                                onPress={() =>
-                                  handleChangeShelterImage(
-                                    shelter.shelterId,
-                                    shelterImages.length,
-                                    -1,
-                                  )
-                                }
-                              >
-                                <ChevronLeft
-                                  color={colors.textOnColor}
-                                  size={18}
-                                  strokeWidth={2.8}
-                                />
-                              </ImageNavButton>
-                              <ImageNavButton
-                                $position="right"
-                                accessibilityRole="button"
-                                accessibilityLabel={t('map.a11y.nextImage')}
-                                hitSlop={7}
-                                onPress={() =>
-                                  handleChangeShelterImage(
-                                    shelter.shelterId,
-                                    shelterImages.length,
-                                    1,
-                                  )
-                                }
-                              >
-                                <ChevronRight
-                                  color={colors.textOnColor}
-                                  size={18}
-                                  strokeWidth={2.8}
-                                />
-                              </ImageNavButton>
-                              <ImageCounter>
-                                <ImageCounterText>
-                                  {imageIndex + 1}/{shelterImages.length}
-                                </ImageCounterText>
-                              </ImageCounter>
-                            </>
-                          ) : null}
-                        </ShelterImageFrame>
+                          >
+                            <ShelterImage
+                              source={resolveImageSource(shelterImages[imageIndex])}
+                              onError={() =>
+                                handleImageError(shelterImages[imageIndex])
+                              }
+                              resizeMode="cover"
+                            />
+                            {shelterImages.length > 1 ? (
+                              <>
+                                <ImageNavButton
+                                  $position="left"
+                                  accessibilityRole="button"
+                                  accessibilityLabel={t('map.a11y.previousImage')}
+                                  hitSlop={7}
+                                  onPress={() =>
+                                    handleChangeShelterImage(
+                                      shelter.shelterId,
+                                      shelterImages.length,
+                                      -1,
+                                    )
+                                  }
+                                >
+                                  <ChevronLeft
+                                    color={colors.textOnColor}
+                                    size={18}
+                                    strokeWidth={2.8}
+                                  />
+                                </ImageNavButton>
+                                <ImageNavButton
+                                  $position="right"
+                                  accessibilityRole="button"
+                                  accessibilityLabel={t('map.a11y.nextImage')}
+                                  hitSlop={7}
+                                  onPress={() =>
+                                    handleChangeShelterImage(
+                                      shelter.shelterId,
+                                      shelterImages.length,
+                                      1,
+                                    )
+                                  }
+                                >
+                                  <ChevronRight
+                                    color={colors.textOnColor}
+                                    size={18}
+                                    strokeWidth={2.8}
+                                  />
+                                </ImageNavButton>
+                                <ImageCounter>
+                                  <ImageCounterText>
+                                    {imageIndex + 1}/{shelterImages.length}
+                                  </ImageCounterText>
+                                </ImageCounter>
+                              </>
+                            ) : null}
+                          </ShelterImageFrame>
+                        ) : (
+                          <ShelterNoPhotoBanner typeLabel={shelterTypeLabel} />
+                        )}
                       <ShelterTitleRow>
                         <ShelterName>{shelter.name}</ShelterName>
                         <TypeChip>
-                          <TypeChipText>
-                            {t(
-                              getShelterTypeTranslationKey(shelter.shelterType) ??
-                                getShelterTypeLabel(shelter.shelterType),
-                            )}
-                          </TypeChipText>
+                          <TypeChipText>{shelterTypeLabel}</TypeChipText>
                         </TypeChip>
                       </ShelterTitleRow>
                       <ShelterMetaRow>
@@ -3162,32 +3168,13 @@ export default function MapScreen() {
                         ) : null}
                       </ShelterContactRow>
                       <ChipRow>
-                        {getAccessibilityChips(shelter).map(chip => {
-                          const chipLabel = t(chip.labelKey);
-                          // 색만으로 있음/없음을 가르지 않게 아이콘과 읽기 라벨을 같이 둔다.
-                          return (
-                            <AccessChip
-                              key={`${shelter.shelterId}-${chip.key}`}
-                              $active={chip.active}
-                              accessible
-                              accessibilityLabel={t(
-                                chip.active
-                                  ? 'map.a11y.facilityAvailable'
-                                  : 'map.a11y.facilityUnavailable',
-                                { name: chipLabel },
-                              )}
-                            >
-                              {chip.active ? (
-                                <Check color={colors.textOnColor} size={11} strokeWidth={3} />
-                              ) : (
-                                <X color={colors.textDisabled} size={11} strokeWidth={3} />
-                              )}
-                              <AccessChipText $active={chip.active}>
-                                {chipLabel}
-                              </AccessChipText>
-                            </AccessChip>
-                          );
-                        })}
+                        {getAccessibilityChips(shelter).map(chip => (
+                          <AccessibilityChip
+                            key={`${shelter.shelterId}-${chip.key}`}
+                            label={t(chip.labelKey)}
+                            active={chip.active}
+                          />
+                        ))}
                       </ChipRow>
                       {shelter.etcFacilities?.trim() ? (
                         <ShelterMeta>

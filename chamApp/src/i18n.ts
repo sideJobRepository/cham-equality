@@ -149,6 +149,7 @@ const resources = {
           noManagingAuthority: '관리기관 정보 없음',
           noShelters: '연결된 대피소가 없습니다.',
           unknownType: '유형 정보 없음',
+          noPhoto: '등록된 사진 없음',
           noMapKey: '카카오 지도 키가 없어 지도를 표시할 수 없습니다.',
         },
         location: {
@@ -397,6 +398,7 @@ const resources = {
           noManagingAuthority: 'No managing agency information',
           noShelters: 'No linked shelters.',
           unknownType: 'Unknown type',
+          noPhoto: 'No photos yet',
           noMapKey: 'The map cannot be shown because the Kakao map key is missing.',
         },
         location: {
@@ -645,6 +647,7 @@ const resources = {
           noManagingAuthority: '无管理机构信息',
           noShelters: '没有关联的避难所。',
           unknownType: '类型信息不详',
+          noPhoto: '暂无照片',
           noMapKey: '缺少 Kakao 地图密钥，无法显示地图。',
         },
         location: {
@@ -893,6 +896,7 @@ const resources = {
           noManagingAuthority: '管理機関情報なし',
           noShelters: '関連する避難所がありません。',
           unknownType: '種類情報なし',
+          noPhoto: '写真はまだありません',
           noMapKey: 'カカオマップのキーがないため、地図を表示できません。',
         },
         location: {
@@ -1142,6 +1146,7 @@ const resources = {
           noManagingAuthority: 'Không có thông tin cơ quan quản lý',
           noShelters: 'Không có nơi trú ẩn liên kết.',
           unknownType: 'Không rõ loại',
+          noPhoto: 'Chưa có ảnh',
           noMapKey: 'Không thể hiển thị bản đồ vì thiếu khóa bản đồ Kakao.',
         },
         location: {

@@ -1,9 +1,6 @@
 import styled from 'styled-components/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import {
-  ACCESSIBILITY_SELECTED_COLOR,
-  SHELTER_SELECTED_COLOR,
-} from '../store/mapFilters.ts';
+import { SHELTER_SELECTED_COLOR } from '../store/mapFilters.ts';
 import {
   colors,
   fontSize,
@@ -51,7 +48,7 @@ export const ShelterItem = styled.Pressable`
 export const ShelterImageFrame = styled.Pressable`
   position: relative;
   width: 100%;
-  aspect-ratio: 4 / 3;
+  aspect-ratio: 16 / 9;
   overflow: hidden;
   border-radius: 10px;
   background-color: ${colors.border};
@@ -144,23 +141,6 @@ export const TypeChip = styled.View`
 
 export const TypeChipText = styled.Text`
   color: ${colors.textOnColor};
-  font-size: 10px;
-  font-weight: 800;
-`;
-
-export const AccessChip = styled.View<{ $active: boolean }>`
-  padding: 5px 7px;
-  border-radius: 999px;
-  background-color: ${({ $active }) =>
-    $active ? ACCESSIBILITY_SELECTED_COLOR : colors.surfaceMuted};
-  border-width: 1px;
-  border-color: ${({ $active }) =>
-    $active ? ACCESSIBILITY_SELECTED_COLOR : colors.border};
-`;
-
-export const AccessChipText = styled.Text<{ $active: boolean }>`
-  color: ${({ $active }) =>
-    $active ? colors.textOnColor : colors.textDisabled};
   font-size: 10px;
   font-weight: 800;
 `;

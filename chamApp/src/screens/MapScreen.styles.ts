@@ -2,10 +2,7 @@ import { Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import styled from 'styled-components/native';
 import { colors } from '../theme/index.ts';
-import {
-  ACCESSIBILITY_SELECTED_COLOR,
-  SHELTER_SELECTED_COLOR,
-} from '../store/mapFilters.ts';
+import { SHELTER_SELECTED_COLOR } from '../store/mapFilters.ts';
 import {
   MAP_CONTROL_SIZE,
   MAP_CONTROL_GAP,
@@ -464,7 +461,7 @@ export const ShelterItem = styled.View`
 export const ShelterImageFrame = styled.Pressable`
   position: relative;
   width: 100%;
-  aspect-ratio: 4 / 3;
+  aspect-ratio: 16 / 9;
   overflow: hidden;
   border-radius: 10px;
   background-color: ${colors.border};
@@ -570,26 +567,6 @@ export const TypeCountChip = styled.View`
 export const TypeCountText = styled.Text`
   color: ${colors.textOnColor};
   font-size: 11px;
-  font-weight: 800;
-`;
-
-export const AccessChip = styled.View<{ $active: boolean }>`
-  flex-direction: row;
-  align-items: center;
-  gap: 3px;
-  padding: 5px 7px;
-  border-radius: 999px;
-  background-color: ${({ $active }) =>
-    $active ? ACCESSIBILITY_SELECTED_COLOR : colors.surfaceMuted};
-  border-width: 1px;
-  border-color: ${({ $active }) =>
-    $active ? ACCESSIBILITY_SELECTED_COLOR : colors.border};
-`;
-
-export const AccessChipText = styled.Text<{ $active: boolean }>`
-  color: ${({ $active }) =>
-    $active ? colors.textOnColor : colors.textDisabled};
-  font-size: 10px;
   font-weight: 800;
 `;
 
