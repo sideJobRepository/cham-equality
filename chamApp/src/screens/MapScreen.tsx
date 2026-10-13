@@ -562,6 +562,10 @@ function buildMapHtml(
       // 핀을 고른 직후 이 시간 안에 패널·미리보기로 가려지면 그 핀을 보이는 곳으로 옮긴다.
       var RECENTER_WINDOW_MS = 800;
       var lastOverlayTapAt = 0;
+      // 점은 14px 라 손가락으로 맞히기 어렵다. 보이는 점은 그대로 두고 누르는 상자만 키운다.
+      var PIN_HIT_SIZE = 36;
+      // 그래도 빗나가 지도 click 으로 떨어지면 이 거리(px) 안의 가장 가까운 핀을 고른다.
+      var PIN_NEAR_TAP_PX = 28;
 
       // 매칭이 좋은 점이 위로 오게 한다(겹쳐도 접근 가능한 곳이 가려지지 않게).
       function matchZIndex(status) {
@@ -573,13 +577,15 @@ function buildMapHtml(
       }
 
       // 누르는 순간 살짝 줄여 눌렸다는 걸 보여 주고, 탭 시각을 적어 지도 click 과 구분한다.
-      function attachPressFeedback(el) {
+      // target 은 줄어들 요소. 핀은 누르는 상자(el)와 보이는 점(target)이 다르다.
+      function attachPressFeedback(el, target) {
+        var pressed = target || el;
         function release() {
-          el.style.transform = '';
+          pressed.style.transform = '';
         }
         el.addEventListener('pointerdown', function() {
           lastOverlayTapAt = Date.now();
-          el.style.transform = 'scale(.94)';
+          pressed.style.transform = 'scale(.94)';
         });
         el.addEventListener('pointerup', release);
         el.addEventListener('pointercancel', release);
@@ -692,9 +698,20 @@ function buildMapHtml(
 
       function createDetailOverlay(item, position, onSelect) {
         const el = document.createElement('div');
+        el.style.cssText = [
+          'display:flex',
+          'align-items:center',
+          'justify-content:center',
+          'width:' + PIN_HIT_SIZE + 'px',
+          'height:' + PIN_HIT_SIZE + 'px',
+          'cursor:pointer',
+          '-webkit-tap-highlight-color:transparent',
+        ].join(';');
+        const dot = document.createElement('div');
         const markerColor = accessibilityMatchColor(item.accessibilityMatchStatus);
-        el.style.cssText = detailMarkerStyle(markerColor, false);
-        attachPressFeedback(el);
+        dot.style.cssText = detailMarkerStyle(markerColor, false);
+        el.appendChild(dot);
+        attachPressFeedback(el, dot);
         el.addEventListener('click', function() {
           lastOverlayTapAt = Date.now();
           onSelect(item);
@@ -709,6 +726,7 @@ function buildMapHtml(
             zIndex: matchZIndex(item.accessibilityMatchStatus),
           }),
           el: el,
+          dot: dot,
           // 매칭 상태는 __setMatchStatus 가 item 에 고쳐 쓴다. 선택 해제 때 zIndex 를 여기서 다시 읽는다.
           item: item,
           color: markerColor,
@@ -849,7 +867,7 @@ function buildMapHtml(
         function setDetailSelected(entry, selected) {
           if (!entry || entry.selected === selected) return;
           entry.selected = selected;
-          entry.el.style.cssText = detailMarkerStyle(entry.color, selected);
+          entry.dot.style.cssText = detailMarkerStyle(entry.color, selected);
           entry.overlay.setZIndex(
             selected ? SELECTED_Z_INDEX : matchZIndex(entry.item.accessibilityMatchStatus)
           );
@@ -867,6 +885,34 @@ function buildMapHtml(
           }
         }
 
+        // 핀 탭과 빗나간 탭 보정이 같이 쓴다.
+        function selectDetail(item) {
+          paintSelected(item.placeId);
+          recenterUntil = Date.now() + RECENTER_WINDOW_MS;
+          window.__notify({ type: 'marker', placeId: item.placeId });
+        }
+
+        // 지도에 떠 있는 핀 중 탭 지점에서 PIN_NEAR_TAP_PX 안의 가장 가까운 것. 없으면 null.
+        function findNearPin(latLng) {
+          if (!latLng || map.getLevel() > DETAIL_MAX_LEVEL) return null;
+          const projection = map.getProjection();
+          const tap = projection.containerPointFromCoords(latLng);
+          let nearest = null;
+          let nearestDistance = PIN_NEAR_TAP_PX;
+          detailOverlays.forEach(function(overlayEntry) {
+            if (!overlayEntry.shown || !overlayEntry.coords) return;
+            const point = projection.containerPointFromCoords(
+              new window.kakao.maps.LatLng(overlayEntry.coords.lat, overlayEntry.coords.lng)
+            );
+            const distance = Math.hypot(point.x - tap.x, point.y - tap.y);
+            if (distance <= nearestDistance) {
+              nearest = overlayEntry;
+              nearestDistance = distance;
+            }
+          });
+          return nearest;
+        }
+
         // 처음 화면에 들어올 때 만든다. 첫 화면에 수백 개를 한꺼번에 만들지 않으려는 것.
         function ensureDetailOverlay(entry) {
           const key = String(entry.item.placeId);
@@ -876,12 +922,9 @@ function buildMapHtml(
           overlayEntry = createDetailOverlay(
             entry.item,
             new window.kakao.maps.LatLng(entry.coords.lat, entry.coords.lng),
-            function(item) {
-              paintSelected(item.placeId);
-              recenterUntil = Date.now() + RECENTER_WINDOW_MS;
-              window.__notify({ type: 'marker', placeId: item.placeId });
-            }
+            selectDetail
           );
+          overlayEntry.coords = entry.coords;
           detailOverlays.set(key, overlayEntry);
           if (String(selectedPlaceId) === key) setDetailSelected(overlayEntry, true);
           return overlayEntry;
@@ -1275,7 +1318,7 @@ function buildMapHtml(
             var overlayEntry = detailOverlays.get(String(entry.item.placeId));
             if (!overlayEntry) return;
             overlayEntry.color = accessibilityMatchColor(status);
-            overlayEntry.el.style.cssText = detailMarkerStyle(overlayEntry.color, overlayEntry.selected);
+            overlayEntry.dot.style.cssText = detailMarkerStyle(overlayEntry.color, overlayEntry.selected);
             if (!overlayEntry.selected) overlayEntry.overlay.setZIndex(matchZIndex(status));
           });
         };
@@ -1371,9 +1414,15 @@ function buildMapHtml(
 
         // 빈 곳 탭 → 선택을 풀고 RN 에 알린다(미리보기·상세를 닫고 목록으로).
         // 핀 click 뒤에 오는 지도 click 을 거르려고 한 박자 미뤄서 탭 시각을 본다.
-        window.kakao.maps.event.addListener(map, 'click', function() {
+        // 핀을 살짝 빗나간 탭이면 해제 대신 가까운 핀을 고른다.
+        window.kakao.maps.event.addListener(map, 'click', function(mouseEvent) {
           setTimeout(function() {
             if (Date.now() - lastOverlayTapAt < PIN_TAP_GUARD_MS) return;
+            const nearPin = findNearPin(mouseEvent && mouseEvent.latLng);
+            if (nearPin) {
+              selectDetail(nearPin.item);
+              return;
+            }
             recenterUntil = 0;
             if (selectedPlaceId != null) paintSelected(null);
             window.__notify({ type: 'mapTap' });

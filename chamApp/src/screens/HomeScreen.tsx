@@ -34,6 +34,7 @@ import {
   loadCurrentLocation,
   useCurrentLocation,
 } from '../hooks/useCurrentLocation.ts';
+import { useTapGuard } from '../hooks/useTapGuard.ts';
 import { useFetchSMS } from '../services/sms.service.ts';
 import { useFetchNearestShelter } from '../services/map.service.ts';
 import {
@@ -219,6 +220,8 @@ function formatSMSDateTime(dateString?: string) {
 export default function HomeScreen() {
   const { t: translate } = useTranslation();
   const navigation = useNavigation<BottomTabNavigationProp<RootTabParamList>>();
+  // 홈은 내용이 짧아 스크롤이 안 생길 때가 많다. 스크롤하려고 끈 손가락이 카드 탭으로 잡히지 않게 한다.
+  const tapGuard = useTapGuard();
   useCurrentLocation();
   useFetchSMS();
   useFetchDisaster();
@@ -273,7 +276,7 @@ export default function HomeScreen() {
     Linking.openURL(disasterData.originUrl);
   };
   const handlePressNearestShelter = () => {
-    if (!nearestShelter) return;
+    if (!nearestShelter || !tapGuard.isTap()) return;
 
     navigation.navigate('Map', {
       focusPlaceId: nearestShelter.placeId ?? undefined,
@@ -371,7 +374,10 @@ export default function HomeScreen() {
 
   return (
     <Screen edges={['top', 'left', 'right']}>
-      <HomeScroll showsVerticalScrollIndicator={false}>
+      <HomeScroll
+        showsVerticalScrollIndicator={false}
+        onScrollBeginDrag={tapGuard.markScrolled}
+      >
         <TopSection>
           <LanguageRow>
             <BrandRow accessibilityRole="header">
@@ -386,7 +392,10 @@ export default function HomeScreen() {
               accessibilityRole="button"
               accessibilityLabel={`${latestStepLabel}, ${latestSMS.content}`}
               accessibilityHint={latestAgo || undefined}
+              onTouchStart={tapGuard.onTouchStart}
+              onTouchMove={tapGuard.onTouchMove}
               onPress={() => {
+                if (!tapGuard.isTap()) return;
                 setSelectedSMSIndex(0);
                 setIsSMSModalVisible(true);
               }}
@@ -468,7 +477,11 @@ export default function HomeScreen() {
             showAccessibilityAll={false}
           />
           {nearestShelter ? (
-            <ShelterItem onPress={handlePressNearestShelter}>
+            <ShelterItem
+              onTouchStart={tapGuard.onTouchStart}
+              onTouchMove={tapGuard.onTouchMove}
+              onPress={handlePressNearestShelter}
+            >
               {nearestShelterImages.length ? (
                 <ShelterImageFrame
                   accessibilityRole="imagebutton"
