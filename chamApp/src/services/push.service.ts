@@ -3,12 +3,15 @@ import { PermissionsAndroid, Platform } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
+  AuthorizationStatus,
   getInitialNotification,
   getMessaging,
   getToken,
+  hasPermission,
   onMessage,
   onNotificationOpenedApp,
   onTokenRefresh,
+  requestPermission,
   type RemoteMessage,
 } from '@react-native-firebase/messaging';
 import api from '../lib/axiosInstance.ts';
@@ -26,7 +29,7 @@ const PREFERENCES_STORAGE_KEY = 'push.preferences';
 
 /**
  * 푸시 연결. 로그인과 무관하게 모든 기기를 등록한다.
- * - 스플래시가 걷힌 뒤 알림 권한을 묻는다(Android 13+). 두 번 거절하면 OS가 더는 묻지 않는다.
+ * - 스플래시가 걷힌 뒤 알림 권한을 묻는다(Android 13+ 두 번 거절, iOS 한 번 거절이면 OS가 더는 묻지 않는다).
  * - 토큰은 앱 언어·알림 설정과 함께 서버에 올리고, 토큰·언어·로그인 상태·설정이 바뀌면 다시 올린다.
  * - 앱을 쓰는 중 받은 알림은 OS가 띄우지 않으므로 공통 알림창으로 보여준다.
  * - 재난문자 알림을 누르면 홈에서 해당 상세를, 제보 결과 알림을 누르면 더보기에서 그 제보 상세를 연다.
@@ -45,12 +48,12 @@ export function usePushRegistration() {
   const language = i18n.language;
 
   useEffect(() => {
-    if (!splashDone || Platform.OS !== 'android') return;
-    requestNotificationPermission();
+    if (!splashDone) return;
+    requestNotificationPermission().catch(() => {});
   }, [splashDone]);
 
   useEffect(() => {
-    if (Platform.OS !== 'android') return;
+    // iOS도 알림 권한과 무관하게 APNs 토큰이 나오므로 권한 요청을 기다리지 않고 등록한다.
     if (!preferencesRestored) return;
     const preferences = { disasterEnabled, personalEnabled };
     let cancelled = false;
@@ -135,6 +138,10 @@ export function updatePushPreferences(preferences: {
 }
 
 async function requestNotificationPermission() {
+  if (Platform.OS === 'ios') {
+    await requestPermission(messaging);
+    return;
+  }
   // 13 미만은 설치 시점에 허용된 상태라 물을 게 없다.
   if (Number(Platform.Version) < 33) return;
   const permission = PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS;
@@ -144,6 +151,13 @@ async function requestNotificationPermission() {
 
 /** OS 알림 권한이 켜져 있는지. 꺼져 있으면 앱 토글을 켜도 알림이 안 온다. */
 export async function hasNotificationPermission() {
+  if (Platform.OS === 'ios') {
+    const status = await hasPermission(messaging);
+    return (
+      status === AuthorizationStatus.AUTHORIZED ||
+      status === AuthorizationStatus.PROVISIONAL
+    );
+  }
   if (Platform.OS !== 'android' || Number(Platform.Version) < 33) return true;
   return PermissionsAndroid.check(
     PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS,

@@ -23,7 +23,8 @@ if (Config.NAVER_CLIENT_KEY && Config.NAVER_CLIENT_SECRET) {
     appName: Config.NAVER_APP_NAME || 'chamApp',
     consumerKey: Config.NAVER_CLIENT_KEY,
     consumerSecret: Config.NAVER_CLIENT_SECRET,
-    serviceUrlSchemeIOS: Config.NAVER_SERVICE_URL_SCHEME_IOS,
+    // ios/chamApp/Info.plist 의 CFBundleURLTypes, 네이버 개발자 콘솔 iOS URL Scheme 과 같아야 한다.
+    serviceUrlSchemeIOS: 'chamequalitynaver',
     disableNaverAppAuthIOS: true,
   });
 }

@@ -39,7 +39,7 @@ firebase:
   service-account-base64: ${FIREBASE_SERVICE_ACCOUNT_BASE64:}   # FCM 발송용 서비스 계정 JSON(base64). 비면 푸시 비활성
 
 apple:
-  client-id: ${APPLE_CLIENT_ID:}          # identityToken aud 검증값 (iOS Bundle ID) — .env에 설정
+  client-id: ${APPLE_CLIENT_ID:kr.or.cham.equality}   # identityToken aud 검증값 = iOS Bundle ID(비밀 아님)
   issuer: https://appleid.apple.com
   jwks-uri: https://appleid.apple.com/auth/keys
 

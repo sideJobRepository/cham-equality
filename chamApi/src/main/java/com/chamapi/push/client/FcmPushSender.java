@@ -71,6 +71,11 @@ public class FcmPushSender implements PushSender {
                         .setPriority(AndroidConfig.Priority.HIGH)
                         .setNotification(AndroidNotification.builder().setChannelId(ANDROID_CHANNEL_ID).build())
                         .build())
+                // iOS는 notification 블록만으로도 뜨지만 소리가 없다. 재난문자라 소리 + 즉시 전달(10)로 보낸다.
+                .setApnsConfig(ApnsConfig.builder()
+                        .putHeader("apns-priority", "10")
+                        .setAps(Aps.builder().setSound("default").build())
+                        .build())
                 .build();
         try {
             return firebaseMessaging.sendEachForMulticast(message);

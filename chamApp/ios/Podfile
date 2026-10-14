@@ -8,11 +8,9 @@ require Pod::Executable.execute_command('node', ['-p',
 platform :ios, min_ios_version_supported
 prepare_react_native_project!
 
-linkage = ENV['USE_FRAMEWORKS']
-if linkage != nil
-  Pod::UI.puts "Configuring Pod with #{linkage}ally linked Frameworks".green
-  use_frameworks! :linkage => linkage.to_sym
-end
+# Firebase(@react-native-firebase)는 Swift pod 라 정적 프레임워크로 묶어야 한다.
+use_frameworks! :linkage => :static
+$RNFirebaseAsStaticFramework = true
 
 target 'chamApp' do
   config = use_native_modules!
@@ -30,5 +28,15 @@ target 'chamApp' do
       :mac_catalyst_enabled => false,
       # :ccache_enabled => true
     )
+
+    # pod 리소스 번들은 서명 대상이 아니다. 앱만 수동 서명(Apple Distribution)이라 이걸 안 끄면
+    # CI 아카이브에서 "requires a development team" 류 오류가 난다.
+    installer.pods_project.targets.each do |target|
+      if target.respond_to?(:product_type) && target.product_type == 'com.apple.product-type.bundle'
+        target.build_configurations.each do |build_config|
+          build_config.build_settings['CODE_SIGNING_ALLOWED'] = 'NO'
+        end
+      end
+    end
   end
 end

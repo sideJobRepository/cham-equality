@@ -19,6 +19,70 @@ const { ChamLocation } = NativeModules as {
   };
 };
 
+type IosGeolocation =
+  typeof import('@react-native-community/geolocation').default;
+
+let iosGeolocation: IosGeolocation | null = null;
+
+// iOS는 안드로이드 전용 ChamLocation 대신 이 라이브러리를 쓴다. 안드로이드엔 연결하지 않아서
+// (react-native.config.js) 파일 맨 위에서 import 하면 네이티브 모듈이 없어 바로 죽는다 → iOS에서만 꺼낸다.
+function getIosGeolocation() {
+  if (!iosGeolocation) {
+    iosGeolocation = require('@react-native-community/geolocation')
+      .default as IosGeolocation;
+    iosGeolocation.setRNConfiguration({
+      skipPermissionRequests: false,
+      authorizationLevel: 'whenInUse',
+    });
+  }
+  return iosGeolocation;
+}
+
+// 권한 거부 코드(1). iOS는 한 번 거절하면 다시 묻지 않아서 설정 화면 안내('blocked')로 보낸다.
+const IOS_PERMISSION_DENIED = 1;
+
+function requestIosLocationPermission(): Promise<PermissionResult> {
+  return new Promise(resolve => {
+    try {
+      getIosGeolocation().requestAuthorization(
+        () => resolve('granted'),
+        error =>
+          resolve(error.code === IOS_PERMISSION_DENIED ? 'blocked' : null),
+      );
+    } catch {
+      resolve(null);
+    }
+  });
+}
+
+// ChamLocation 과 같은 모양({lat, lng, accuracy})과 오류 code 로 맞춘다.
+function getIosCurrentLocation(): Promise<UserLocation> {
+  return new Promise((resolve, reject) => {
+    getIosGeolocation().getCurrentPosition(
+      position =>
+        resolve({
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+          accuracy: position.coords.accuracy,
+        }),
+      error =>
+        reject({
+          code:
+            error.code === error.POSITION_UNAVAILABLE
+              ? 'LOCATION_PROVIDER_DISABLED'
+              : 'LOCATION_UNAVAILABLE',
+        }),
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 2 * 60 * 1000 },
+    );
+  });
+}
+
+function getNativeCurrentLocation() {
+  if (Platform.OS === 'ios') return getIosCurrentLocation();
+  if (!ChamLocation) return null;
+  return ChamLocation.getCurrentLocation();
+}
+
 function isKoreaLocation(location: UserLocation) {
   return (
     location.lat >= 32 &&
@@ -46,6 +110,7 @@ function scheduleIdleTask(task: () => void) {
 type PermissionResult = 'granted' | 'denied' | 'blocked' | null;
 
 async function requestLocationPermission(): Promise<PermissionResult> {
+  if (Platform.OS === 'ios') return requestIosLocationPermission();
   if (Platform.OS !== 'android') return 'granted';
 
   try {
@@ -97,13 +162,14 @@ export async function loadCurrentLocation(
 
   setChecking();
 
-  if (!ChamLocation) {
+  const locationRequest = getNativeCurrentLocation();
+  if (!locationRequest) {
     setUnavailable('');
     return 'unavailable';
   }
 
   try {
-    const nativeLocation = await ChamLocation.getCurrentLocation();
+    const nativeLocation = await locationRequest;
     if (isCancelled()) return 'unavailable';
 
     if (!isKoreaLocation(nativeLocation)) {

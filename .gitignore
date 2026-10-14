@@ -39,3 +39,10 @@ CLAUDE.local.md
 **/CLAUDE.local.md
 
 .claude/settings.local.json
+# iOS — Pods는 CI에서 pod install, Firebase 설정은 GOOGLE_SERVICE_INFO_PLIST_BASE64 시크릿으로 복원
+chamApp/ios/Pods
+chamApp/ios/build
+chamApp/ios/.xcode.env.local
+chamApp/ios/chamApp/GoogleService-Info.plist
+**/xcuserdata
+*.xcworkspace/xcuserdata
