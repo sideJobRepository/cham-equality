@@ -20,6 +20,7 @@ import com.chamapi.shelter.entity.ShelterImage;
 import com.chamapi.shelter.enums.AccessibilityFeature;
 import com.chamapi.shelter.enums.AccessibilityMatchStatus;
 import com.chamapi.shelter.enums.ShelterImageCategory;
+import com.chamapi.shelter.enums.ShelterType;
 import com.chamapi.shelter.repository.ShelterRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -240,6 +241,24 @@ class ShelterMapServiceTest {
         assertThat(response.y()).isEqualByComparingTo("36.00100000");
     }
 
+    @DisplayName("getNearest — 유형을 고르면 더 가까운 다른 유형 대피소는 건너뛴다")
+    @Test
+    void getNearest_filtersByShelterType() {
+        Shelter nearChemical = shelterAt(61L, new BigDecimal("127.00100000"), new BigDecimal("36.00100000"));
+        ReflectionTestUtils.setField(nearChemical, "shelterType", ShelterType.CHEMICAL_ACCIDENT);
+        Shelter farCivil = shelterAt(62L, new BigDecimal("127.10000000"), new BigDecimal("36.00000000"));
+        ReflectionTestUtils.setField(farCivil, "shelterType", ShelterType.CIVIL_DEFENSE);
+
+        when(shelterRepository.findAllWithPlaceAndRegion())
+                .thenReturn(List.of(nearChemical, farCivil));
+
+        ShelterMapResponse response = shelterMapService.getNearest(
+                new NearestShelterCondition(List.of(), List.of(ShelterType.CIVIL_DEFENSE),
+                        new BigDecimal("127.00000000"), new BigDecimal("36.00000000")), Language.KO);
+
+        assertThat(response.shelterId()).isEqualTo(62L);
+    }
+
     @DisplayName("getNearest — 위도·경도가 null인 대피소는 후보에서 제외되고, 좌표가 있는 대피소가 선택된다")
     @Test
     void getNearest_excludesShelterWithoutCoordinates() {
@@ -409,7 +428,7 @@ class ShelterMapServiceTest {
     }
 
     private NearestShelterCondition nearestCondition(BigDecimal x, BigDecimal y, AccessibilityFeature... features) {
-        return new NearestShelterCondition(List.of(features), x, y);
+        return new NearestShelterCondition(List.of(features), List.of(), x, y);
     }
 
     private FileViewResponse fileView(Long fileId, String url) {

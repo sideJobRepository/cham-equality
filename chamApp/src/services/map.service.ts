@@ -9,7 +9,9 @@ import { useLocationStore } from '../store/location.ts';
 import { useNearestShelterStore } from '../store/nearestShelter.ts';
 import {
   ACCESSIBILITY_ALL_LABEL,
+  SHELTER_ALL_LABEL,
   accessibilityValueMap,
+  shelterTypeValueMap,
   useMapFilterStore,
 } from '../store/mapFilters.ts';
 
@@ -90,6 +92,9 @@ export function useFetchNearestShelter() {
   const selectedAccessibility = useMapFilterStore(
     state => state.selectedAccessibility,
   );
+  const selectedShelterTypes = useMapFilterStore(
+    state => state.selectedShelterTypes,
+  );
   const setNearestShelter = useNearestShelterStore(
     state => state.setNearestShelter,
   );
@@ -113,6 +118,10 @@ export function useFetchNearestShelter() {
       .filter(item => item !== ACCESSIBILITY_ALL_LABEL)
       .map(item => accessibilityValueMap[item])
       .filter(Boolean);
+    const shelterTypes = selectedShelterTypes
+      .filter(item => item !== SHELTER_ALL_LABEL)
+      .map(item => shelterTypeValueMap[item])
+      .filter(Boolean);
 
     setNearestShelterStatus('loading');
     request(
@@ -122,6 +131,7 @@ export function useFetchNearestShelter() {
             '/api/shelters/map/nearest',
             {
               accessibilityFeatures,
+              shelterTypes,
               x: location.lng,
               y: location.lat,
             },
@@ -155,6 +165,7 @@ export function useFetchNearestShelter() {
     location,
     request,
     selectedAccessibility,
+    selectedShelterTypes,
     setNearestShelter,
     setNearestShelterStatus,
   ]);

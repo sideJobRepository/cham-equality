@@ -1,34 +1,22 @@
 import { useState } from 'react';
-import { Modal, useWindowDimensions } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import styled from 'styled-components/native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CircleHelp, SlidersHorizontal, X } from 'lucide-react-native';
-import Button from './ui/Button.tsx';
-import IconButton from './ui/IconButton.tsx';
+import MapFilterSheet, { useShelterTypeSummary } from './MapFilterSheet.tsx';
 import {
   ACCESSIBILITY_ALL_LABEL,
   SHELTER_ALL_LABEL,
   accessibilityFilterLabelKeys,
-  accessibilityOptions,
-  shelterTypeFilterLabelKeys,
-  shelterTypeOptions,
-  toggleWithAll,
   useMapFilterStore,
 } from '../store/mapFilters.ts';
 import {
   colors,
   fontSize,
   fontWeight,
-  lineHeight,
   radius,
   size,
   spacing,
 } from '../theme/index.ts';
-
-const accessibilityChoices = accessibilityOptions.filter(
-  item => item !== ACCESSIBILITY_ALL_LABEL,
-);
 
 interface MapFilterBarProps {
   onPressAccessibilityInfo?: () => void;
@@ -40,64 +28,49 @@ export default function MapFilterBar({
   onPressAccessibilityInfo,
 }: MapFilterBarProps) {
   const { t: translate } = useTranslation();
-  const insets = useSafeAreaInsets();
-  const { height: windowHeight } = useWindowDimensions();
-  const selectedShelterTypes = useMapFilterStore(
-    state => state.selectedShelterTypes,
-  );
   const selectedAccessibility = useMapFilterStore(
     state => state.selectedAccessibility,
   );
-  const toggleShelterType = useMapFilterStore(state => state.toggleShelterType);
   const toggleAccessibility = useMapFilterStore(
     state => state.toggleAccessibility,
   );
   const applyFilters = useMapFilterStore(state => state.applyFilters);
+  const shelterTypeSummary = useShelterTypeSummary();
 
   const [visible, setVisible] = useState(false);
-  // 시트에서 고르는 동안엔 지도를 다시 불러오지 않게 적용 전까지 따로 들고 있는다
-  const [draftShelterTypes, setDraftShelterTypes] = useState<string[]>([]);
-  const [draftAccessibility, setDraftAccessibility] = useState<string[]>([]);
 
-  const activeShelterTypes = selectedShelterTypes.filter(
-    item => item !== SHELTER_ALL_LABEL,
-  );
   const activeAccessibility = selectedAccessibility.filter(
     item => item !== ACCESSIBILITY_ALL_LABEL,
   );
-  const selectedCount = activeShelterTypes.length + activeAccessibility.length;
+  const selectedCount = shelterTypeSummary.count + activeAccessibility.length;
 
-  const openSheet = () => {
-    setDraftShelterTypes(selectedShelterTypes);
-    setDraftAccessibility(selectedAccessibility);
-    setVisible(true);
-  };
-
+  const openSheet = () => setVisible(true);
   const closeSheet = () => setVisible(false);
 
-  const resetDraft = () => {
-    setDraftShelterTypes([SHELTER_ALL_LABEL]);
-    setDraftAccessibility([ACCESSIBILITY_ALL_LABEL]);
-  };
-
-  const apply = () => {
-    applyFilters(draftShelterTypes, draftAccessibility);
-    setVisible(false);
-  };
-
+  // 유형은 한 칩으로 접혀 있으니 X 는 유형 선택을 통째로 푼다
   const summaryItems = [
-    ...activeShelterTypes.map(item => ({
-      key: `type-${item}`,
-      label: translate(shelterTypeFilterLabelKeys[item] ?? item),
-      color: colors.filterStrong.shelter,
-      onRemove: () => toggleShelterType(item),
-    })),
-    ...activeAccessibility.map(item => ({
-      key: `a11y-${item}`,
-      label: translate(accessibilityFilterLabelKeys[item] ?? item),
-      color: colors.filterStrong.accessibility,
-      onRemove: () => toggleAccessibility(item),
-    })),
+    ...(shelterTypeSummary.count
+      ? [
+          {
+            key: 'type',
+            label: shelterTypeSummary.label,
+            a11yLabel: shelterTypeSummary.fullLabel,
+            color: colors.filterStrong.shelter,
+            onRemove: () =>
+              applyFilters([SHELTER_ALL_LABEL], selectedAccessibility),
+          },
+        ]
+      : []),
+    ...activeAccessibility.map(item => {
+      const label = translate(accessibilityFilterLabelKeys[item] ?? item);
+      return {
+        key: `a11y-${item}`,
+        label,
+        a11yLabel: label,
+        color: colors.filterStrong.accessibility,
+        onRemove: () => toggleAccessibility(item),
+      };
+    }),
   ];
 
   return (
@@ -157,7 +130,7 @@ export default function MapFilterBar({
               key={item.key}
               accessibilityRole="button"
               accessibilityLabel={translate('map.filterSheet.remove', {
-                label: item.label,
+                label: item.a11yLabel,
               })}
               onPress={item.onRemove}
             >
@@ -176,112 +149,7 @@ export default function MapFilterBar({
         )}
       </SummaryScroll>
 
-      <Modal
-        visible={visible}
-        transparent
-        animationType="fade"
-        statusBarTranslucent
-        onRequestClose={closeSheet}
-      >
-        <Overlay
-          accessible={false}
-          importantForAccessibility="no"
-          onPress={closeSheet}
-        >
-          {/* 시트 안을 눌러도 바깥(닫기)으로 전달되지 않게 Pressable 로 감싼다 */}
-          <Sheet
-            accessible={false}
-            accessibilityViewIsModal
-            $bottom={insets.bottom}
-            $maxHeight={windowHeight * 0.8}
-            onPress={() => {}}
-          >
-            <SheetHeader>
-              <SheetTitle accessibilityRole="header">
-                {translate('map.filterSheet.title')}
-              </SheetTitle>
-              <IconButton
-                accessibilityLabel={translate('common.close')}
-                onPress={closeSheet}
-              >
-                <X color={colors.textSecondary} size={22} />
-              </IconButton>
-            </SheetHeader>
-
-            <SheetBody>
-              <SectionTitle accessibilityRole="header">
-                {translate('map.filterSheet.shelterType')}
-              </SectionTitle>
-              <ChipWrap>
-                {shelterTypeOptions.map(item => {
-                  const selected = draftShelterTypes.includes(item);
-                  return (
-                    <SheetChip
-                      key={item}
-                      accessibilityRole="checkbox"
-                      accessibilityState={{ checked: selected }}
-                      $selected={selected}
-                      $selectedColor={colors.filterStrong.shelter}
-                      onPress={() =>
-                        setDraftShelterTypes(prev =>
-                          toggleWithAll(prev, item, SHELTER_ALL_LABEL),
-                        )
-                      }
-                    >
-                      <SheetChipText $selected={selected}>
-                        {translate(shelterTypeFilterLabelKeys[item] ?? item)}
-                      </SheetChipText>
-                    </SheetChip>
-                  );
-                })}
-              </ChipWrap>
-
-              <SectionTitle accessibilityRole="header">
-                {translate('map.filterSheet.accessibility')}
-              </SectionTitle>
-              <SectionDescription>
-                {translate('map.accessibilityInfo.description')}
-              </SectionDescription>
-              <ChipWrap>
-                {accessibilityChoices.map(item => {
-                  const selected = draftAccessibility.includes(item);
-                  return (
-                    <SheetChip
-                      key={item}
-                      accessibilityRole="checkbox"
-                      accessibilityState={{ checked: selected }}
-                      $selected={selected}
-                      $selectedColor={colors.filterStrong.accessibility}
-                      onPress={() =>
-                        setDraftAccessibility(prev =>
-                          toggleWithAll(prev, item, ACCESSIBILITY_ALL_LABEL),
-                        )
-                      }
-                    >
-                      <SheetChipText $selected={selected}>
-                        {translate(accessibilityFilterLabelKeys[item] ?? item)}
-                      </SheetChipText>
-                    </SheetChip>
-                  );
-                })}
-              </ChipWrap>
-            </SheetBody>
-
-            <SheetFooter>
-              <Button
-                label={translate('map.filterSheet.reset')}
-                variant="outline"
-                onPress={resetDraft}
-              />
-              <Button
-                label={translate('map.filterSheet.apply')}
-                flex
-                onPress={apply}
-              />
-            </SheetFooter>
-          </Sheet>
-        </Overlay>
-      </Modal>
+      <MapFilterSheet visible={visible} onClose={closeSheet} />
     </Bar>
   );
 }
@@ -386,86 +254,4 @@ const SummaryChipText = styled.Text`
 const EmptySummaryText = styled.Text`
   color: ${colors.textMuted};
   font-size: ${fontSize.caption}px;
-`;
-
-const Overlay = styled.Pressable`
-  flex: 1;
-  justify-content: flex-end;
-  background-color: ${colors.overlay};
-`;
-
-const Sheet = styled.Pressable<{ $bottom: number; $maxHeight: number }>`
-  max-height: ${({ $maxHeight }) => $maxHeight}px;
-  padding: ${spacing.md}px ${spacing.xl}px
-    ${({ $bottom }) => $bottom + spacing.xl}px;
-  border-top-left-radius: ${radius.lg}px;
-  border-top-right-radius: ${radius.lg}px;
-  background-color: ${colors.surface};
-`;
-
-const SheetHeader = styled.View`
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
-`;
-
-const SheetTitle = styled.Text`
-  color: ${colors.text};
-  font-size: ${fontSize.title}px;
-  line-height: ${lineHeight.title}px;
-  font-weight: ${fontWeight.heavy};
-`;
-
-const SheetBody = styled.ScrollView`
-  flex-grow: 0;
-`;
-
-const SectionTitle = styled.Text`
-  margin-top: ${spacing.lg}px;
-  color: ${colors.text};
-  font-size: ${fontSize.body}px;
-  line-height: ${lineHeight.body}px;
-  font-weight: ${fontWeight.heavy};
-`;
-
-const SectionDescription = styled.Text`
-  margin-top: ${spacing.xs}px;
-  color: ${colors.textMuted};
-  font-size: ${fontSize.caption}px;
-  line-height: ${lineHeight.caption}px;
-`;
-
-const ChipWrap = styled.View`
-  flex-direction: row;
-  flex-wrap: wrap;
-  gap: ${spacing.md}px;
-  margin-top: ${spacing.md}px;
-`;
-
-const SheetChip = styled.Pressable<{
-  $selected: boolean;
-  $selectedColor: string;
-}>`
-  min-height: ${size.touchMin}px;
-  justify-content: center;
-  padding: 0 ${spacing.xl}px;
-  border-radius: ${radius.full}px;
-  border-width: 1px;
-  border-color: ${({ $selected, $selectedColor }) =>
-    $selected ? $selectedColor : colors.borderStrong};
-  background-color: ${({ $selected, $selectedColor }) =>
-    $selected ? $selectedColor : colors.surface};
-`;
-
-const SheetChipText = styled.Text<{ $selected: boolean }>`
-  color: ${({ $selected }) =>
-    $selected ? colors.textOnColor : colors.textSecondary};
-  font-size: ${fontSize.label}px;
-  font-weight: ${fontWeight.bold};
-`;
-
-const SheetFooter = styled.View`
-  flex-direction: row;
-  gap: ${spacing.md}px;
-  margin-top: ${spacing.xl}px;
 `;

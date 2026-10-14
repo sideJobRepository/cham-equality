@@ -1,19 +1,17 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import styled from 'styled-components/native';
-import { CircleHelp } from 'lucide-react-native';
+import { ChevronDown, CircleHelp } from 'lucide-react-native';
 import {
   ACCESSIBILITY_ALL_LABEL,
   ACCESSIBILITY_SELECTED_COLOR,
-  SHELTER_SELECTED_COLOR,
   accessibilityFilterLabelKeys,
   accessibilityOptions,
-  shelterTypeFilterLabelKeys,
-  shelterTypeOptions,
   useMapFilterStore,
 } from '../store/mapFilters.ts';
 import { colors } from '../theme/index.ts';
 import MapFilterBar from './MapFilterBar.tsx';
+import MapFilterSheet, { useShelterTypeSummary } from './MapFilterSheet.tsx';
 
 interface MapSearchFiltersProps {
   horizontalPadding?: number;
@@ -54,13 +52,9 @@ function ChipFilters({
 > &
   Pick<MapSearchFiltersProps, 'onPressAccessibilityInfo'>) {
   const { t: translate } = useTranslation();
-  const selectedShelterTypes = useMapFilterStore(
-    state => state.selectedShelterTypes,
-  );
   const selectedAccessibility = useMapFilterStore(
     state => state.selectedAccessibility,
   );
-  const toggleShelterType = useMapFilterStore(state => state.toggleShelterType);
   const toggleAccessibility = useMapFilterStore(
     state => state.toggleAccessibility,
   );
@@ -71,32 +65,11 @@ function ChipFilters({
     () => accessibilityOptions.filter(item => item !== ACCESSIBILITY_ALL_LABEL),
     [],
   );
+  const shelterTypeSummary = useShelterTypeSummary();
+  const [typeSheetVisible, setTypeSheetVisible] = useState(false);
 
   return (
     <FilterSection $horizontalPadding={horizontalPadding}>
-      {showShelterTypes ? (
-        <FilterGroup>
-          <FilterRow horizontal showsHorizontalScrollIndicator={false}>
-            {shelterTypeOptions.map(item => (
-              <FilterChip
-                key={item}
-                $selected={selectedShelterTypes.includes(item)}
-                $selectedColor={SHELTER_SELECTED_COLOR}
-                accessibilityRole="button"
-                accessibilityState={{
-                  selected: selectedShelterTypes.includes(item),
-                }}
-                onPress={() => toggleShelterType(item)}
-              >
-                <FilterChipText $selected={selectedShelterTypes.includes(item)}>
-                  {translate(shelterTypeFilterLabelKeys[item] ?? item)}
-                </FilterChipText>
-              </FilterChip>
-            ))}
-          </FilterRow>
-        </FilterGroup>
-      ) : null}
-
       <FilterGroup>
         <AccessibilityRow>
           {showAccessibilityAll ? (
@@ -119,7 +92,41 @@ function ChipFilters({
           <AccessibilityFilterRow
             horizontal
             showsHorizontalScrollIndicator={false}
+            contentContainerStyle={rowContentStyle}
           >
+            {showShelterTypes ? (
+              <>
+                <FilterChip
+                  $selected={shelterTypeSummary.count > 0}
+                  $selectedColor={colors.filterStrong.shelter}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${translate(
+                    'map.filterSheet.shelterType',
+                  )}${
+                    shelterTypeSummary.count
+                      ? `: ${shelterTypeSummary.fullLabel}`
+                      : ''
+                  }`}
+                  onPress={() => setTypeSheetVisible(true)}
+                >
+                  <FilterChipText $selected={shelterTypeSummary.count > 0}>
+                    {shelterTypeSummary.count
+                      ? shelterTypeSummary.label
+                      : translate('map.filterSheet.shelterType')}
+                  </FilterChipText>
+                  <ChevronDown
+                    color={
+                      shelterTypeSummary.count
+                        ? colors.textOnColor
+                        : colors.textSecondary
+                    }
+                    size={15}
+                    strokeWidth={2.6}
+                  />
+                </FilterChip>
+                <RowDivider />
+              </>
+            ) : null}
             {visibleAccessibilityOptions.map(item => {
               const selected = selectedAccessibility.includes(item);
 
@@ -141,6 +148,14 @@ function ChipFilters({
           </AccessibilityFilterRow>
         </AccessibilityRow>
       </FilterGroup>
+
+      {showShelterTypes ? (
+        <MapFilterSheet
+          visible={typeSheetVisible}
+          onClose={() => setTypeSheetVisible(false)}
+          showAccessibility={false}
+        />
+      ) : null}
     </FilterSection>
   );
 }
@@ -154,13 +169,19 @@ const FilterGroup = styled.View`
   gap: 8px;
 `;
 
-const FilterRow = styled.ScrollView`
-  max-height: 46px;
-`;
-
 const AccessibilityRow = styled.View`
   flex-direction: row;
   align-items: center;
+`;
+
+const rowContentStyle = { alignItems: 'center' as const };
+
+// 유형은 시트를 여는 칩, 오른쪽은 바로 켜고 끄는 접근성 칩이라 둘 사이를 갈라 둔다
+const RowDivider = styled.View`
+  width: 1px;
+  height: 20px;
+  margin-right: 8px;
+  background-color: ${colors.borderStrong};
 `;
 
 const AccessibilityFilterRow = styled.ScrollView`

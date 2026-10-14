@@ -13,6 +13,7 @@ import com.chamapi.shelter.entity.Shelter;
 import com.chamapi.shelter.entity.ShelterImage;
 import com.chamapi.shelter.enums.AccessibilityFeature;
 import com.chamapi.shelter.enums.AccessibilityMatchStatus;
+import com.chamapi.shelter.enums.ShelterType;
 import com.chamapi.shelter.repository.ShelterQueryRepositoryImpl;
 import com.chamapi.shelter.repository.ShelterRepository;
 import lombok.RequiredArgsConstructor;
@@ -46,9 +47,11 @@ public class ShelterMapService {
 
     public ShelterMapResponse getNearest(NearestShelterCondition condition, Language lang) {
         List<AccessibilityFeature> features = condition.accessibilityFeatures();
+        List<ShelterType> shelterTypes = condition.shelterTypes();
 
         Shelter nearest = shelterRepository.findAllWithPlaceAndRegion().stream()
                 .filter(s -> Objects.nonNull(s.getLatitude()) && Objects.nonNull(s.getLongitude()))
+                .filter(s -> isEmpty(shelterTypes) || shelterTypes.contains(s.getShelterType()))
                 .filter(s -> isEmpty(features) || s.evaluateAccessibility(features) == AccessibilityMatchStatus.ACCESSIBLE)
                 .min(Comparator.comparingDouble(s -> s.distanceTo(condition.y(), condition.x())))
                 .orElseThrow(() -> new BadRequestException("조건에 맞는 대피소를 찾을 수 없습니다"));

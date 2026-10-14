@@ -473,7 +473,6 @@ export default function HomeScreen() {
           <CurrentLocationBar />
           <MapSearchFilters
             horizontalPadding={0}
-            showShelterTypes={false}
             showAccessibilityAll={false}
           />
           {nearestShelter ? (
