@@ -9,6 +9,7 @@ import com.facebook.react.ReactApplication
 import com.facebook.react.ReactHost
 import com.facebook.react.ReactNativeApplicationEntryPoint.loadReactNative
 import com.facebook.react.defaults.DefaultReactHost.getDefaultReactHost
+import com.hotupdater.HotUpdater
 
 class MainApplication : Application(), ReactApplication {
 
@@ -21,11 +22,19 @@ class MainApplication : Application(), ReactApplication {
           // add(MyReactNativePackage())
           add(ChamLocationPackage())
         },
+      // OTA로 받은 JS 번들이 있으면 그걸, 없으면 APK에 든 번들을 쓴다(디버그는 Metro라 무관).
+      jsBundleFilePath = HotUpdater.getJSBundleFile(applicationContext),
     )
   }
 
   override fun onCreate() {
     super.onCreate()
+    // OTA(hot-updater) 네이티브 지문. 라이브러리는 이 문자열을 이름으로만 찾아서 R8 리소스 축소가 지워 버린다.
+    // 코드에서 직접 읽어 넘기면 지워지지 않는다. 비어 있으면(지문 없이 만든 빌드) 업데이트 확인을 건너뛴다.
+    // reactHost(번들 경로 결정)보다 먼저 불러야 한다.
+    HotUpdater.configure(
+      fingerprintHash = getString(R.string.hot_updater_fingerprint_hash).ifEmpty { null },
+    )
     createDisasterChannel()
     loadReactNative(this)
   }

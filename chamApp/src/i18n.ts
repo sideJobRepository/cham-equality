@@ -130,6 +130,12 @@ const resources = {
         },
         languageSettings: '언어 설정',
         login: '로그인',
+        version: '버전 {{version}}',
+        betaUpdates: {
+          title: '베타 업데이트 받기',
+          description: '테스터용. 전체 배포 전인 앱 수정을 먼저 받아요.',
+          changed: '바꾼 설정은 다음에 앱을 다시 열 때 적용돼요.',
+        },
       },
       moreReports: {
         title: '내가 제보한 목록',
@@ -407,6 +413,12 @@ const resources = {
         },
         languageSettings: 'Language Settings',
         login: 'Login',
+        version: 'Version {{version}}',
+        betaUpdates: {
+          title: 'Receive beta updates',
+          description: 'For testers. Get app fixes before they reach everyone.',
+          changed: 'This takes effect the next time you open the app.',
+        },
       },
       moreReports: {
         title: 'My Reports',
@@ -684,6 +696,12 @@ const resources = {
         },
         languageSettings: '语言设置',
         login: '登录',
+        version: '版本 {{version}}',
+        betaUpdates: {
+          title: '接收测试版更新',
+          description: '供测试人员使用。在全面发布前抢先获得应用修复。',
+          changed: '下次打开应用时生效。',
+        },
       },
       moreReports: {
         title: '我的举报列表',
@@ -961,6 +979,12 @@ const resources = {
         },
         languageSettings: '言語設定',
         login: 'ログイン',
+        version: 'バージョン {{version}}',
+        betaUpdates: {
+          title: 'ベータ版アップデートを受け取る',
+          description: 'テスター向け。全体配信の前にアプリの修正を先に受け取ります。',
+          changed: '次にアプリを開いたときに反映されます。',
+        },
       },
       moreReports: {
         title: '自分の提報一覧',
@@ -1239,6 +1263,12 @@ const resources = {
         },
         languageSettings: 'Cài đặt ngôn ngữ',
         login: 'Đăng nhập',
+        version: 'Phiên bản {{version}}',
+        betaUpdates: {
+          title: 'Nhận bản cập nhật beta',
+          description: 'Dành cho người thử nghiệm. Nhận bản sửa lỗi trước khi phát hành cho mọi người.',
+          changed: 'Thay đổi sẽ áp dụng khi bạn mở lại ứng dụng.',
+        },
       },
       moreReports: {
         title: 'Báo cáo của tôi',

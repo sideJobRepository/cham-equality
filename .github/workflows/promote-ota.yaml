@@ -1,0 +1,56 @@
+name: promote-ota
+
+# JS 번들 OTA(심사 없는 업데이트) 관리. main 푸시로 올라간 번들은 테스터(앱 더보기에서 "베타 업데이트 받기"를 켠 기기)만 받는다.
+# 여기서 promote 를 실행해야 전체 사용자에게 간다. GitHub Actions 화면에서 직접 실행한다.
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'promote=테스터 번들 전부 전체 배포 / disable=번들 끄기(롤백) / enable=다시 켜기 / list=최근 번들 보기'
+        type: choice
+        options:
+          - promote
+          - disable
+          - enable
+          - list
+        default: promote
+      uuid:
+        description: '대상 번들 uuid (disable·enable 에만 필요. list 로 확인)'
+        required: false
+
+concurrency:
+  group: promote-ota
+  cancel-in-progress: false
+
+jobs:
+  ota:
+    runs-on: ubuntu-latest
+    env:
+      API_BASE_URL: ${{ secrets.APP_API_BASE_URL }}
+      ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+      ACTION: ${{ inputs.action }}
+      BUNDLE_UUID: ${{ inputs.uuid }}
+
+    steps:
+      - name: 실행
+        run: |
+          set -euo pipefail
+          call() {
+            curl -fsS -X "$1" "$API_BASE_URL/api/admin/app-bundles$2" -H "X-Admin-Password: $ADMIN_PASSWORD" | jq '.data'
+          }
+
+          case "$ACTION" in
+            promote)
+              # 승격된 번들 목록이 나온다. 빈 배열이면 테스터에게만 가던 번들이 없었던 것.
+              call POST /promote
+              ;;
+            disable|enable)
+              if ! [[ "$BUNDLE_UUID" =~ ^[0-9a-f-]{36}$ ]]; then
+                echo "uuid 를 입력하세요(list 로 확인): '$BUNDLE_UUID'"; exit 1
+              fi
+              call POST "/$BUNDLE_UUID/$ACTION"
+              ;;
+            list)
+              call GET '?limit=20'
+              ;;
+          esac

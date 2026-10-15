@@ -1,5 +1,6 @@
 import UIKit
 import FirebaseCore
+import HotUpdater
 import KakaoSDKAuth
 import KakaoSDKCommon
 import NaverThirdPartyLogin
@@ -66,7 +67,8 @@ class ReactNativeDelegate: RCTDefaultReactNativeFactoryDelegate {
 #if DEBUG
     RCTBundleURLProvider.sharedSettings().jsBundleURL(forBundleRoot: "index")
 #else
-    Bundle.main.url(forResource: "main", withExtension: "jsbundle")
+    // OTA로 받은 JS 번들이 있으면 그걸, 없으면 앱에 든 main.jsbundle을 쓴다.
+    HotUpdater.bundleURL()
 #endif
   }
 }

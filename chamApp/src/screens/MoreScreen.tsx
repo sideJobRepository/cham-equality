@@ -52,6 +52,7 @@ import SubmitButton from '../components/ui/SubmitButton.tsx';
 import Button from '../components/ui/Button.tsx';
 import IconButton from '../components/ui/IconButton.tsx';
 import StatusMessage from '../components/ui/StatusMessage.tsx';
+import AppVersionFooter from '../components/AppVersionFooter.tsx';
 import { colors } from '../theme/index.ts';
 import {
   Screen,
@@ -737,6 +738,8 @@ export default function MoreScreen() {
             </LoginBlock>
           )}
         </Section>
+
+        <AppVersionFooter />
       </Content>
 
       <Modal

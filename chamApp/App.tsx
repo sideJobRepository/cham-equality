@@ -8,6 +8,7 @@ import { refreshAccessToken } from './src/lib/axiosInstance';
 import { DialogProvider } from './src/utils/dialog';
 import { colors } from './src/theme';
 import { useInAppUpdate } from './src/hooks/useInAppUpdate';
+import { useOtaUpdate } from './src/services/otaUpdate.service';
 import {
   restorePushPreferences,
   usePushRegistration,
@@ -18,6 +19,9 @@ import { useSplashStore } from './src/store';
 function App() {
   const [sessionRestored, setSessionRestored] = useState(false);
   const [splashVisible, setSplashVisible] = useState(true);
+
+  // JS만 바뀐 수정(OTA)을 받아 둔다. 다음 실행 때 적용돼 쓰는 중엔 화면이 안 바뀐다.
+  useOtaUpdate();
 
   // 앱 시작 시 Keychain의 refresh token으로 세션 복원(로그인 안 했으면 즉시 no-op)과
   // 저장된 언어·알림 설정 복원을 함께 기다린다. 그동안은 스플래시가 가려 준다.

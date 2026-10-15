@@ -104,6 +104,10 @@ android {
         // 카카오 URL scheme — AuthCodeHandlerActivity의 intent-filter에서 사용
         def kakaoAppKey = project.env.get("KAKAO_NATIVE_APP_KEY") ?: ""
         manifestPlaceholders = [KAKAO_SCHEME: "kakao" + kakaoAppKey]
+
+        // OTA(hot-updater) 네이티브 지문. CI가 scripts/fingerprint.js 값을 -PhotUpdaterFingerprint 로 넘긴다.
+        // 비어 있으면 앱이 업데이트 확인을 건너뛴다(로컬 디버그 빌드 등).
+        resValue "string", "hot_updater_fingerprint_hash", (project.findProperty('hotUpdaterFingerprint') ?: "")
     }
     signingConfigs {
         debug {
