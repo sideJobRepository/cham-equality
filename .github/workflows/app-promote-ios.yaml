@@ -46,7 +46,6 @@ jobs:
       RELEASE_AFTER_APPROVAL: ${{ inputs.release_after_approval }}
       ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
       ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
-      ASC_KEY_PATH: ${{ runner.temp }}/asc.p8
 
     steps:
       - name: 입력값 검증
@@ -64,8 +63,11 @@ jobs:
       - name: jwt 설치
         run: gem install jwt --no-document
 
+      # 잡 env 에서는 runner 컨텍스트를 못 써서(워크플로 파일 오류) 경로를 여기서 정해 다음 스텝에 넘긴다.
       - name: API 키 준비
-        run: echo "${{ secrets.ASC_KEY_P8_BASE64 }}" | base64 -d > "$ASC_KEY_PATH"
+        run: |
+          echo "${{ secrets.ASC_KEY_P8_BASE64 }}" | base64 -d > "$RUNNER_TEMP/asc.p8"
+          echo "ASC_KEY_PATH=$RUNNER_TEMP/asc.p8" >> "$GITHUB_ENV"
 
       - name: 실행
         run: ruby .github/scripts/app-store.rb "$ACTION"
