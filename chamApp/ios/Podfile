@@ -11,6 +11,9 @@ prepare_react_native_project!
 # Firebase(@react-native-firebase)는 Swift pod 라 정적 프레임워크로 묶어야 한다.
 use_frameworks! :linkage => :static
 $RNFirebaseAsStaticFramework = true
+# react-native-firebase 는 기본으로 Firebase 를 SPM 으로 받는데, SPM 산출물은 정적 링크와 섞이면
+# pod 마다 사본이 들어가 중복 심볼이 난다(pod install 이 막는다). CocoaPods 로 받게 해서 피한다.
+$RNFirebaseDisableSPM = true
 
 target 'chamApp' do
   config = use_native_modules!
