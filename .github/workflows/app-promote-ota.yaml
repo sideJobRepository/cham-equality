@@ -1,4 +1,4 @@
-name: promote-ota
+name: 앱 OTA 승격
 
 # JS 번들 OTA(심사 없는 업데이트) 관리. main 푸시로 올라간 번들은 테스터(앱 더보기에서 "베타 업데이트 받기"를 켠 기기)만 받는다.
 # 여기서 promote 를 실행해야 전체 사용자에게 간다. GitHub Actions 화면에서 직접 실행한다.

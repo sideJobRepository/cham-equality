@@ -1,0 +1,49 @@
+name: 앱 빌드 준비
+description: chamApp 의 Node 설치·npm ci·.env 생성. android·ios·OTA 잡이 같이 쓴다.
+
+# 컴포지트 액션은 secrets 를 직접 못 읽어서 호출하는 쪽이 inputs 로 넘긴다.
+# api-base-url 을 비우면 .env 를 만들지 않는다(OTA 번들은 .env 를 읽지 않음 — react-native-config 값은 네이티브 쪽에 박힌다).
+inputs:
+  api-base-url:
+    required: false
+    default: ''
+  kakao-native-app-key:
+    required: false
+    default: ''
+  kakao-map-app-key:
+    required: false
+    default: ''
+  naver-client-key:
+    required: false
+    default: ''
+  naver-client-secret:
+    required: false
+    default: ''
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@v4
+      with:
+        node-version: '22'
+        cache: 'npm'
+        cache-dependency-path: chamApp/package-lock.json
+
+    - name: npm ci
+      shell: bash
+      working-directory: chamApp
+      run: npm ci
+
+    - name: .env 생성 (react-native-config 빌드 타임 주입)
+      if: inputs.api-base-url != ''
+      shell: bash
+      working-directory: chamApp
+      run: |
+        cat > .env <<EOF
+        API_BASE_URL=${{ inputs.api-base-url }}
+        KAKAO_NATIVE_APP_KEY=${{ inputs.kakao-native-app-key }}
+        KAKAO_MAP_APP_KEY=${{ inputs.kakao-map-app-key }}
+        NAVER_CLIENT_KEY=${{ inputs.naver-client-key }}
+        NAVER_CLIENT_SECRET=${{ inputs.naver-client-secret }}
+        NAVER_APP_NAME=대전 모두의 안전
+        EOF

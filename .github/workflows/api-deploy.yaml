@@ -1,0 +1,87 @@
+name: API 배포
+
+# chamApi 가 바뀐 main 푸시 → jar 빌드 → 서버 8081 재기동.
+# 코드 변경 없이 다시 띄우고 싶으면 Actions 화면에서 직접 실행.
+on:
+  push:
+    branches: [main]
+    paths: ['chamApi/**']
+  workflow_dispatch:
+
+# 두 배포가 겹치면 fuser 로 서로의 프로세스를 죽인다. 앞의 것이 끝날 때까지 기다린다.
+concurrency:
+  group: api-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'corretto'
+          java-version: '25'
+
+      - name: jar 빌드
+        working-directory: chamApi
+        run: chmod +x ./gradlew && ./gradlew clean build -x test
+
+      - name: jar 이름 정리
+        run: mv ./chamApi/build/libs/*SNAPSHOT.jar ./project.jar
+
+      - name: 서버로 전송
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          password: ${{ secrets.PASSWORD }}
+          port: 22
+          source: project.jar
+          target: /home/cham/cham-server-research/tobe
+
+      - name: 재기동
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          password: ${{ secrets.PASSWORD }}
+          port: 22
+          script_stop: true
+          script: |
+            rm -rf /home/cham/cham-server-research/target
+            mkdir -p /home/cham/cham-server-research/target
+            mv /home/cham/cham-server-research/tobe/project.jar /home/cham/cham-server-research/target
+            cd /home/cham/cham-server-research/target
+            sudo fuser -k -n tcp 8081 || true
+            DB_USERNAME='${{ secrets.DB_USERNAME }}' \
+            DB_PASSWORD='${{ secrets.DB_PASSWORD }}' \
+            DB_URL='${{ secrets.DB_URL }}' \
+            DB_PORT='${{ secrets.DB_PORT }}' \
+            AWS_ACCESS_KEY='${{ secrets.AWS_ACCESS_KEY }}' \
+            AWS_SECRET_KEY='${{ secrets.AWS_SECRET_KEY }}' \
+            AWS_REGION='${{ secrets.AWS_REGION }}' \
+            AWS_BUCKET='${{ secrets.AWS_BUCKET }}' \
+            ADMIN_PASSWORD='${{ secrets.ADMIN_PASSWORD }}' \
+            USER_PASSWORD='${{ secrets.USER_PASSWORD }}' \
+            DATA_API_KEY='${{ secrets.DATA_API_KEY }}' \
+            AZURE_TRANSLATOR_KEY='${{ secrets.AZURE_TRANSLATOR_KEY }}' \
+            AZURE_TRANSLATOR_REGION='${{ secrets.AZURE_TRANSLATOR_REGION }}' \
+            AZURE_TRANSLATOR_ENDPOINT='${{ secrets.AZURE_TRANSLATOR_ENDPOINT }}' \
+            NCP_API_KEY_ID='${{ secrets.NCP_API_KEY_ID }}' \
+            NCP_API_KEY='${{ secrets.NCP_API_KEY }}' \
+            NCP_BASE_URL='${{ secrets.NCP_BASE_URL }}' \
+            NCP_GEOCODING_PATH='${{ secrets.NCP_GEOCODING_PATH }}' \
+            NCP_REVERSE_GEOCODING_PATH='${{ secrets.NCP_REVERSE_GEOCODING_PATH }}' \
+            KAKAO_APP_ID='${{ secrets.KAKAO_APP_ID }}' \
+            VWORLD_KEY='${{ secrets.VWORLD_KEY }}' \
+            FIREBASE_SERVICE_ACCOUNT_BASE64='${{ secrets.FIREBASE_SERVICE_ACCOUNT_BASE64 }}' \
+            nohup java \
+            -Dspring.profiles.active=real \
+            -Dserver.port=8081 \
+            -Duser.timezone=Asia/Seoul \
+            -jar project.jar > /dev/null 2>&1 &
+
+            rm -rf /home/cham/cham-server-research/tobe

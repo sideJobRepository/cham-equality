@@ -1,6 +1,6 @@
-name: promote-production
+name: 앱 Play 프로덕션 승격
 
-# 비공개 테스트(alpha)에서 확인한 빌드를 프로덕션으로 올린다. 다시 빌드하지 않아 테스트한 것과 출시하는 것이 같다.
+# Android 전용. 비공개 테스트(alpha)에서 확인한 빌드를 프로덕션으로 올린다. 다시 빌드하지 않아 테스트한 것과 출시하는 것이 같다.
 # GitHub Actions 화면에서 직접 실행한다(main 푸시로는 돌지 않음). 서비스 계정에 Play Console '프로덕션 출시' 권한이 필요하다.
 on:
   workflow_dispatch:

@@ -1,0 +1,290 @@
+name: 앱 빌드
+
+# chamApp 이 바뀐 main 푸시에서 두 갈래로 나뉜다.
+#   - 네이티브 파일(JS 외)이 하나라도 바뀜 → 스토어 빌드: Android AAB → Play 비공개 테스트(alpha), iOS IPA → TestFlight
+#   - JS(src·App.tsx·index.js)만 바뀜     → OTA: JS 번들을 테스터(alpha 채널)에게만 배포. 심사 없음
+# 이후 전체 사용자에게 내보내는 건 수동 워크플로 두 개가 맡는다: 앱 Play 프로덕션 승격 / 앱 OTA 승격.
+#
+# 수동 실행은 스토어 빌드만 한다(서명 문제로 실패한 빌드를 코드 변경 없이 다시 돌리는 용도).
+on:
+  push:
+    branches: [main]
+    paths: ['chamApp/**']
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: '다시 빌드할 플랫폼'
+        type: choice
+        options: [ios, android, both]
+        default: ios
+
+concurrency:
+  group: app-release
+  cancel-in-progress: false
+
+env:
+  # 빌드 번호 = run_number + 이 값. Android versionCode·iOS 빌드 번호 공통이고 항상 커져야 한다.
+  # run_number 는 워크플로 파일마다 1부터 다시 센다. 예전 cham-equality.yaml 에서 +100 으로 올린 번호를
+  # 넘어서도록 1000 으로 잡았다. 이 파일 이름을 또 바꾸면 이 값도 그 시점 최대 번호보다 크게 올릴 것.
+  BUILD_NUMBER_OFFSET: 1000
+
+jobs:
+  # 푸시일 때 네이티브 변경 여부만 판정한다. 수동 실행이면 판정하지 않는다(출력이 비어 OTA 가 돌지 않음).
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      native: ${{ steps.changes.outputs.native }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dorny/paths-filter@v3
+        id: changes
+        if: github.event_name == 'push'
+        with:
+          # 패턴을 모두 만족하는 파일만 센다 → '!' 제외 패턴이 동작한다.
+          predicate-quantifier: 'every'
+          filters: |
+            native:
+              - 'chamApp/**'
+              - '!chamApp/src/**'
+              - '!chamApp/App.tsx'
+              - '!chamApp/index.js'
+
+  android:
+    needs: detect-changes
+    if: >-
+      (github.event_name == 'push' && needs.detect-changes.outputs.native == 'true') ||
+      (github.event_name == 'workflow_dispatch' && inputs.platform != 'ios')
+    runs-on: ubuntu-latest
+    env:
+      PLAY_SA: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'corretto'
+          java-version: '17'
+
+      - uses: ./.github/actions/app-setup
+        with:
+          api-base-url: ${{ secrets.APP_API_BASE_URL }}
+          kakao-native-app-key: ${{ secrets.KAKAO_NATIVE_APP_KEY }}
+          kakao-map-app-key: ${{ secrets.KAKAO_MAP_APP_KEY }}
+          naver-client-key: ${{ secrets.NAVER_CLIENT_KEY }}
+          naver-client-secret: ${{ secrets.NAVER_CLIENT_SECRET }}
+
+      # OTA 번들은 이 값이 같은 앱에만 내려간다. 서명 파일 복원 전에 계산한다(지문에 섞이지 않게).
+      - name: 빌드 번호·네이티브 지문
+        working-directory: chamApp
+        run: |
+          echo "BUILD_NUMBER=$(( ${{ github.run_number }} + BUILD_NUMBER_OFFSET ))" >> "$GITHUB_ENV"
+          echo "HOT_UPDATER_FINGERPRINT=$(node scripts/fingerprint.js android)" >> "$GITHUB_ENV"
+
+      - name: 서명·Firebase 파일 복원
+        run: |
+          echo "${{ secrets.UPLOAD_KEYSTORE_BASE64 }}" | base64 -d > chamApp/android/app/upload-keystore.jks
+          echo "${{ secrets.GOOGLE_SERVICES_JSON_BASE64 }}" | base64 -d > chamApp/android/app/google-services.json
+          cat > chamApp/android/keystore.properties <<EOF
+          CHAM_UPLOAD_STORE_FILE=upload-keystore.jks
+          CHAM_UPLOAD_KEY_ALIAS=upload
+          CHAM_UPLOAD_STORE_PASSWORD=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          CHAM_UPLOAD_KEY_PASSWORD=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          EOF
+
+      - name: AAB 빌드
+        working-directory: chamApp/android
+        run: chmod +x ./gradlew && ./gradlew bundleRelease --no-daemon -PappVersionCode="$BUILD_NUMBER" -PhotUpdaterFingerprint="$HOT_UPDATER_FINGERPRINT"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: app-release-aab
+          path: chamApp/android/app/build/outputs/bundle/release/app-release.aab
+          if-no-files-found: error
+
+      # 서비스 계정 JSON 시크릿이 있을 때만 업로드(없으면 아티팩트까지만).
+      # 트랙을 늘릴 땐 tracks 에 콤마로 추가 — AAB 는 1회만 올라가고 같은 versionCode 가 각 트랙에 붙는다
+      # (스텝을 쪼개면 version code already used). track(단수)과 같이 쓰면 액션이 에러를 낸다.
+      - name: Play 비공개 테스트(alpha) 업로드
+        if: ${{ env.PLAY_SA != '' }}
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: kr.or.cham.equality
+          releaseFiles: chamApp/android/app/build/outputs/bundle/release/app-release.aab
+          tracks: alpha
+          status: completed
+          # 출시 노트. 큰 업데이트 때 chamApp/distribution/whatsnew/whatsnew-ko-KR 만 고치면 된다(프로덕션 승격 시 같이 넘어감).
+          whatsNewDirectory: chamApp/distribution/whatsnew
+
+  # Mac 이 없어서 빌드·서명·TestFlight 업로드를 전부 여기서 한다.
+  # public 레포라 표준 macOS 러너는 무료(-large/-xlarge 라벨은 유료라 쓰지 말 것).
+  ios:
+    needs: detect-changes
+    if: >-
+      (github.event_name == 'push' && needs.detect-changes.outputs.native == 'true') ||
+      (github.event_name == 'workflow_dispatch' && inputs.platform != 'android')
+    runs-on: macos-26
+    env:
+      ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+      # Xcode 의 PROVISIONING_PROFILE_SPECIFIER(project.pbxproj Release)와 같은 이름이어야 한다.
+      PROFILE_NAME: chamApp AppStore
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Xcode 버전
+        run: xcodebuild -version
+
+      - uses: ./.github/actions/app-setup
+        with:
+          api-base-url: ${{ secrets.APP_API_BASE_URL }}
+          kakao-native-app-key: ${{ secrets.KAKAO_NATIVE_APP_KEY }}
+          kakao-map-app-key: ${{ secrets.KAKAO_MAP_APP_KEY }}
+          naver-client-key: ${{ secrets.NAVER_CLIENT_KEY }}
+          naver-client-secret: ${{ secrets.NAVER_CLIENT_SECRET }}
+
+      # pod install·시크릿 복원 전에 계산한다(지문에 섞이지 않게).
+      - name: 빌드 번호·네이티브 지문
+        working-directory: chamApp
+        run: |
+          echo "BUILD_NUMBER=$(( ${{ github.run_number }} + BUILD_NUMBER_OFFSET ))" >> "$GITHUB_ENV"
+          echo "HOT_UPDATER_FINGERPRINT=$(node scripts/fingerprint.js ios)" >> "$GITHUB_ENV"
+
+      - name: GoogleService-Info.plist 복원 (FCM 푸시)
+        run: echo "${{ secrets.GOOGLE_SERVICE_INFO_PLIST_BASE64 }}" | base64 -d > chamApp/ios/chamApp/GoogleService-Info.plist
+
+      - name: pod install
+        working-directory: chamApp/ios
+        run: pod install
+
+      - name: 배포 인증서 설치
+        uses: apple-actions/import-codesign-certs@v3
+        with:
+          p12-file-base64: ${{ secrets.IOS_DIST_CERT_P12_BASE64 }}
+          p12-password: ${{ secrets.IOS_DIST_CERT_PASSWORD }}
+
+      - name: 프로비저닝 프로파일 설치
+        run: |
+          for dir in "$HOME/Library/MobileDevice/Provisioning Profiles" "$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles"; do
+            mkdir -p "$dir"
+            echo "${{ secrets.IOS_PROVISION_PROFILE_BASE64 }}" | base64 -d > "$dir/chamApp_AppStore.mobileprovision"
+          done
+
+      # 버전 = Xcode 의 MARKETING_VERSION(앞자리) + 빌드 번호. Android versionName 과 같은 규칙.
+      # App Store 는 같은 버전 문자열로 두 번 출시할 수 없어서, 앞자리를 고정해 두면 첫 출시 뒤 업로드가 막힌다.
+      - name: 아카이브
+        working-directory: chamApp/ios
+        run: |
+          base_version="$(grep -m1 -o 'MARKETING_VERSION = [0-9.]*' chamApp.xcodeproj/project.pbxproj | awk '{print $3}')"
+          xcodebuild archive \
+            -workspace chamApp.xcworkspace \
+            -scheme chamApp \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -archivePath "$RUNNER_TEMP/chamApp.xcarchive" \
+            DEVELOPMENT_TEAM=${{ secrets.APPLE_TEAM_ID }} \
+            CURRENT_PROJECT_VERSION="$BUILD_NUMBER" \
+            MARKETING_VERSION="$base_version.$BUILD_NUMBER" \
+            HOT_UPDATER_FINGERPRINT_HASH="$HOT_UPDATER_FINGERPRINT"
+
+      - name: IPA 내보내기
+        run: |
+          cat > "$RUNNER_TEMP/ExportOptions.plist" <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key><string>app-store-connect</string>
+            <key>teamID</key><string>${{ secrets.APPLE_TEAM_ID }}</string>
+            <key>signingStyle</key><string>manual</string>
+            <key>provisioningProfiles</key>
+            <dict>
+              <key>kr.or.cham.equality</key><string>${PROFILE_NAME}</string>
+            </dict>
+          </dict>
+          </plist>
+          EOF
+          xcodebuild -exportArchive \
+            -archivePath "$RUNNER_TEMP/chamApp.xcarchive" \
+            -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" \
+            -exportPath "$RUNNER_TEMP/export"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: app-release-ipa
+          path: ${{ runner.temp }}/export/*.ipa
+          if-no-files-found: error
+
+      # App Store Connect API 키가 있을 때만 업로드(없으면 아티팩트까지만).
+      # 내부 테스트 그룹은 자동 배포라 업로드 처리만 끝나면 바로 받는다.
+      - name: TestFlight 업로드
+        if: ${{ env.ASC_KEY_ID != '' }}
+        run: |
+          mkdir -p "$HOME/private_keys"
+          echo "${{ secrets.ASC_KEY_P8_BASE64 }}" | base64 -d > "$HOME/private_keys/AuthKey_${ASC_KEY_ID}.p8"
+          xcrun altool --upload-app -t ios \
+            -f "$(ls "$RUNNER_TEMP"/export/*.ipa)" \
+            --apiKey "$ASC_KEY_ID" \
+            --apiIssuer "${{ secrets.ASC_ISSUER_ID }}"
+
+  # JS 만 바뀐 푸시: JS 번들을 S3 에 올리고 서버에 테스터용(alpha)으로 등록한다.
+  # 같은 지문(네이티브)의 앱에만 내려간다. 전체 사용자에게는 '앱 OTA 승격' 을 실행해야 간다.
+  ota:
+    needs: detect-changes
+    if: github.event_name == 'push' && needs.detect-changes.outputs.native != 'true'
+    runs-on: ubuntu-latest
+    env:
+      API_BASE_URL: ${{ secrets.APP_API_BASE_URL }}
+      ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_KEY }}
+      AWS_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
+      AWS_BUCKET: ${{ secrets.AWS_BUCKET }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./.github/actions/app-setup
+
+      - name: 번들 생성·업로드·등록
+        working-directory: chamApp
+        run: |
+          set -euo pipefail
+          message="$(git log -1 --pretty=%s)"
+
+          for platform in android ios; do
+            fingerprint="$(node scripts/fingerprint.js "$platform")"
+            bash scripts/ota-bundle.sh "$platform" "$RUNNER_TEMP/ota"
+            zip_file="$RUNNER_TEMP/ota/$platform.zip"
+
+            # hot-updater 번들 id는 UUIDv7(앞부분이 시각이라 문자열 순서 = 시간 순서).
+            uuid="$(node -e "
+              const bytes = require('crypto').randomBytes(16);
+              let time = BigInt(Date.now());
+              for (let i = 5; i >= 0; i--) { bytes[i] = Number(time & 0xffn); time >>= 8n; }
+              bytes[6] = (bytes[6] & 0x0f) | 0x70;
+              bytes[8] = (bytes[8] & 0x3f) | 0x80;
+              const hex = bytes.toString('hex');
+              console.log([hex.slice(0, 8), hex.slice(8, 12), hex.slice(12, 16), hex.slice(16, 20), hex.slice(20)].join('-'));
+            ")"
+            s3_key="app-bundles/$platform/$uuid.zip"
+            file_hash="$(sha256sum "$zip_file" | cut -d' ' -f1)"
+
+            aws s3 cp "$zip_file" "s3://$AWS_BUCKET/$s3_key" --content-type application/zip
+
+            body="$(jq -n \
+              --arg uuid "$uuid" --arg platform "$platform" --arg fingerprint "$fingerprint" \
+              --arg s3Key "$s3_key" --arg fileHash "$file_hash" --arg gitCommit "${GITHUB_SHA:0:7}" \
+              --arg message "$message" \
+              '{uuid: $uuid, platform: $platform, channel: "alpha", fingerprint: $fingerprint, s3Key: $s3Key,
+                fileHash: $fileHash, gitCommit: $gitCommit, message: ($message | .[0:200]), forceUpdate: false}')"
+            curl -fsS -X POST "$API_BASE_URL/api/admin/app-bundles" \
+              -H 'Content-Type: application/json' \
+              -H "X-Admin-Password: $ADMIN_PASSWORD" \
+              --data "$body"
+            echo
+            echo "등록: $platform $uuid (지문 $fingerprint)"
+          done

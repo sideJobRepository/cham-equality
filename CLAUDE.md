@@ -171,3 +171,4 @@ COOKIE_SECURE           # false for local http
 - `chamApi/CLAUDE.md` — backend package layout, dynamic URL↔Role authorization, RSA JWT (public key in file, private key in DB), QueryDSL repo trio, S3 presigned-URL cache.
 - `chamApi/README-db.md` — DB naming / column conventions.
 - `chamApp/README.md` — React Native standard setup.
+- `.github/workflows/README.md` — CI/CD 지도(배포 대상별 워크플로, 앱 alpha→프로덕션/OTA 흐름, 빌드 번호 오프셋).

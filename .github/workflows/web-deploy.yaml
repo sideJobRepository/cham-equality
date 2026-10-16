@@ -1,0 +1,54 @@
+name: 웹 배포
+
+# front 가 바뀐 main 푸시 → vite 빌드 → nginx 정적 폴더 교체.
+on:
+  push:
+    branches: [main]
+    paths: ['front/**']
+  workflow_dispatch:
+
+concurrency:
+  group: web-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # 러너 기본 Node 버전이 바뀌어도 빌드가 흔들리지 않게 고정한다.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: front/package-lock.json
+
+      - name: 빌드
+        working-directory: front
+        run: npm ci && npm run build
+
+      - name: 서버로 전송
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          password: ${{ secrets.PASSWORD }}
+          port: 22
+          source: front/dist/*
+          target: /home/cham/deploy/front-dist-temp-research
+
+      - name: nginx 폴더 교체
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          password: ${{ secrets.PASSWORD }}
+          port: 22
+          script_stop: true
+          script: |
+            sudo rm -rf /usr/share/nginx/cham-front-research
+            sudo mkdir -p /usr/share/nginx/cham-front-research
+            sudo mv /home/cham/deploy/front-dist-temp-research/* /usr/share/nginx/cham-front-research/
+            sudo systemctl reload nginx
