@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - main
+  # Actions 탭에서 손으로 돌리면 iOS 빌드(TestFlight)만 한다. 첫 빌드나 서명 문제로 실패한 빌드를
+  # 코드 변경 없이 다시 돌리려고 둔다. 변경 감지를 건너뛰므로 다른 잡은 모두 꺼진다.
+  workflow_dispatch:
 
 jobs:
   detect-changes:
@@ -13,6 +16,7 @@ jobs:
 
       - uses: dorny/paths-filter@v3
         id: changes
+        if: github.event_name == 'push'
         with:
           # 패턴을 모두 만족하는 파일만 센다 → app_native 의 '!' 제외 패턴이 동작한다.
           predicate-quantifier: 'every'
@@ -246,7 +250,7 @@ jobs:
   # 저장소 변수 IOS_BUILD_ENABLED=true 를 켜야 돈다 → 애플 인증서·시크릿 준비 전엔 꺼 둔다.
   build-ios:
     needs: detect-changes
-    if: needs.detect-changes.outputs.app_native == 'true' && vars.IOS_BUILD_ENABLED == 'true'
+    if: vars.IOS_BUILD_ENABLED == 'true' && (github.event_name == 'workflow_dispatch' || needs.detect-changes.outputs.app_native == 'true')
     runs-on: macos-26
     env:
       ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
