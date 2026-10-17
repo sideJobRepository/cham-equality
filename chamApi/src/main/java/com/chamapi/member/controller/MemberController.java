@@ -2,12 +2,14 @@ package com.chamapi.member.controller;
 
 import com.chamapi.common.dto.ApiResponse;
 import com.chamapi.common.exception.UnauthorizedException;
+import com.chamapi.member.dto.WithdrawRequest;
 import com.chamapi.member.service.MemberService;
 import com.chamapi.util.JwtParserUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -22,14 +24,18 @@ public class MemberController {
 
     private final MemberService memberService;
 
-    /** 회원 탈퇴. 본인 계정 + 관련 데이터(앱 제보/권한/refresh)를 삭제한다. */
+    /**
+     * 회원 탈퇴. 본인 계정 + 관련 데이터(앱 제보/권한/refresh)를 삭제한다.
+     * 애플 회원은 본문에 {@code appleAuthorizationCode}가 있어야 한다(애플 토큰 철회용).
+     */
     @DeleteMapping
-    public ApiResponse<Void> withdraw(@AuthenticationPrincipal Jwt jwt) {
+    public ApiResponse<Void> withdraw(@AuthenticationPrincipal Jwt jwt,
+                                      @RequestBody(required = false) WithdrawRequest request) {
         Long memberId = JwtParserUtil.extractMemberId(jwt);
         if (memberId == null) {
             throw new UnauthorizedException("로그인이 필요합니다");
         }
-        memberService.withdraw(memberId);
+        memberService.withdraw(memberId, request == null ? null : request.appleAuthorizationCode());
         return ApiResponse.of(200, true, "회원 탈퇴 완료");
     }
 }

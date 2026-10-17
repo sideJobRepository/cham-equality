@@ -388,7 +388,8 @@ export default function MoreScreen() {
     );
     if (!ok) return;
     try {
-      await withdraw();
+      const withdrawn = await withdraw();
+      if (!withdrawn) return; // 애플 확인 창을 닫음
       alert(translate('auth.withdrawDone'), undefined, { tone: 'success' });
     } catch {
       alert(translate('auth.withdrawFailed'), undefined, { tone: 'error' });

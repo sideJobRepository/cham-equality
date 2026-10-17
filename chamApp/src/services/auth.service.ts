@@ -3,9 +3,10 @@ import { useRequest } from '../hooks/useRequest';
 import api from '../lib/axiosInstance';
 import { loginWithKakao, logoutFromKakao } from '../auth/kakao';
 import { loginWithNaver, logoutFromNaver } from '../auth/naver';
-import { loginWithApple } from '../auth/apple';
+import { getAppleAuthorizationCode, loginWithApple } from '../auth/apple';
 import { applySession, clearSession, type AuthResponse } from './authSession';
 import { getRefreshToken } from './refreshTokenStore';
+import { useUserStore } from '../store/user';
 
 // 카카오 로그인: SDK accessToken → 우리 서버 JWT 발급 → 세션 반영
 export function useKakaoLogin() {
@@ -67,12 +68,25 @@ export function useAppleLogin() {
   }, [request]);
 }
 
-// 회원 탈퇴: 서버에서 회원+관련 데이터 삭제 → 로컬 세션·소셜 세션 정리
+// 회원 탈퇴: 서버에서 회원+관련 데이터 삭제 → 로컬 세션·소셜 세션 정리.
+// 애플 회원은 서버가 애플 토큰을 철회할 수 있게 애플 창을 한 번 더 띄워 코드를 받는다.
+// 사용자가 애플 창을 닫으면 탈퇴하지 않고 false.
 export function useWithdraw() {
   const { request } = useRequest();
-  return useCallback(async () => {
+  return useCallback(async (): Promise<boolean> => {
+    let appleAuthorizationCode: string | undefined;
+    if (useUserStore.getState().user?.socialType === 'APPLE') {
+      const code = await getAppleAuthorizationCode();
+      if (!code) return false;
+      appleAuthorizationCode = code;
+    }
     await request(
-      () => api.delete('/api/app/member').then(res => res.data),
+      () =>
+        api
+          .delete('/api/app/member', {
+            data: appleAuthorizationCode ? { appleAuthorizationCode } : undefined,
+          })
+          .then(res => res.data),
       undefined,
       { ignoreErrorRedirect: true },
     );
@@ -87,6 +101,7 @@ export function useWithdraw() {
     } catch {
       // 네이버 세션이 없을 수도 있음
     }
+    return true;
   }, [request]);
 }
 

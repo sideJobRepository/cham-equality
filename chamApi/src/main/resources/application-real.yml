@@ -33,6 +33,10 @@ apple:
   client-id: ${APPLE_CLIENT_ID:kr.or.cham.equality}
   issuer: https://appleid.apple.com
   jwks-uri: https://appleid.apple.com/auth/keys
+  # 탈퇴 시 애플 토큰 철회(client_secret 서명). 키는 Sign in with Apple 켠 .p8, 값은 파일 전체를 base64
+  team-id: ${APPLE_TEAM_ID:}
+  key-id: ${APPLE_SIWA_KEY_ID:}
+  private-key-base64: ${APPLE_SIWA_KEY_P8_BASE64:}
 
 auth:
   cookie:

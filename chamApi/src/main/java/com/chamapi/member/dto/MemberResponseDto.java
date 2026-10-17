@@ -19,6 +19,7 @@ public class MemberResponseDto {
     private String name;
     private List<String> roles;
     private String socialId;
+    private String socialType;
     private String sub;
     
     public static MemberResponseDto create(Member member, List<GrantedAuthority> authorities) {
@@ -33,6 +34,7 @@ public class MemberResponseDto {
         }
         memberResponseDto.setRoles(roleList);
         memberResponseDto.setSocialId(member.getSocialId());
+        memberResponseDto.setSocialType(member.getSocialType() == null ? null : member.getSocialType().name());
         memberResponseDto.setSub("user");
         return memberResponseDto;
     }

@@ -7,6 +7,7 @@ export interface MemberDto {
   id: number;
   name: string;
   roles: string[];
+  socialType?: string; // KAKAO | NAVER | APPLE (구버전 서버 응답엔 없음)
 }
 
 export interface AuthResponse {
@@ -17,7 +18,13 @@ export interface AuthResponse {
 
 function mapUser(dto: MemberDto): User {
   // 백엔드 MemberResponseDto엔 email이 없어 빈값으로 둔다.
-  return { id: String(dto.id), email: '', name: dto.name, roles: dto.roles ?? [] };
+  return {
+    id: String(dto.id),
+    email: '',
+    name: dto.name,
+    roles: dto.roles ?? [],
+    socialType: dto.socialType,
+  };
 }
 
 // 로그인/재발급 성공 시 access(메모리) + refresh(keychain) + user(zustand)를 한번에 반영.

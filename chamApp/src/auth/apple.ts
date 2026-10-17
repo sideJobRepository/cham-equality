@@ -51,6 +51,24 @@ export async function loginWithApple(): Promise<AppleLoginResult> {
   return { identityToken: res.identityToken, name };
 }
 
+// 회원 탈퇴용: 애플 토큰 철회(App Store 심사 5.1.1(v))에 쓸 authorizationCode를 새로 받는다.
+// 서버가 이 코드를 토큰으로 바꿔 바로 철회한다. 사용자가 창을 닫으면 null.
+// 애플 로그인 버튼은 iOS에만 있으므로 iOS 전용.
+export async function getAppleAuthorizationCode(): Promise<string | null> {
+  try {
+    const res = await appleAuth.performRequest({
+      requestedOperation: appleAuth.Operation.LOGIN,
+      requestedScopes: [],
+    });
+    return res.authorizationCode ?? null;
+  } catch (error) {
+    if ((error as { code?: string })?.code === appleAuth.Error.CANCELED) {
+      return null;
+    }
+    throw error;
+  }
+}
+
 function createRequestId() {
   return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
