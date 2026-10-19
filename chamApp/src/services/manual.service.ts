@@ -20,7 +20,8 @@ export function useFetchManuals(query?: string) {
     const seq = ++requestSeqRef.current;
     const trimmedQuery = query?.trim();
     setStatus('loading');
-    request(
+    // 당겨서 새로고침이 끝나는 시점을 알 수 있게 promise 를 돌려준다.
+    return request(
       () =>
         api
           .get(trimmedQuery ? '/api/manuals/search' : '/api/manuals', {

@@ -9,6 +9,9 @@ export const manualStyles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.surface,
   },
+  listContent: {
+    paddingBottom: 24,
+  },
 });
 
 export const Screen = styled(SafeAreaView)`
@@ -48,10 +51,8 @@ export const SearchInput = styled.TextInput`
   font-weight: 600;
 `;
 
-export const Board = styled.View`
-  overflow: hidden;
-  border-radius: 8px;
-  border-color: ${colors.border};
+// 목록이 FlatList 라 머리·행·빈 상태를 각각 감싸 같은 좌우 여백을 준다
+export const BoardInset = styled.View`
   padding: 0 12px;
 `;
 
@@ -117,25 +118,6 @@ export const EmptyText = styled.Text`
   color: ${colors.textMuted};
   font-size: 14px;
   font-weight: 700;
-`;
-
-export const Pagination = styled.View`
-  flex-direction: row;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  margin-top: 16px;
-`;
-
-// 페이지 버튼은 보이는 크기만 36. 터치 영역은 IconButton 이 hitSlop 으로 44를 채운다
-export const PAGE_BUTTON_SIZE = 36;
-
-export const PageText = styled.Text`
-  min-width: 58px;
-  text-align: center;
-  color: ${colors.textMuted};
-  font-size: 12px;
-  font-weight: 600;
 `;
 
 export const ModalOverlay = styled.Pressable`

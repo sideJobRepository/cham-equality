@@ -1,14 +1,13 @@
-import { useMemo, useState } from 'react';
-import { Modal, type ImageSourcePropType } from 'react-native';
+import { useMemo, useRef, useState } from 'react';
+import {
+  FlatList,
+  Modal,
+  RefreshControl,
+  type ImageSourcePropType,
+} from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
-import {
-  ChevronLeft,
-  ChevronRight,
-  CloudOff,
-  Search,
-  X,
-} from 'lucide-react-native';
+import { ChevronRight, CloudOff, Search, X } from 'lucide-react-native';
 import { WebView } from 'react-native-webview';
 import { useTranslation } from 'react-i18next';
 import {
@@ -27,7 +26,7 @@ import {
   BannerImage,
   SearchBox,
   SearchInput,
-  Board,
+  BoardInset,
   BoardHeader,
   HeaderTitle,
   HeaderDate,
@@ -36,9 +35,6 @@ import {
   ManualDate,
   EmptyBox,
   EmptyText,
-  Pagination,
-  PAGE_BUTTON_SIZE,
-  PageText,
   ModalOverlay,
   ModalCard,
   ModalHeader,
@@ -52,7 +48,6 @@ import {
   MapShortcutIcon,
 } from './ManualScreen.styles.ts';
 
-const PAGE_SIZE = 10;
 const manualBanner =
   require('../assets/images/manual.png') as ImageSourcePropType;
 
@@ -109,7 +104,8 @@ export default function ManualScreen() {
   const manuals = useManualStore(state => state.manuals);
   const manualDetail = useManualStore(state => state.manualDetail);
   const clearManualDetail = useManualStore(state => state.clearManualDetail);
-  const [page, setPage] = useState(1);
+  const [pullRefreshing, setPullRefreshing] = useState(false);
+  const listRef = useRef<FlatList<(typeof manuals)[number]>>(null);
   // source 객체가 렌더마다 새로 생기면 WebView 가 본문을 다시 읽는다.
   const manualDetailContent = manualDetail?.content;
   const manualDetailSource = useMemo(
@@ -117,33 +113,31 @@ export default function ManualScreen() {
     [manualDetailContent],
   );
 
-  const totalPages = Math.max(1, Math.ceil(manuals.length / PAGE_SIZE));
-  const currentPage = Math.min(page, totalPages);
-  const pagedManuals = useMemo(() => {
-    const start = (currentPage - 1) * PAGE_SIZE;
-    return manuals.slice(start, start + PAGE_SIZE);
-  }, [currentPage, manuals]);
+  // 오류면 옛 목록 대신 오류 안내를 보여야 하므로 비운다.
+  const visibleManuals = manualsStatus === 'error' ? [] : manuals;
 
-  const handlePrevPage = () => {
-    setPage(value => Math.max(value - 1, 1));
-  };
-
-  const handleNextPage = () => {
-    setPage(value => Math.min(value + 1, totalPages));
+  // 탭 진입 때 자동 새로고침에도 status 가 loading 이 되므로, 당김 표시는 사용자가 당긴 경우만.
+  const handlePullRefresh = () => {
+    setPullRefreshing(true);
+    fetchManuals().finally(() => setPullRefreshing(false));
   };
 
   const handlePressManual = (id: number) => {
     fetchManualDetail(id);
   };
 
+  const scrollToTop = () => {
+    listRef.current?.scrollToOffset({ offset: 0, animated: false });
+  };
+
   const handleSubmitSearch = () => {
-    setPage(1);
+    scrollToTop();
     setQuery(searchText.trim());
   };
 
   const handleClearSearch = () => {
     setSearchText('');
-    setPage(1);
+    scrollToTop();
     setQuery('');
   };
 
@@ -154,55 +148,68 @@ export default function ManualScreen() {
 
   return (
     <Screen>
-      <BannerFrame>
-        <BannerImage source={manualBanner} resizeMode="contain" />
-      </BannerFrame>
-
-      <SearchBox>
-        <SearchInput
-          value={searchText}
-          onChangeText={setSearchText}
-          onSubmitEditing={handleSubmitSearch}
-          placeholder={translate('manual.searchPlaceholder')}
-          placeholderTextColor={colors.textDisabled}
-          returnKeyType="search"
-        />
-        {searchText ? (
-          <IconButton
-            accessibilityLabel={translate('manual.clearSearch')}
-            onPress={handleClearSearch}
-          >
-            <X color={colors.textMuted} size={18} strokeWidth={2.6} />
-          </IconButton>
-        ) : null}
-        <IconButton
-          accessibilityLabel={translate('manual.search')}
-          backgroundColor={colors.brand}
-          borderRadius={radius.sm}
-          onPress={handleSubmitSearch}
-        >
-          <Search color={colors.textOnColor} size={18} strokeWidth={2.6} />
-        </IconButton>
-      </SearchBox>
-
-      <Board>
-        <BoardHeader>
-          <HeaderTitle>{translate('manual.subject')}</HeaderTitle>
-          <HeaderDate>{translate('manual.createdAt')}</HeaderDate>
-        </BoardHeader>
-
-        {manualsStatus === 'error' ? (
-          <StatusMessage
-            tone="error"
-            icon={CloudOff}
-            message={translate('manual.loadFailed')}
-            actionLabel={translate('common.retry')}
-            onAction={fetchManuals}
+      <FlatList
+        ref={listRef}
+        data={visibleManuals}
+        keyExtractor={manual => String(manual.id)}
+        keyboardShouldPersistTaps="handled"
+        contentContainerStyle={manualStyles.listContent}
+        refreshControl={
+          <RefreshControl
+            refreshing={pullRefreshing}
+            onRefresh={handlePullRefresh}
+            colors={[colors.brand]}
+            tintColor={colors.brand}
           />
-        ) : pagedManuals.length ? (
-          pagedManuals.map(manual => (
+        }
+        ListHeaderComponent={
+          <>
+            <BannerFrame>
+              <BannerImage source={manualBanner} resizeMode="contain" />
+            </BannerFrame>
+
+            <SearchBox>
+              <SearchInput
+                value={searchText}
+                onChangeText={setSearchText}
+                onSubmitEditing={handleSubmitSearch}
+                placeholder={translate('manual.searchPlaceholder')}
+                placeholderTextColor={colors.textDisabled}
+                returnKeyType="search"
+              />
+              {searchText ? (
+                <IconButton
+                  accessibilityLabel={translate('manual.clearSearch')}
+                  onPress={handleClearSearch}
+                >
+                  <X color={colors.textMuted} size={18} strokeWidth={2.6} />
+                </IconButton>
+              ) : null}
+              <IconButton
+                accessibilityLabel={translate('manual.search')}
+                backgroundColor={colors.brand}
+                borderRadius={radius.sm}
+                onPress={handleSubmitSearch}
+              >
+                <Search
+                  color={colors.textOnColor}
+                  size={18}
+                  strokeWidth={2.6}
+                />
+              </IconButton>
+            </SearchBox>
+
+            <BoardInset>
+              <BoardHeader>
+                <HeaderTitle>{translate('manual.subject')}</HeaderTitle>
+                <HeaderDate>{translate('manual.createdAt')}</HeaderDate>
+              </BoardHeader>
+            </BoardInset>
+          </>
+        }
+        renderItem={({ item: manual }) => (
+          <BoardInset>
             <ManualRow
-              key={manual.id}
               accessibilityRole="button"
               onPress={() => handlePressManual(manual.id)}
             >
@@ -211,55 +218,32 @@ export default function ManualScreen() {
               </ManualTitle>
               <ManualDate>{formatManualDate(manual.createDate)}</ManualDate>
             </ManualRow>
-          ))
-        ) : manualsStatus === 'loading' ? (
-          <StatusMessage loading message={translate('manual.loading')} />
-        ) : (
-          <EmptyBox accessibilityLiveRegion="polite">
-            <EmptyText>
-              {query
-                ? translate('manual.searchEmpty')
-                : translate('manual.empty')}
-            </EmptyText>
-          </EmptyBox>
+          </BoardInset>
         )}
-      </Board>
-
-      <Pagination>
-        <IconButton
-          accessibilityLabel={translate('common.prevPage')}
-          visualSize={PAGE_BUTTON_SIZE}
-          backgroundColor={colors.surface}
-          borderColor={colors.border}
-          disabled={currentPage === 1}
-          onPress={handlePrevPage}
-        >
-          <ChevronLeft
-            color={currentPage === 1 ? colors.borderStrong : colors.text}
-            size={16}
-            strokeWidth={2.6}
-          />
-        </IconButton>
-        <PageText>
-          {currentPage} / {totalPages}
-        </PageText>
-        <IconButton
-          accessibilityLabel={translate('common.nextPage')}
-          visualSize={PAGE_BUTTON_SIZE}
-          backgroundColor={colors.surface}
-          borderColor={colors.border}
-          disabled={currentPage === totalPages}
-          onPress={handleNextPage}
-        >
-          <ChevronRight
-            color={
-              currentPage === totalPages ? colors.borderStrong : colors.text
-            }
-            size={16}
-            strokeWidth={2.6}
-          />
-        </IconButton>
-      </Pagination>
+        ListEmptyComponent={
+          <BoardInset>
+            {manualsStatus === 'error' ? (
+              <StatusMessage
+                tone="error"
+                icon={CloudOff}
+                message={translate('manual.loadFailed')}
+                actionLabel={translate('common.retry')}
+                onAction={fetchManuals}
+              />
+            ) : manualsStatus === 'loading' ? (
+              <StatusMessage loading message={translate('manual.loading')} />
+            ) : (
+              <EmptyBox accessibilityLiveRegion="polite">
+                <EmptyText>
+                  {query
+                    ? translate('manual.searchEmpty')
+                    : translate('manual.empty')}
+                </EmptyText>
+              </EmptyBox>
+            )}
+          </BoardInset>
+        }
+      />
 
       <Modal
         animationType="fade"
