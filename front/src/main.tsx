@@ -5,6 +5,7 @@ import './index.css'
 import RequireAdmin from '@/components/RequireAdmin'
 import { ADMIN_HOME_PATH } from '@/lib/adminRedirect'
 import AdminLoginPage from '@/pages/AdminLoginPage'
+import AdminDashboardPage from '@/pages/AdminDashboardPage'
 import AdminReportsPage from '@/pages/AdminReportsPage'
 import AdminAppReportsPage from '@/pages/AdminAppReportsPage'
 import AdminFeedbacksPage from '@/pages/AdminFeedbacksPage'
@@ -18,10 +19,10 @@ createRoot(document.getElementById('root')!).render(
     <BrowserRouter basename="/research">
       <Routes>
         <Route path="/" element={<Navigate to="/admin" replace />} />
-        <Route path="/admin" element={<Navigate to={ADMIN_HOME_PATH} replace />} />
         <Route path="/admin/login" element={<AdminLoginPage />} />
         {/* 로그인 검사·사이드바·토스트는 RequireAdmin이 한 번에 맡는다. */}
         <Route element={<RequireAdmin />}>
+          <Route path={ADMIN_HOME_PATH} element={<AdminDashboardPage />} />
           <Route path="/admin/reports" element={<AdminReportsPage />} />
           <Route path="/admin/app-reports" element={<AdminAppReportsPage />} />
           <Route path="/admin/feedbacks" element={<AdminFeedbacksPage />} />

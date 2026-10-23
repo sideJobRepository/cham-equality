@@ -18,6 +18,15 @@ const QUERY_PARAM = 'q'
 
 const SEARCH_DEBOUNCE_MS = 300
 
+/**
+ * 필터가 걸린 목록 화면 경로. 대시보드 카드처럼 다른 화면에서 특정 필터로 목록을 열 때 쓴다.
+ * 기본 필터라도 쿼리에 그대로 적는다 — 목록 화면의 기본값이 바뀌어도 링크가 뜻하는 필터는 유지된다.
+ */
+export function buildFilteredListPath(listPath: string, filter: string): string {
+  const params = new URLSearchParams({ [FILTER_PARAM]: filter })
+  return `${listPath}?${params.toString()}`
+}
+
 /** URL의 1부터 시작하는 page를 0부터로 바꾼다. 잘못된 값이면 0(첫 페이지). */
 function parsePage(rawPage: string | null): number {
   if (rawPage === null || !/^\d+$/.test(rawPage)) return 0

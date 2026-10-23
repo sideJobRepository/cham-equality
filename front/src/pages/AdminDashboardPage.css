@@ -1,0 +1,171 @@
+/* AdminDashboardPage — Airbnb-style. Tokens (--ab-*) come from
+   `.admin-layout` in AdminLayout.css. 헤더는 AdminReportsPage와 같은 규칙을 쓴다. */
+.admin-dashboard-page {
+  padding: 32px 40px 64px;
+  font-family: var(--ab-font);
+  color: var(--ab-ink);
+  max-width: 1280px;
+}
+
+.admin-dashboard-page .admin-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--ab-hairline-soft);
+}
+
+.admin-dashboard-page .admin-header h1 {
+  margin: 0 0 6px;
+  font-family: inherit;
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.43;
+  color: var(--ab-ink);
+}
+
+.admin-dashboard-page .admin-header .subtitle {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.43;
+  color: var(--ab-muted);
+}
+
+/* button-secondary : white fill, 1px ink outline, 8px radius */
+.dashboard-refresh {
+  flex-shrink: 0;
+  padding: 10px 16px;
+  background: var(--ab-canvas);
+  border: 1px solid var(--ab-ink);
+  color: var(--ab-ink);
+  border-radius: var(--ab-radius-sm);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.29;
+  transition: background 0.12s ease;
+}
+
+.dashboard-refresh:hover:not(:disabled) {
+  background: var(--ab-surface-soft);
+}
+
+.dashboard-refresh:disabled {
+  border-color: var(--ab-hairline);
+  color: var(--ab-muted-soft);
+  cursor: default;
+}
+
+.dashboard-error {
+  margin-bottom: 16px;
+  padding: 12px 16px;
+  background: var(--ab-error-soft);
+  color: var(--ab-error);
+  border-radius: var(--ab-radius-sm);
+  font-size: 14px;
+  line-height: 1.43;
+}
+
+/* 카드 그리드 : 카드 사이 16px(DESIGN.md gutters) */
+.dashboard-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 16px;
+}
+
+/* 카드 : hairline 테두리 + md 라운드, 호버 때만 시스템의 단일 그림자 */
+.dashboard-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 24px;
+  background: var(--ab-canvas);
+  border: 1px solid var(--ab-hairline-soft);
+  border-radius: var(--ab-radius-md);
+  color: var(--ab-ink);
+  text-decoration: none;
+  transition: box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.dashboard-card:hover {
+  border-color: transparent;
+  box-shadow: var(--ab-shadow-card);
+}
+
+.dashboard-card:focus-visible {
+  outline: 2px solid var(--ab-ink);
+  outline-offset: 2px;
+}
+
+.dashboard-card-label {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.29;
+  color: var(--ab-body);
+}
+
+.dashboard-card-count {
+  font-size: 40px;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.8px;
+  color: var(--ab-ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.dashboard-card-unit {
+  margin-left: 4px;
+  font-size: 16px;
+  font-weight: 500;
+  letter-spacing: 0;
+  color: var(--ab-muted);
+}
+
+.dashboard-card-description {
+  font-size: 13px;
+  line-height: 1.38;
+  color: var(--ab-muted);
+}
+
+.dashboard-card-link {
+  margin-top: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ab-ink);
+}
+
+/* 좁은 화면 규칙은 AdminReportsPage.css와 같은 구간(960/640)을 쓴다. */
+@media (max-width: 960px) {
+  .admin-dashboard-page {
+    padding: 24px 24px 48px;
+  }
+}
+
+@media (max-width: 640px) {
+  .admin-dashboard-page {
+    padding: 20px 16px 32px;
+  }
+
+  .admin-dashboard-page .admin-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    padding-bottom: 16px;
+  }
+
+  .admin-dashboard-page .admin-header h1 {
+    font-size: 22px;
+  }
+
+  .dashboard-card {
+    padding: 20px;
+  }
+
+  .dashboard-card-count {
+    font-size: 32px;
+  }
+}

@@ -1,7 +1,8 @@
 // 로그인 페이지로 보낼 때 "원래 보던 화면"을 next 쿼리로 넘기고, 로그인 뒤 그 경로로 돌려보낸다.
 // next는 URL로 누구나 조작할 수 있으므로 관리자 화면 내부 경로만 받아들인다(오픈 리다이렉트 방지).
 
-export const ADMIN_HOME_PATH = '/admin/reports'
+// 로그인 직후 next가 없을 때 여는 화면(대시보드).
+export const ADMIN_HOME_PATH = '/admin'
 const ADMIN_LOGIN_PATH = '/admin/login'
 
 // 실제로 쓰이지 않는 가상 origin. 상대 경로를 URL 파서로 정규화하는 용도로만 쓴다.

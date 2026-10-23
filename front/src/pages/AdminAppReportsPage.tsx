@@ -7,7 +7,9 @@ import AdminAppReportDetailModal from '@/components/AdminAppReportDetailModal'
 import Pagination from '@/components/common/Pagination'
 import { useUrlFilter, useUrlPage } from '@/hooks/useListQuery'
 import { usePagedList } from '@/hooks/usePagedList'
+import { usePendingCounts } from '@/hooks/usePendingCounts'
 import { useReviewNavigation } from '@/hooks/useReviewNavigation'
+import { APP_REPORT_PENDING_FILTER } from '@/lib/pendingCounts'
 import './AdminReportsPage.css'
 
 const PAGE_SIZE = 20
@@ -30,8 +32,9 @@ function yn(value: boolean | null): string {
 
 export default function AdminAppReportsPage() {
   // 필터·페이지는 URL 쿼리에 둔다(새로고침·뒤로가기·링크 공유 때 유지).
-  const { filter, setFilter } = useUrlFilter(FILTER_VALUES, 'PENDING')
+  const { filter, setFilter } = useUrlFilter(FILTER_VALUES, APP_REPORT_PENDING_FILTER)
   const { page, setPage } = useUrlPage()
+  const { refreshCounts } = usePendingCounts()
 
   // 조건이 바뀌면 fetcher가 새로 만들어지고, usePagedList가 그걸 새 요청으로 보고 다시 불러온다.
   const fetchPage = useCallback(() => fetchAppReports(filter, page, PAGE_SIZE), [filter, page])
@@ -134,6 +137,8 @@ export default function AdminAppReportsPage() {
           reportId={review.selectedId}
           onClose={review.close}
           onActionDone={() => {
+            // 사이드바 배지·대시보드의 대기 건수도 같이 갱신한다.
+            refreshCounts()
             const actedId = review.selectedId
             if (actedId !== null) review.openNextPending(actedId)
           }}

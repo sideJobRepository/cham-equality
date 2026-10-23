@@ -8,6 +8,8 @@ import Pagination from '@/components/common/Pagination'
 import { useFeedback } from '@/hooks/useFeedback'
 import { useUrlFilter, useUrlPage } from '@/hooks/useListQuery'
 import { usePagedList } from '@/hooks/usePagedList'
+import { usePendingCounts } from '@/hooks/usePendingCounts'
+import { FEEDBACK_NEW_FILTER } from '@/lib/pendingCounts'
 import './AdminReportsPage.css'
 import './AdminFeedbacksPage.css'
 
@@ -41,8 +43,9 @@ const CATEGORY_LABEL: Record<string, string> = {
 export default function AdminFeedbacksPage() {
   const { toast } = useFeedback()
   // 필터·페이지는 URL 쿼리에 둔다(새로고침·뒤로가기·링크 공유 때 유지).
-  const { filter, setFilter } = useUrlFilter(FILTER_VALUES, 'RECEIVED')
+  const { filter, setFilter } = useUrlFilter(FILTER_VALUES, FEEDBACK_NEW_FILTER)
   const { page, setPage } = useUrlPage()
+  const { refreshCounts } = usePendingCounts()
   const [selectedId, setSelectedId] = useState<number | null>(null)
 
   // 조건이 바뀌면 fetcher가 새로 만들어지고, usePagedList가 그걸 새 요청으로 보고 다시 불러온다.
@@ -132,6 +135,8 @@ export default function AdminFeedbacksPage() {
             setSelectedId(null)
             toast('저장되었습니다')
             reload()
+            // 상태를 접수에서 바꿨으면 새 피드백 건수가 줄어든다.
+            refreshCounts()
           }}
         />
       )}

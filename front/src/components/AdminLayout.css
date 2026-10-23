@@ -100,7 +100,11 @@
 }
 
 .admin-sidebar-link {
-  display: block;
+  /* 글자는 왼쪽, 대기 건수 배지는 오른쪽 끝 */
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
   padding: 11px 14px;
   background: transparent;
   color: var(--ab-body);
@@ -242,4 +246,38 @@
   .admin-sidebar-logout {
     padding: 8px 14px;
   }
+}
+
+/* ── 메뉴 옆 대기 건수 배지 ──
+   브랜드 색은 주요 동작에만 쓰므로 배지는 ink 반전 알약으로 둔다. */
+.admin-sidebar-link-label {
+  min-width: 0;
+}
+
+.admin-sidebar-badge {
+  flex-shrink: 0;
+  min-width: 20px;
+  padding: 2px 7px;
+  box-sizing: border-box;
+  background: var(--ab-ink);
+  color: var(--ab-on-primary);
+  border-radius: var(--ab-radius-full);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.45;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 화면에는 안 보이고 화면 읽기 프로그램만 읽는 글자 */
+.admin-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
 }
