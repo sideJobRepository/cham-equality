@@ -1,38 +1,30 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import { bulkCreateAdminShelters, fetchAdminShelters } from '@/api/adminApi'
 import AdminShelterCreateModal from '@/components/AdminShelterCreateModal'
 import AdminShelterEditModal from '@/components/AdminShelterEditModal'
 import Pagination from '@/components/common/Pagination'
 import { useAdminRequest } from '@/hooks/useAdminRequest'
 import { useFeedback } from '@/hooks/useFeedback'
+import { useUrlPage, useUrlSearch } from '@/hooks/useListQuery'
 import { usePagedList } from '@/hooks/usePagedList'
 import { SHELTER_TYPE_LABEL, type Shelter } from '@/types/shelter'
 import './AdminSheltersPage.css'
 
 const PAGE_SIZE = 20
-const SEARCH_DEBOUNCE_MS = 300
 
 export default function AdminSheltersPage() {
   const { run } = useAdminRequest()
   const { toast } = useFeedback()
-  const [keyword, setKeyword] = useState('')
-  const [debouncedKeyword, setDebouncedKeyword] = useState('')
-  const [page, setPage] = useState(0)
+  // 검색어(q)·페이지는 URL 쿼리에 둔다. 입력창 값과 요청 검색어의 디바운스·동기화는 useUrlSearch가 맡는다.
+  const { keywordInput, setKeywordInput, query } = useUrlSearch()
+  const { page, setPage } = useUrlPage()
   const [editing, setEditing] = useState<Shelter | null>(null)
   const [creating, setCreating] = useState(false)
   const [uploading, setUploading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  useEffect(() => {
-    const debounceTimer = setTimeout(() => {
-      setDebouncedKeyword(keyword)
-      setPage(0)
-    }, SEARCH_DEBOUNCE_MS)
-    return () => clearTimeout(debounceTimer)
-  }, [keyword])
-
   // 조건이 바뀌면 fetcher가 새로 만들어지고, usePagedList가 그걸 새 요청으로 보고 다시 불러온다.
-  const fetchPage = useCallback(() => fetchAdminShelters(page, PAGE_SIZE, debouncedKeyword), [page, debouncedKeyword])
+  const fetchPage = useCallback(() => fetchAdminShelters(page, PAGE_SIZE, query), [page, query])
   const { data, loading, error, reload } = usePagedList(fetchPage)
 
   // 엑셀 한 개를 그대로 서버에 넘겨 대량 등록한다. 파싱·검증은 전부 서버(ExcelMapper)가 담당.
@@ -85,21 +77,22 @@ export default function AdminSheltersPage() {
       <div className="search-bar">
         <input
           type="text"
-          value={keyword}
-          onChange={(changeEvent) => setKeyword(changeEvent.target.value)}
+          value={keywordInput}
+          onChange={(changeEvent) => setKeywordInput(changeEvent.target.value)}
           placeholder="시설명, 도로명, 구주소로 검색"
         />
-        {keyword && (
-          <button type="button" className="search-clear" onClick={() => setKeyword('')}>✕</button>
+        {keywordInput && (
+          <button type="button" className="search-clear" aria-label="검색어 지우기" onClick={() => setKeywordInput('')}>✕</button>
         )}
       </div>
 
-      {loading && <div className="state">불러오는 중…</div>}
+      {/* 처음 불러올 때만 문구를 띄우고, 이후엔 직전 표를 흐리게 남겨 깜빡임을 없앤다. */}
+      {loading && !data && <div className="state">불러오는 중…</div>}
       {error && <div className="state error">{error}</div>}
 
-      {data && !loading && !error && (
+      {data && !error && (
         <>
-          <div className="shelters-table-wrap">
+          <div className="shelters-table-wrap" aria-busy={loading}>
             <table className="shelters-table">
               <thead>
                 <tr>
@@ -131,7 +124,7 @@ export default function AdminSheltersPage() {
                 {data.empty && (
                   <tr>
                     <td colSpan={8} className="center">
-                      {debouncedKeyword ? '검색 결과가 없습니다' : '데이터가 없습니다'}
+                      {query ? '검색 결과가 없습니다' : '데이터가 없습니다'}
                     </td>
                   </tr>
                 )}

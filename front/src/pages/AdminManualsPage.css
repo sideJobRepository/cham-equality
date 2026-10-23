@@ -89,6 +89,11 @@
 }
 
 /* ── Table ── */
+/* 좁은 화면에서 표가 페이지 밖으로 밀리지 않게 표 안에서만 가로 스크롤한다. */
+.manual-table-wrap {
+  overflow-x: auto;
+}
+
 .manual-table {
   width: 100%;
   border-collapse: collapse;
@@ -191,5 +196,9 @@
   }
   .admin-manuals-page .admin-header h1 {
     font-size: 22px;
+  }
+  /* 제목 칸(max-width: 0 말줄임)이 0까지 줄어들지 않도록 최소 폭을 둔다. */
+  .manual-table {
+    min-width: 480px;
   }
 }

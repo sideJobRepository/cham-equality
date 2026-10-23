@@ -68,11 +68,12 @@ export default function AdminContentsPage() {
         </div>
       </header>
 
-      {loading && <div className="state">불러오는 중…</div>}
+      {/* 처음 불러올 때만 문구를 띄우고, 저장·삭제 뒤 다시 불러올 땐 직전 목록을 흐리게 남긴다. */}
+      {loading && !byType && <div className="state">불러오는 중…</div>}
       {error && <div className="state error">{error}</div>}
 
-      {byType && !loading && !error && (
-        <div className="type-sections">
+      {byType && !error && (
+        <div className="type-sections" aria-busy={loading}>
           {TYPES.map((contentType) => (
             <section key={contentType} className="type-section" data-type={contentType}>
               <header className="type-section-header">

@@ -1,14 +1,14 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { fetchMembers, type AdminMember } from '@/api/adminApi'
 import AdminMemberPushModal from '@/components/AdminMemberPushModal'
 import Pagination from '@/components/common/Pagination'
 import { useFeedback } from '@/hooks/useFeedback'
+import { useUrlPage, useUrlSearch } from '@/hooks/useListQuery'
 import { usePagedList } from '@/hooks/usePagedList'
 import './AdminReportsPage.css'
 import './AdminMembersPage.css'
 
 const PAGE_SIZE = 20
-const SEARCH_DEBOUNCE_MS = 300
 
 const SOCIAL_LABEL: Record<string, string> = {
   KAKAO: '카카오',
@@ -18,21 +18,13 @@ const SOCIAL_LABEL: Record<string, string> = {
 
 export default function AdminMembersPage() {
   const { toast } = useFeedback()
-  const [keyword, setKeyword] = useState('')
-  const [debouncedKeyword, setDebouncedKeyword] = useState('')
-  const [page, setPage] = useState(0)
+  // 검색어(q)·페이지는 URL 쿼리에 둔다. 입력창 값과 요청 검색어의 디바운스·동기화는 useUrlSearch가 맡는다.
+  const { keywordInput, setKeywordInput, query } = useUrlSearch()
+  const { page, setPage } = useUrlPage()
   const [target, setTarget] = useState<AdminMember | null>(null)
 
-  useEffect(() => {
-    const debounceTimer = setTimeout(() => {
-      setDebouncedKeyword(keyword)
-      setPage(0)
-    }, SEARCH_DEBOUNCE_MS)
-    return () => clearTimeout(debounceTimer)
-  }, [keyword])
-
   // 조건이 바뀌면 fetcher가 새로 만들어지고, usePagedList가 그걸 새 요청으로 보고 다시 불러온다.
-  const fetchPage = useCallback(() => fetchMembers(debouncedKeyword, page, PAGE_SIZE), [debouncedKeyword, page])
+  const fetchPage = useCallback(() => fetchMembers(query, page, PAGE_SIZE), [query, page])
   const { data, loading, error, reload } = usePagedList(fetchPage)
 
   return (
@@ -48,21 +40,22 @@ export default function AdminMembersPage() {
 
       <div className="search-bar">
         <input
-          value={keyword}
-          onChange={(changeEvent) => setKeyword(changeEvent.target.value)}
+          value={keywordInput}
+          onChange={(changeEvent) => setKeywordInput(changeEvent.target.value)}
           placeholder="이름 또는 이메일로 검색"
         />
-        {keyword && (
-          <button type="button" className="search-clear" onClick={() => setKeyword('')}>✕</button>
+        {keywordInput && (
+          <button type="button" className="search-clear" aria-label="검색어 지우기" onClick={() => setKeywordInput('')}>✕</button>
         )}
       </div>
 
-      {loading && <div className="state">불러오는 중…</div>}
+      {/* 처음 불러올 때만 문구를 띄우고, 이후엔 직전 표를 흐리게 남겨 깜빡임을 없앤다. */}
+      {loading && !data && <div className="state">불러오는 중…</div>}
       {error && <div className="state error">{error}</div>}
 
-      {data && !loading && !error && (
+      {data && !error && (
         <>
-          <div className="reports-table-wrap">
+          <div className="reports-table-wrap" aria-busy={loading}>
             <table className="reports-table">
               <thead>
                 <tr>

@@ -159,6 +159,20 @@
   background: var(--ab-canvas);
 }
 
+/* ── 다시 불러오는 중인 목록 ──
+   직전 데이터를 그대로 두고 흐리게만 한다(빈 화면으로 깜빡이지 않게).
+   응답이 빠르면 흐려지지도 않도록 흐림만 150ms 늦게 시작하고, 끝날 땐 바로 돌아온다.
+   흐린 동안엔 옛 행을 누르지 못하게 막는다. */
+.admin-main [aria-busy='true'] {
+  opacity: 0.55;
+  pointer-events: none;
+  transition: opacity 0.12s ease 0.15s;
+}
+
+.admin-main [aria-busy='false'] {
+  transition: opacity 0.12s ease;
+}
+
 @media (max-width: 768px) {
   .admin-layout {
     flex-direction: column;
@@ -192,23 +206,40 @@
     display: none;
   }
 
+  /* 메뉴가 늘어 여러 줄로 감기면 헤더가 화면을 크게 차지한다 → 한 줄 가로 스크롤로 둔다.
+     제목·로그아웃 다음 줄을 통째로 쓰도록 order와 100% 폭을 준다. */
   .admin-sidebar-nav {
+    order: 3;
+    flex: 1 1 100%;
     flex-direction: row;
-    flex: 1;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     gap: 4px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .admin-sidebar-nav::-webkit-scrollbar {
+    display: none;
   }
 
   .admin-sidebar-link {
+    flex-shrink: 0;
     padding: 8px 12px;
     font-size: 14px;
+    white-space: nowrap;
   }
 
   .admin-sidebar-footer {
+    margin-left: auto;
     padding-top: 0;
     border-top: none;
     flex-direction: row;
     align-items: center;
     gap: 8px;
+  }
+
+  .admin-sidebar-logout {
+    padding: 8px 14px;
   }
 }

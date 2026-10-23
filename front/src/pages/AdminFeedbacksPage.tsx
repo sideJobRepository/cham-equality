@@ -6,6 +6,7 @@ import {
 import AdminFeedbackDetailModal from '@/components/AdminFeedbackDetailModal'
 import Pagination from '@/components/common/Pagination'
 import { useFeedback } from '@/hooks/useFeedback'
+import { useUrlFilter, useUrlPage } from '@/hooks/useListQuery'
 import { usePagedList } from '@/hooks/usePagedList'
 import './AdminReportsPage.css'
 import './AdminFeedbacksPage.css'
@@ -20,6 +21,8 @@ const FILTERS: { value: Filter; label: string }[] = [
   { value: 'RESOLVED', label: '완료' },
   { value: 'ALL', label: '전체' },
 ]
+
+const FILTER_VALUES: readonly Filter[] = FILTERS.map((filterOption) => filterOption.value)
 
 const STATUS_LABEL: Record<AppFeedbackStatus, string> = {
   RECEIVED: '접수',
@@ -37,8 +40,9 @@ const CATEGORY_LABEL: Record<string, string> = {
 
 export default function AdminFeedbacksPage() {
   const { toast } = useFeedback()
-  const [filter, setFilter] = useState<Filter>('RECEIVED')
-  const [page, setPage] = useState(0)
+  // 필터·페이지는 URL 쿼리에 둔다(새로고침·뒤로가기·링크 공유 때 유지).
+  const { filter, setFilter } = useUrlFilter(FILTER_VALUES, 'RECEIVED')
+  const { page, setPage } = useUrlPage()
   const [selectedId, setSelectedId] = useState<number | null>(null)
 
   // 조건이 바뀌면 fetcher가 새로 만들어지고, usePagedList가 그걸 새 요청으로 보고 다시 불러온다.
@@ -61,22 +65,21 @@ export default function AdminFeedbacksPage() {
           <button
             key={filterOption.value}
             className={filter === filterOption.value ? 'active' : ''}
-            onClick={() => {
-              setFilter(filterOption.value)
-              setPage(0)
-            }}
+            aria-pressed={filter === filterOption.value}
+            onClick={() => setFilter(filterOption.value)}
           >
             {filterOption.label}
           </button>
         ))}
       </div>
 
-      {loading && <div className="state">불러오는 중…</div>}
+      {/* 처음 불러올 때만 문구를 띄우고, 이후엔 직전 표를 흐리게 남겨 깜빡임을 없앤다. */}
+      {loading && !data && <div className="state">불러오는 중…</div>}
       {error && <div className="state error">{error}</div>}
 
-      {data && !loading && !error && (
+      {data && !error && (
         <>
-          <div className="reports-table-wrap">
+          <div className="reports-table-wrap" aria-busy={loading}>
             <table className="reports-table">
               <thead>
                 <tr>
