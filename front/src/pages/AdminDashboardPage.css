@@ -169,3 +169,181 @@
     font-size: 32px;
   }
 }
+
+/* ── 유지보수(장소 경계 채우기·푸시 테스트) ──
+   대기 카드와 구분되게 위에 여백·구분선을 두고, 카드는 같은 hairline 테두리를 쓴다. */
+.dashboard-maintenance {
+  margin-top: 40px;
+  padding-top: 24px;
+  border-top: 1px solid var(--ab-hairline-soft);
+}
+
+.dashboard-section-title {
+  margin: 0 0 16px;
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.18px;
+  color: var(--ab-ink);
+}
+
+.maintenance-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+}
+
+.maintenance-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 24px;
+  background: var(--ab-canvas);
+  border: 1px solid var(--ab-hairline-soft);
+  border-radius: var(--ab-radius-md);
+}
+
+.maintenance-card-head h3 {
+  margin: 0 0 6px;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--ab-ink);
+}
+
+.maintenance-card-head p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.43;
+  color: var(--ab-muted);
+}
+
+.maintenance-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.maintenance-progress-bar {
+  height: 6px;
+  background: var(--ab-surface-strong);
+  border-radius: var(--ab-radius-full);
+  overflow: hidden;
+}
+
+.maintenance-progress-bar span {
+  display: block;
+  height: 100%;
+  background: var(--ab-ink);
+  border-radius: inherit;
+  transition: width 0.2s ease;
+}
+
+.maintenance-progress-text {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.43;
+  color: var(--ab-body);
+  font-variant-numeric: tabular-nums;
+}
+
+.maintenance-hint {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.38;
+  color: var(--ab-muted);
+}
+
+.maintenance-error {
+  margin: 0;
+  padding: 10px 12px;
+  background: var(--ab-error-soft);
+  color: var(--ab-error);
+  border-radius: var(--ab-radius-sm);
+  font-size: 13px;
+  line-height: 1.43;
+}
+
+.maintenance-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--ab-muted);
+}
+
+.maintenance-field textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--ab-hairline);
+  border-radius: var(--ab-radius-sm);
+  background: var(--ab-canvas);
+  color: var(--ab-ink);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  resize: vertical;
+  box-sizing: border-box;
+  word-break: break-all;
+}
+
+.maintenance-field textarea:focus {
+  outline: none;
+  border-color: var(--ab-ink);
+}
+
+.maintenance-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: auto;
+}
+
+/* button-secondary(기본) / primary : ink fill — 대시보드의 Rausch는 아껴 둔다 */
+.maintenance-button {
+  padding: 10px 16px;
+  background: var(--ab-canvas);
+  border: 1px solid var(--ab-ink);
+  color: var(--ab-ink);
+  border-radius: var(--ab-radius-sm);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.29;
+  transition: background 0.12s ease;
+}
+
+.maintenance-button:hover:not(:disabled) {
+  background: var(--ab-surface-soft);
+}
+
+.maintenance-button.primary {
+  background: var(--ab-ink);
+  color: var(--ab-on-primary);
+}
+
+.maintenance-button.primary:hover:not(:disabled) {
+  background: var(--ab-body);
+}
+
+.maintenance-button:disabled {
+  background: var(--ab-canvas);
+  border-color: var(--ab-hairline);
+  color: var(--ab-muted-soft);
+  cursor: default;
+}
+
+@media (max-width: 640px) {
+  .maintenance-cards {
+    grid-template-columns: 1fr;
+  }
+
+  .maintenance-card {
+    padding: 20px;
+  }
+
+  /* 16px 미만이면 iOS 사파리가 포커스 때 화면을 확대한다. */
+  .maintenance-field textarea {
+    font-size: 16px;
+  }
+}

@@ -25,78 +25,73 @@ npm run preview
 
 ```
 src/
-├─ main.tsx                         # Root + BrowserRouter(basename="/research")
+├─ main.tsx                         # Root + BrowserRouter(basename="/research"), routes
 ├─ index.css                        # Global styles
 ├─ api/
-│  ├─ http.ts                       # axios instance, interceptors, password injection, UnauthorizedError
-│  ├─ shelterApi.ts                 # /api/shelters, /shelter-reports, uploadShelterImage
-│  ├─ adminApi.ts                   # /api/admin/*, getDownloadUrl, downloadFilesAsZip
-│  └─ contentApi.ts                 # /api/admin/contents/*, uploadContentImage
-├─ types/
-│  ├─ shelter.ts                    # Shelter, PageResponse<T>, ApiResponse<T>
-│  └─ content.ts                    # Content, ContentType, ContentUpsertRequest
-├─ lib/file/
-│  ├─ presignedUpload/              # Generic presigned-URL uploader factory
-│  └─ download/                     # saveBlob, downloadFile
-├─ pages/
-│  ├─ AdminLoginPage.tsx            # /research/admin/login
-│  ├─ AdminReportsPage.tsx          # /research/admin/reports
-│  ├─ AdminSheltersPage.tsx         # /research/admin/shelters
-│  ├─ AdminContentsPage.tsx         # /research/admin/contents
-│  └─ temp/
-│     └─ ShelterListPage.tsx        # /research/shelters — legacy citizen survey, to be removed
+│  ├─ http.ts                       # axios instance, admin-password injection, UnauthorizedError, errorMessage
+│  ├─ adminApi.ts                   # /api/admin/* (reports, app-reports, feedbacks, members, shelters,
+│  │                                #   app-bundles, places/boundaries, push/test), downloads
+│  ├─ contentApi.ts                 # /api/admin/contents/*, uploadContentImage
+│  ├─ manualApi.ts                  # /api/admin/manuals/*
+│  └─ regionApi.ts                  # region options for shelter create
+├─ types/                           # shelter.ts (PageResponse, ApiResponse), content.ts, manual.ts, file.ts
+├─ lib/
+│  ├─ adminRedirect.ts              # ADMIN_HOME_PATH, buildLoginPath / safeAdminNext (login ?next=)
+│  ├─ pendingCounts.ts              # pending-count sources shared by dashboard cards and sidebar badges
+│  └─ file/                         # presignedUpload (uploader factory), download (saveBlob, downloadFile)
+├─ hooks/
+│  ├─ useAdminRequest.ts            # run(promise) -> {ok,data} | {ok:false,message}; 401 -> login with next
+│  ├─ usePagedList.ts               # list/detail loading with request sequencing (late responses dropped)
+│  ├─ useListQuery.ts               # filter/page/q kept in the URL query
+│  ├─ useReviewNavigation.ts        # prev/next + "open next pending" in report detail modals
+│  ├─ useFeedback.ts                # toast / confirm
+│  └─ usePendingCounts.ts           # sidebar badge counts + refreshCounts()
+├─ pages/                           # Admin*Page.tsx (+ .css), one per route below
 └─ components/
-   ├─ AdminLayout.tsx               # Sidebar shell shared by every admin page
-   ├─ AdminReportDetailModal.tsx    # Admin detail view + approve/reject + downloads
-   ├─ AdminShelterEditModal.tsx     # Admin-only shelter field edit
-   ├─ AdminContentEditModal.tsx     # Create/edit content (image upload + display period)
-   └─ temp/
-      ├─ ShelterReportModal.tsx     # Citizen create/edit report — slated for removal
-      ├─ PendingReportsListModal.tsx
-      └─ ShelterInfoViewModal.tsx
+   ├─ RequireAdmin.tsx              # /admin/* guard: providers + AdminLayout + <Outlet/>
+   ├─ AdminLayout.tsx               # Sidebar shell (MENU)
+   ├─ AdminMaintenanceSection.tsx   # Dashboard maintenance: place-boundary fill loop, push test send
+   ├─ Admin*Modal.tsx               # Detail / edit modals
+   └─ common/                       # Pagination, Feedback (toast + confirm Provider), PendingCountsProvider
 ```
-
-The `temp/` subdirectories hold the citizen-survey UI (the original "research" mode) which is being phased out as the app pivots to admin-only management. Do not extend code under `temp/` — add new work in the top-level `pages/` and `components/` directories.
 
 ## Routing
 
 `main.tsx` wraps everything in `<BrowserRouter basename="/research">`. All in-app paths should be written **without** the `/research` prefix — React Router adds it. So `navigate('/admin/login')`, not `navigate('/research/admin/login')`.
 
-| Path (in-app)       | Element              |
-|---------------------|----------------------|
-| `/`                 | Navigate → `/shelters` |
-| `/shelters`         | `temp/ShelterListPage` |
-| `/admin`            | Navigate → `/admin/reports` |
-| `/admin/login`      | `AdminLoginPage`     |
-| `/admin/reports`    | `AdminReportsPage`   |
-| `/admin/shelters`   | `AdminSheltersPage`  |
-| `/admin/contents`   | `AdminContentsPage`  |
+| Path (in-app)          | Element                |
+|------------------------|------------------------|
+| `/`                    | Navigate → `/admin`    |
+| `/admin/login`         | `AdminLoginPage` (returns to `?next=` when it is an `/admin` path) |
+| `/admin`               | `AdminDashboardPage` (pending cards + maintenance) |
+| `/admin/reports`       | `AdminReportsPage` (웹 제보 검토) |
+| `/admin/app-reports`   | `AdminAppReportsPage`  |
+| `/admin/feedbacks`     | `AdminFeedbacksPage`   |
+| `/admin/members`       | `AdminMembersPage`     |
+| `/admin/shelters`      | `AdminSheltersPage`    |
+| `/admin/contents`      | `AdminContentsPage`    |
+| `/admin/manuals`       | `AdminManualsPage`     |
+| `/admin/app-bundles`   | `AdminAppBundlesPage` (OTA bundles: promote, enable/disable) |
+
+Every route except login sits under `<Route element={<RequireAdmin/>}>`.
 
 ## API layer
 
 `src/api/http.ts` is the single axios instance. `baseURL: '/api'`, so always call paths as `/shelters`, `/admin/reports`, etc. — never hardcode the host.
 
-### Password-header flow (important)
+### Admin password header
 
-The backend has no session/JWT in the browser; it authenticates admin and edit actions by two custom headers that the request interceptor injects:
+The backend has no session/JWT in the browser; admin calls are authenticated by `X-Admin-Password`:
 
-- **`X-Admin-Password`** — persistent.
-  - Stored in `sessionStorage['admin-password']` via `setAdminPassword(pw)` after `adminLogin(pw)` succeeds.
-  - Interceptor attaches it to every request whose path starts with `/admin` or `/download-file`.
-  - On a `401` for those paths, the response interceptor throws `UnauthorizedError` (exported from `http.ts`). Pages/modals must catch it and call `clearAdminPassword()` + navigate back to `/admin/login`.
-- **`X-User-Password`** — one-shot.
-  - Set immediately before a single request via `useNextUserPassword(pw)`; the interceptor attaches it once and clears it. Currently only `updateShelterReport` and `createShelterReport` (when the shelter is in `RE_INVESTIGATION`) use this.
-  - Do not persist user passwords anywhere.
-
-`adminApi.ts` re-exports `getAdminPassword`, `setAdminPassword`, `clearAdminPassword`, and `UnauthorizedError` so pages import them from one place.
+- Stored in `sessionStorage['admin-password']` via `setAdminPassword(pw)` after `adminLogin(pw)` succeeds.
+- The request interceptor attaches it to every request whose path starts with `/admin` or `/download-file`.
+- On a `401` for those paths, the response interceptor throws `UnauthorizedError`. Pages and modals do not catch it themselves — they call APIs through `useAdminRequest().run(...)`, which clears the password and sends the user to `/admin/login?next=<current path>`.
 
 ### Endpoint wrappers
 
-Keep all HTTP calls inside `src/api/*.ts`. Pages should not import `axios` or call `http` directly — they call the typed wrappers:
+Keep all HTTP calls inside `src/api/*.ts`. Pages should not import `axios` or call `http` directly — they call the typed wrappers. Response types mirror the backend DTO records (read them in `chamApi` before adding a wrapper).
 
-- `shelterApi.ts`: `fetchShelters(page, size, keyword?, filter?)`, `createShelterReport(body, userPassword?)`, `fetchPendingReportsByShelter(shelterId)`, `fetchApprovedReportsByShelter(shelterId)`, `fetchShelterReportDetail(id)`, `updateShelterReport(id, body, userPassword)`, `uploadShelterImage(file)`.
-- `adminApi.ts`: `adminLogin(password)`, `fetchReports(status, page, size)` where `status` is `ShelterReportStatus | 'ALL' | 'RE_INVESTIGATION'`, `fetchReportDetail(id)`, `approveReport(id)`, `rejectReport(id)`, `reInvestigateReport(id)`, `fetchAdminShelters`, `updateAdminShelter`, `getDownloadUrl(fileId)`, `downloadFilesAsZip(ids, name)`.
-- `contentApi.ts`: `fetchContents()`, `createContent(body)`, `updateContent(id, body)`, `deleteContent(id)`, `uploadContentImage(file)`. The server speaks `contentType` and `displayStartDate/EndDate` as `LocalDateTime`; the wrapper maps it to `type` + `YYYY-MM-DD` for the UI and resolves `imageFileId` → presigned download URL for display. `updateContent` is **full replacement**, not PATCH — pass every field, including ones the caller doesn't edit (e.g. preserve `additionalInfo` from the loaded content), or they get nulled out.
+- `contentApi.ts`: `updateContent` is **full replacement**, not PATCH — pass every field, including ones the caller doesn't edit (e.g. preserve `additionalInfo`), or they get nulled out. The wrapper maps server `contentType`/`displayStartDate/EndDate` (`LocalDateTime`) to `type` + `YYYY-MM-DD`.
 
 Response envelope from the API is `ApiResponse<T> = { code, success, message, data }`. Wrappers unwrap `.data.data` and return just `T`; pages should not see the envelope. Paged endpoints return `PageResponse<T>`.
 
@@ -108,10 +103,7 @@ Response envelope from the API is `ApiResponse<T> = { code, success, message, da
 2. PUT each file to its presigned URL in parallel
 3. POST register (transitions the file row from `UPLOADING` → `COMPLETE` on the server), returning the backend file records
 
-Current uploaders, each with a distinct `fileType` constant the backend recognises:
-
-- `shelterImageUploader` — `fileType: 'SHELTER_IMAGE'`, exposed via `shelterApi.uploadShelterImage(file)`.
-- `contentImageUploader` — `fileType: 'CONTENT_IMAGE'`, exposed via `contentApi.uploadContentImage(file)`.
+Current uploader: `contentImageUploader` — `fileType: 'CONTENT_IMAGE'`, exposed via `contentApi.uploadContentImage(file)`.
 
 If you add another upload kind, build a new uploader with the same factory — don't duplicate the three-step sequence inline. The backend's `FileType` enum has to grow alongside.
 
@@ -122,29 +114,26 @@ If you add another upload kind, build a new uploader with the same factory — d
 
 ## Admin page shell
 
-Every admin page renders inside `<AdminLayout>`, which provides the left-hand sidebar (`리포트 검토 / 대피소 편집 / 컨텐츠 관리` + logout). The sidebar `MENU` constant in `AdminLayout.tsx` is the source of truth — add new admin routes there *and* in `main.tsx`. The sidebar's logout button just clears the admin password and navigates to `/admin/login`; pages still handle `UnauthorizedError` themselves.
+`RequireAdmin` renders `PendingCountsProvider` → `AdminLayout` (sidebar) → `FeedbackProvider` → `<Outlet/>`. Pages do not wrap themselves in `<AdminLayout>` and do not check the password on mount. The sidebar `MENU` constant in `AdminLayout.tsx` is the source of truth — add new admin routes there *and* in `main.tsx`.
 
 ## Modal conventions
 
 All modals follow the same pattern — copy it when adding another:
 
-- Backdrop `onClick={onClose}`; inner `onClick={e => e.stopPropagation()}`.
+- Backdrop `onClick={onClose}`; inner `onClick={clickEvent => clickEvent.stopPropagation()}`.
 - `useEffect` to listen for `Escape` and to set `document.body.style.overflow = 'hidden'`; cleanup both on unmount.
-- Props shape is `{ ...inputs, onClose, onSaved | onSubmitted | onActionDone, onUnauthorized? }` — parents handle navigation; modals do not call `useNavigate`.
-- On `UnauthorizedError` inside an admin modal, call `onUnauthorized()` rather than navigating yourself.
+- Props shape is `{ ...inputs, onClose, onSaved | onSent | onActionDone }` — parents handle list reloads. API calls go through `useAdminRequest().run`.
 
-`ShelterReportModal` has two modes keyed by whether `reportId` is passed. In edit mode it requires a user password (bound to `X-User-Password`) and disables submit while any image is still uploading (tracked in a `PendingImage` local state with `uploading | done | failed`, with retry).
-
-`AdminContentEditModal` uses the same `uploading | done | failed` image state but tracks only a single image (with `existing` vs `new` discriminator so the previous image URL stays visible until upload completes). Submit is blocked while uploading or failed.
+`AdminContentEditModal` tracks a single image with `uploading | done | failed` state (`existing` vs `new`, so the previous image URL stays visible until upload completes). Submit is blocked while uploading or failed.
 
 ## Page conventions
 
-- Each page owns its loading / error / page / data state with `useState`; no shared store.
-- Error handling: `try/catch` around the API call, set an `error` string, render inline. In admin pages, first check `if (e instanceof UnauthorizedError)` → `clearAdminPassword()` → `navigate('/admin/login')`.
-- Admin pages also guard mount with `if (!getAdminPassword()) navigate('/admin/login', { replace: true })`.
-- `ShelterListPage` debounces the search input by 300ms before calling `fetchShelters`.
-- Flash messages are local `useState` with a `setTimeout` (2500ms) clear — no toast library.
-- Pagination is block-based (10 per block), implemented inline in `ShelterListPage` and `AdminReportsPage`. There is no shared `<Pagination>` component yet — if a third page needs it, extract then.
+- List/detail loading uses `usePagedList(fetcher)` with a `useCallback` fetcher. It keeps the previous data while reloading (tables get `aria-busy` and dim); show "불러오는 중…" only when there is no data yet.
+- Filter / page / search live in the URL via `useListQuery` (`filter`, `page` 1-based, `q`); defaults are omitted.
+- Messages: `useFeedback().toast(message, tone)` (error toasts stay until closed) and `await confirm({ title, description, confirmLabel, destructive })` instead of browser `alert`/`confirm`. Destructive or wide-impact actions (reject, delete, push, OTA disable/promote) must confirm.
+- Pagination: shared `components/common/Pagination`.
+- After approve/reject/feedback save, call `refreshCounts()` so the sidebar badges update.
+- Variable names: no single-letter names (`e`, `t`, `r` …) — use `changeEvent`, `clickEvent`, `requestError`, etc.
 
 ## Styling
 

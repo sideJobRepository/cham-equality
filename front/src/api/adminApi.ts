@@ -315,3 +315,77 @@ export async function sendMemberPush(
   const { data } = await http.post<ApiResponse<number>>(`/admin/members/${memberId}/push`, body)
   return data.data
 }
+
+// ===== 앱 업데이트(OTA 번들) =====
+// 번들 등록(POST)은 CI 전용이라 화면에서 쓰지 않는다. 응답은 서버 AppBundleResponse와 같은 모양이다.
+
+export type AppBundlePlatform = 'ANDROID' | 'IOS'
+
+/** ALPHA = 테스터("베타 업데이트 받기"를 켠 기기)에게만, PRODUCTION = 전체 사용자에게. */
+export type AppBundleChannel = 'ALPHA' | 'PRODUCTION'
+
+export type AppBundle = {
+  uuid: string
+  platform: AppBundlePlatform
+  channel: AppBundleChannel
+  /** 네이티브 지문. 같은 지문의 앱만 이 번들을 받는다. */
+  fingerprint: string | null
+  gitCommit: string | null
+  message: string | null
+  enabled: boolean
+  /** 받자마자 재시작해 적용하는 번들인지(아니면 다음 실행 때 적용) */
+  forceUpdate: boolean
+  createDate: string | null
+}
+
+/** 최근 번들(최신순). 서버가 limit을 1~100으로 자른다. */
+export async function fetchAppBundles(limit: number): Promise<AppBundle[]> {
+  const { data } = await http.get<ApiResponse<AppBundle[]>>('/admin/app-bundles', {
+    params: { limit },
+  })
+  return data.data
+}
+
+/** 테스터 채널에 켜져 있는 번들을 전부 전체 공개로 바꾼다. 바뀐 번들 목록을 돌려준다. */
+export async function promoteAppBundles(): Promise<AppBundle[]> {
+  const { data } = await http.post<ApiResponse<AppBundle[]>>('/admin/app-bundles/promote')
+  return data.data
+}
+
+export async function setAppBundleEnabled(uuid: string, enabled: boolean): Promise<AppBundle> {
+  const action = enabled ? 'enable' : 'disable'
+  const { data } = await http.post<ApiResponse<AppBundle>>(
+    `/admin/app-bundles/${encodeURIComponent(uuid)}/${action}`,
+  )
+  return data.data
+}
+
+// ===== 유지보수 =====
+
+/** 장소 경계 채우기 한 번의 결과. remaining이 0이 될 때까지 다시 부른다. */
+export type PlaceBoundaryFillResult = {
+  /** 이번에 조회한 장소 수 */
+  processed: number
+  /** 경계를 찾아 저장한 수 */
+  updated: number
+  /** 필지를 못 찾아 다시 조회하지 않게 표시한 수 */
+  notFound: number
+  /** 통신 오류로 남겨 둔 수(다음 호출 때 다시 시도된다) */
+  failed: number
+  /** 아직 조회하지 않은 장소 수 */
+  remaining: number
+}
+
+export async function fillPlaceBoundaries(limit: number): Promise<PlaceBoundaryFillResult> {
+  const { data } = await http.post<ApiResponse<PlaceBoundaryFillResult>>(
+    '/admin/places/boundaries/fill',
+    null,
+    { params: { limit } },
+  )
+  return data.data
+}
+
+/** 최신 재난문자 1건을 지정한 푸시 토큰 하나에만 보낸다(실기기 수신 확인용). */
+export async function sendTestPush(token: string): Promise<void> {
+  await http.post('/admin/push/test', { token })
+}

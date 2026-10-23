@@ -27,6 +27,7 @@ const MENU: MenuItem[] = [
   { to: '/admin/shelters', label: '대피소 편집' },
   { to: '/admin/contents', label: '컨텐츠 관리' },
   { to: '/admin/manuals', label: '매뉴얼 관리' },
+  { to: '/admin/app-bundles', label: '앱 업데이트' },
 ]
 
 type Props = {

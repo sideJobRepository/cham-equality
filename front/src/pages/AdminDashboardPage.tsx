@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import AdminMaintenanceSection from '@/components/AdminMaintenanceSection'
 import { usePendingCounts } from '@/hooks/usePendingCounts'
 import { PENDING_COUNT_SOURCES } from '@/lib/pendingCounts'
 import './AdminDashboardPage.css'
@@ -53,6 +54,8 @@ export default function AdminDashboardPage() {
           )
         })}
       </div>
+
+      <AdminMaintenanceSection />
     </div>
   )
 }

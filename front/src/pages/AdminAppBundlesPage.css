@@ -1,0 +1,106 @@
+/* ──────────────────────────────────────────────────────────────────────
+   앱 업데이트(OTA) 페이지 — 헤더·표·배지는 AdminReportsPage.css를 그대로 쓰고
+   전체 공개 버튼·안내문·행별 켜기/끄기 버튼만 추가한다. See front/DESIGN.md.
+   ────────────────────────────────────────────────────────────────────── */
+
+/* button-primary : Rausch fill. 전체 사용자에게 나가는 동작이라 화면의 유일한 주 버튼으로 둔다. */
+.admin-app-bundles-page .bundle-promote {
+  flex-shrink: 0;
+  padding: 12px 20px;
+  background: var(--ab-primary);
+  border: none;
+  color: var(--ab-on-primary);
+  border-radius: var(--ab-radius-sm);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.29;
+  transition: background 0.12s ease;
+}
+
+.admin-app-bundles-page .bundle-promote:hover:not(:disabled) {
+  background: var(--ab-primary-active);
+}
+
+.admin-app-bundles-page .bundle-promote:disabled {
+  background: var(--ab-primary-disabled);
+  cursor: default;
+}
+
+.admin-app-bundles-page .bundle-guide {
+  margin: 0 0 20px;
+  padding: 14px 16px 14px 32px;
+  background: var(--ab-surface-soft);
+  border-radius: var(--ab-radius-sm);
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ab-body);
+}
+
+.admin-app-bundles-page .bundle-guide li + li {
+  margin-top: 4px;
+}
+
+.admin-app-bundles-page .bundle-uuid,
+.admin-app-bundles-page .bundle-commit {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.admin-app-bundles-page .bundle-message {
+  max-width: 280px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 꺼진 번들은 흐리게(버튼은 그대로 눌 수 있어야 하니 행 전체 opacity 대신 글자색만) */
+.admin-app-bundles-page tr.bundle-disabled td {
+  color: var(--ab-muted);
+}
+
+.admin-app-bundles-page .badge-enabled {
+  background: var(--ab-surface-strong);
+  color: var(--ab-ink);
+}
+
+/* 행 버튼 : 회원 페이지 push-btn과 같은 pill. 끄기는 경고색 테두리 */
+.admin-app-bundles-page .bundle-toggle {
+  padding: 6px 14px;
+  border: 1px solid var(--ab-ink);
+  border-radius: var(--ab-radius-full);
+  background: var(--ab-canvas);
+  color: var(--ab-ink);
+  font-family: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.admin-app-bundles-page .bundle-toggle:hover:not(:disabled) {
+  background: var(--ab-surface-soft);
+}
+
+.admin-app-bundles-page .bundle-toggle.danger {
+  border-color: var(--ab-error);
+  color: var(--ab-error);
+}
+
+.admin-app-bundles-page .bundle-toggle.danger:hover:not(:disabled) {
+  background: var(--ab-error-soft);
+}
+
+.admin-app-bundles-page .bundle-toggle:disabled {
+  border-color: var(--ab-hairline);
+  color: var(--ab-muted-soft);
+  cursor: not-allowed;
+}
+
+@media (max-width: 640px) {
+  .admin-app-bundles-page .admin-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

@@ -13,6 +13,7 @@ import AdminMembersPage from '@/pages/AdminMembersPage'
 import AdminSheltersPage from '@/pages/AdminSheltersPage'
 import AdminContentsPage from '@/pages/AdminContentsPage'
 import AdminManualsPage from '@/pages/AdminManualsPage'
+import AdminAppBundlesPage from '@/pages/AdminAppBundlesPage'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -30,6 +31,7 @@ createRoot(document.getElementById('root')!).render(
           <Route path="/admin/shelters" element={<AdminSheltersPage />} />
           <Route path="/admin/contents" element={<AdminContentsPage />} />
           <Route path="/admin/manuals" element={<AdminManualsPage />} />
+          <Route path="/admin/app-bundles" element={<AdminAppBundlesPage />} />
         </Route>
       </Routes>
     </BrowserRouter>
