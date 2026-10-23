@@ -17,7 +17,8 @@ type Props = {
   reportId: number
   onClose: () => void
   /** 승인·반려가 끝나면 호출한다. 페이지가 목록을 갱신하고 다음 대기 건을 연다. */
-  onActionDone: () => void
+  /** 처리한 건의 id를 넘긴다(처리 중 모달이 닫혀도 어떤 건이었는지 알 수 있게). */
+  onActionDone: (actedId: number) => void
   /** 이전/다음 건으로 이동. 이웃 건이 없으면 undefined로 넘겨 버튼을 잠근다. */
   onPrevious?: () => void
   onNext?: () => void
@@ -86,7 +87,7 @@ export default function AdminAppReportDetailModal({
     setProcessing(false)
     if (result.ok) {
       toast(successMessage)
-      onActionDone()
+      onActionDone(reportId)
     } else if (result.message) {
       toast(result.message, 'error')
     }

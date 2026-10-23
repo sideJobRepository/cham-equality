@@ -136,11 +136,10 @@ export default function AdminAppReportsPage() {
         <AdminAppReportDetailModal
           reportId={review.selectedId}
           onClose={review.close}
-          onActionDone={() => {
+          onActionDone={(actedId) => {
             // 사이드바 배지·대시보드의 대기 건수도 같이 갱신한다.
             refreshCounts()
-            const actedId = review.selectedId
-            if (actedId !== null) review.openNextPending(actedId)
+            review.openNextPending(actedId)
           }}
           onPrevious={review.hasPrevious ? review.goPrevious : undefined}
           onNext={review.hasNext ? review.goNext : undefined}

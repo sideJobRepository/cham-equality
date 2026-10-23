@@ -52,7 +52,7 @@ export default function AdminReportsPage() {
     <div className="admin-reports-page">
       <header className="admin-header">
         <div>
-          <h1>리포트 검토</h1>
+          <h1>웹 제보 검토</h1>
           <p className="subtitle">
             총 {data?.totalElements ?? 0}건 · 페이지 {(data?.page ?? 0) + 1} / {data?.totalPages ?? 0}
           </p>
@@ -141,9 +141,7 @@ export default function AdminReportsPage() {
         <AdminReportDetailModal
           reportId={review.selectedId}
           onClose={review.close}
-          onActionDone={(action: ReportAction) => {
-            const actedId = review.selectedId
-            if (actedId === null) return
+          onActionDone={(action: ReportAction, actedId: number) => {
             // 사이드바 배지·대시보드의 대기 건수도 같이 갱신한다.
             refreshCounts()
             // 재조사 요청은 대기 건 처리가 아니라서 예전처럼 닫고 목록만 갱신한다.

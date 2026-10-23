@@ -31,7 +31,10 @@ export type ReviewNavigation = {
   close: () => void
   goPrevious: () => void
   goNext: () => void
-  /** 승인·반려가 끝난 뒤 호출한다. 목록을 다시 불러오고 다음 대기 건을 연다. 없으면 모달을 닫고 알린다. */
+  /**
+   * 승인·반려가 끝난 뒤 처리한 건의 id로 호출한다. 목록을 다시 불러오고 다음 대기 건을 연다. 없으면 모달을 닫고 알린다.
+   * 처리 중에 모달이 닫혔으면 목록만 다시 불러온다.
+   */
   openNextPending: (actedId: number) => void
 }
 
@@ -69,6 +72,9 @@ export function useReviewNavigation<Item extends ReviewItem>({
   const [selectedId, setSelectedId] = useState<number | null>(null)
   const [navigating, setNavigating] = useState(false)
   const selectionTokenRef = useRef(0)
+  // 승인·반려 요청이 도는 사이 모달을 닫았는지 알려고 지금 선택을 렌더와 무관하게 들고 있는다.
+  // (모달의 onActionDone은 닫히기 전 렌더의 선택값을 붙잡고 있어서 state로는 알 수 없다)
+  const selectedIdRef = useRef<number | null>(null)
 
   // 화면을 떠난 뒤 도착한 결과로 모달을 다시 열지 않게 순번을 올려 둔다.
   useEffect(() => {
@@ -79,6 +85,7 @@ export function useReviewNavigation<Item extends ReviewItem>({
 
   const select = useCallback((reportId: number | null) => {
     selectionTokenRef.current += 1
+    selectedIdRef.current = reportId
     setNavigating(false)
     setSelectedId(reportId)
   }, [])
@@ -141,6 +148,11 @@ export function useReviewNavigation<Item extends ReviewItem>({
 
   const openNextPending = useCallback(
     (actedId: number) => {
+      // 처리하는 동안 사용자가 모달을 닫았거나 다른 건으로 옮겼으면 다음 건을 열지 않고 표만 갱신한다.
+      if (selectedIdRef.current !== actedId) {
+        reload()
+        return
+      }
       // 처리 시점 표 기준으로 "처리한 건보다 위에 있던 건"을 기억해 둔다(다음 후보에서 뺀다).
       const actedIndex = items.findIndex((item) => item.id === actedId)
       const precedingIds = new Set(

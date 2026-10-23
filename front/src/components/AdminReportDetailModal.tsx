@@ -20,7 +20,8 @@ export type ReportAction = 'approve' | 'reject' | 'reInvestigate'
 type Props = {
   reportId: number
   onClose: () => void
-  onActionDone: (action: ReportAction) => void
+  /** 처리 종류와 처리한 건의 id를 넘긴다(처리 중 모달이 닫혀도 어떤 건이었는지 알 수 있게). */
+  onActionDone: (action: ReportAction, actedId: number) => void
   /** 이전/다음 건으로 이동. 이웃 건이 없으면 undefined로 넘겨 버튼을 잠근다. */
   onPrevious?: () => void
   onNext?: () => void
@@ -90,7 +91,7 @@ export default function AdminReportDetailModal({
     setProcessing(false)
     if (result.ok) {
       toast(successMessage)
-      onActionDone(action)
+      onActionDone(action, reportId)
     } else if (result.message) {
       toast(result.message, 'error')
     }
@@ -156,7 +157,7 @@ export default function AdminReportDetailModal({
       <div className="detail-modal" onClick={(clickEvent) => clickEvent.stopPropagation()}>
         <header className="detail-header">
           <div className="detail-title">
-            <h2>리포트 #{reportId}</h2>
+            <h2>웹 제보 #{reportId}</h2>
             {detail && (
               <p className="detail-sub">
                 <span className="detail-shelter-name">{detail.shelterName ?? '이름 없는 대피소'}</span>
