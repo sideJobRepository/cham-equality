@@ -75,6 +75,7 @@ src/
 | `/admin/contents`      | `AdminContentsPage`    |
 | `/admin/manuals`       | `AdminManualsPage`     |
 | `/admin/app-bundles`   | `AdminAppBundlesPage` (OTA bundles: promote, enable/disable) |
+| `*`                    | Navigate → `/admin` (old links such as `/shelters`, typos) |
 
 Every `/admin` route except login sits under `<Route element={<RequireAdmin/>}>`.
 

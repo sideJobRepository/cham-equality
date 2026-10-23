@@ -33,6 +33,8 @@ createRoot(document.getElementById('root')!).render(
           <Route path="/admin/manuals" element={<AdminManualsPage />} />
           <Route path="/admin/app-bundles" element={<AdminAppBundlesPage />} />
         </Route>
+        {/* 없어진 옛 주소(/shelters 등)나 잘못된 주소는 빈 화면 대신 관리자 첫 화면으로 보낸다. */}
+        <Route path="*" element={<Navigate to={ADMIN_HOME_PATH} replace />} />
       </Routes>
     </BrowserRouter>
   </StrictMode>,
