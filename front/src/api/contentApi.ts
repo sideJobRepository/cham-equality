@@ -3,7 +3,7 @@ import type { Content, ContentType, ContentUpsertRequest } from '@/types/content
 import { createPresignedUploader } from '@/lib/file'
 import { http } from './http'
 import { getDownloadUrl } from './adminApi'
-import type { FileUploadResponse, PresignedUrlResponse } from './shelterApi'
+import type { FileUploadResponse, PresignedUrlResponse } from '@/types/file'
 
 type ServerContent = {
   id: number

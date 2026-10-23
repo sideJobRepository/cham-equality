@@ -4,7 +4,7 @@ import { clearAdminPassword } from '@/api/adminApi'
 import './AdminLayout.css'
 
 const MENU = [
-  { to: '/admin/reports', label: '리포트 검토' },
+  { to: '/admin/reports', label: '웹 제보 검토' },
   { to: '/admin/app-reports', label: '앱 제보 검토' },
   { to: '/admin/feedbacks', label: '앱 피드백' },
   { to: '/admin/members', label: '회원' },
@@ -30,25 +30,22 @@ export default function AdminLayout({ children }: Props) {
       <aside className="admin-sidebar">
         <div className="admin-sidebar-header">
           <div className="admin-sidebar-title">관리자</div>
-          <div className="admin-sidebar-subtitle">Cham Equality</div>
+          <div className="admin-sidebar-subtitle">모두의 안전</div>
         </div>
         <nav className="admin-sidebar-nav">
-          {MENU.map((m) => (
+          {MENU.map((menuItem) => (
             <NavLink
-              key={m.to}
-              to={m.to}
+              key={menuItem.to}
+              to={menuItem.to}
               className={({ isActive }) =>
                 'admin-sidebar-link' + (isActive ? ' active' : '')
               }
             >
-              {m.label}
+              {menuItem.label}
             </NavLink>
           ))}
         </nav>
         <div className="admin-sidebar-footer">
-          <NavLink to="/shelters" className="admin-sidebar-link subtle">
-            ← 대피소 목록
-          </NavLink>
           <button type="button" className="admin-sidebar-logout" onClick={logout}>
             로그아웃
           </button>

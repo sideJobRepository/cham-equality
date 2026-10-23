@@ -31,20 +31,10 @@ function isAdminPath(url: string | undefined): boolean {
   return url.startsWith('/admin') || url.startsWith('/download-file')
 }
 
-let oneShotUserPassword: string | null = null
-
-export function useNextUserPassword(pw: string): void {
-  oneShotUserPassword = pw
-}
-
 http.interceptors.request.use((config) => {
   const adminPw = getAdminPassword()
   if (adminPw && isAdminPath(config.url)) {
     config.headers.set('X-Admin-Password', adminPw)
-  }
-  if (oneShotUserPassword) {
-    config.headers.set('X-User-Password', oneShotUserPassword)
-    oneShotUserPassword = null
   }
   return config
 })

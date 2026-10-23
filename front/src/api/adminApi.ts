@@ -5,7 +5,6 @@ import type {
   ShelterSurveyStatus,
   ShelterType,
 } from '@/types/shelter'
-import type { ShelterSearchFilter } from './shelterApi'
 import { http } from './http'
 
 export {
@@ -221,11 +220,9 @@ export async function fetchAdminShelters(
   page: number,
   size: number,
   keyword?: string,
-  filter?: ShelterSearchFilter,
 ): Promise<PageResponse<Shelter>> {
   const params: Record<string, string | number> = { page, size }
   if (keyword && keyword.trim()) params.keyword = keyword.trim()
-  if (filter) params.filter = filter
   const { data } = await http.get<ApiResponse<PageResponse<Shelter>>>('/admin/shelters', { params })
   return data.data
 }

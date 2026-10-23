@@ -32,7 +32,7 @@ export default function AdminLoginPage() {
     <div className="admin-login-page">
       <form className="admin-login-card" onSubmit={handleSubmit}>
         <h1>관리자 로그인</h1>
-        <p className="hint">승인 대기 중인 대피소 정보 제보를 검토합니다.</p>
+        <p className="hint">모두의 안전 관리자 페이지입니다.</p>
         <input
           type="password"
           placeholder="비밀번호"

@@ -125,24 +125,6 @@
   font-weight: 600;
 }
 
-/* "← 대피소 목록" : tertiary text link */
-.admin-sidebar-link.subtle {
-  background: transparent;
-  border: none;
-  color: var(--ab-muted);
-  font-family: inherit;
-  font-size: 13px;
-  font-weight: 400;
-  padding: 8px 6px;
-  text-decoration: none;
-}
-
-.admin-sidebar-link.subtle:hover {
-  color: var(--ab-ink);
-  background: transparent;
-  text-decoration: underline;
-}
-
 .admin-sidebar-footer {
   padding-top: 12px;
   border-top: 1px solid var(--ab-hairline-soft);

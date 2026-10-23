@@ -15,7 +15,7 @@ src/lib/file/
    └─ index.ts                    # saveBlob, triggerDownload
 ```
 
-`import { createPresignedUploader, saveBlob, triggerDownload } from '../../lib/file'` 식으로 한 군데에서 가져다 씁니다 (경로 별칭 미설정).
+`import { createPresignedUploader, saveBlob, triggerDownload } from '@/lib/file'` 식으로 한 군데에서 가져다 씁니다.
 
 ---
 
@@ -95,16 +95,16 @@ export function createPresignedUploader<
 
 ---
 
-## 기존 업로더 쓰기 — 대피소 이미지 업로드
+## 기존 업로더 쓰기 — 컨텐츠 이미지 업로드
 
-`src/api/shelterApi.ts`에 이미 등록된 `shelterImageUploader`가 `uploadShelterImage(file)` 한 줄로 노출돼 있습니다. 컴포넌트에서는 이것만 호출하면 되고, 3단계는 신경 쓰지 않습니다.
+`src/api/contentApi.ts`에 이미 등록된 `contentImageUploader`가 `uploadContentImage(file)` 한 줄로 노출돼 있습니다. 컴포넌트에서는 이것만 호출하면 되고, 3단계는 신경 쓰지 않습니다.
 
 ```tsx
-import { uploadShelterImage } from '../api/shelterApi'
+import { uploadContentImage } from '@/api/contentApi'
 
 async function onFilePicked(file: File) {
-  const registered = await uploadShelterImage(file)
-  // registered.fileId 를 report body.images[].fileId 로 넘겨서 createShelterReport 호출
+  const registered = await uploadContentImage(file)
+  // registered.fileId 를 body.imageFileId 로 넘겨서 createContent / updateContent 호출
 }
 ```
 
@@ -130,19 +130,21 @@ return registered
 
 - **`transformRequest: [(d) => d]` 는 지우지 마세요.** 지우면 axios가 `File` 객체를 `{}`로 직렬화해서 S3에 0바이트가 올라갑니다. (실수로 한 번 밟고 오랫동안 디버깅할 수 있음.)
 - PUT이 성공하고 `registerUploadedFiles`가 실패하면 S3에는 이미 파일이 올라간 상태입니다. 서버 측에 `TEMPORARY` 상태 + 일일 정리 배치(`CommonFileSchedule`, 01:00)가 있어서 `/upload-file` 호출이 오지 않은 파일은 다음 날 자동 삭제됩니다.
-- presign 응답의 `url`에는 유효시간이 있습니다. 파일 선택 시점에 곧바로 업로드를 시작하세요(`ShelterReportModal`의 현재 동작). 선택만 해 두고 한참 뒤 submit하는 플로우를 만들면 403이 납니다.
+- presign 응답의 `url`에는 유효시간이 있습니다. 파일 선택 시점에 곧바로 업로드를 시작하세요(`AdminContentEditModal`의 현재 동작). 선택만 해 두고 한참 뒤 submit하는 플로우를 만들면 403이 납니다.
 
 ---
 
 ## 새 업로드 종류 추가하는 법
 
-새 도메인(예: 공지사항 첨부파일 `NOTICE_ATTACHMENT`)의 업로더를 만들 때의 레시피입니다. `shelterApi.ts`의 `shelterImageUploader`가 그대로 교본입니다.
+새 도메인(예: 공지사항 첨부파일 `NOTICE_ATTACHMENT`)의 업로더를 만들 때의 레시피입니다. `contentApi.ts`의 `contentImageUploader`가 그대로 교본입니다.
 
 ### 1) 응답 타입 2개 정의
 
+응답 모양이 기존과 같다면 `@/types/file`의 `PresignedUrlResponse`/`FileUploadResponse`를 그대로 쓰면 됩니다(`contentApi.ts`가 그렇게 함). 필드를 더 붙여야 할 때만 아래처럼 따로 정의합니다.
+
 ```ts
 // src/api/noticeApi.ts
-import type { PresignedUrlInfo } from '../lib/file'
+import type { PresignedUrlInfo } from '@/lib/file'
 
 // [1]단계 응답. PresignedUrlInfo 최소 스펙을 만족시키면 필드 추가 자유.
 export type NoticePresignedUrlResponse = PresignedUrlInfo
@@ -164,9 +166,9 @@ export type NoticeFileUploadResponse = {
 
 ```ts
 // src/api/noticeApi.ts (이어서)
-import { createPresignedUploader } from '../lib/file'
+import { createPresignedUploader } from '@/lib/file'
 import { http } from './http'
-import type { ApiResponse } from '../types/shelter'   // 공용 envelope
+import type { ApiResponse } from '@/types/shelter'   // 공용 envelope
 
 const noticeAttachmentUploader = createPresignedUploader<
   NoticePresignedUrlResponse,
@@ -201,7 +203,7 @@ export async function uploadNoticeAttachment(file: File): Promise<NoticeFileUplo
 
 ### 3) 주의할 포인트
 
-- 두 API 응답의 **envelope 유무가 다른 점**을 현재 코드가 그대로 반영하고 있습니다. `/presigned-url`은 배열을 바로 돌려주고, `/upload-file`은 `ApiResponse<T>`로 감싸 `data.data`에 배열이 있습니다. 이 부분은 어댑터 안에서 벗겨내야 합니다 (`shelterImageUploader`가 그렇게 하고 있음). 백엔드 합의 없이 envelope을 바꾸면 어댑터도 같이 고쳐야 합니다.
+- 두 API 응답의 **envelope 유무가 다른 점**을 현재 코드가 그대로 반영하고 있습니다. `/presigned-url`은 배열을 바로 돌려주고, `/upload-file`은 `ApiResponse<T>`로 감싸 `data.data`에 배열이 있습니다. 이 부분은 어댑터 안에서 벗겨내야 합니다 (`contentImageUploader`가 그렇게 하고 있음). 백엔드 합의 없이 envelope을 바꾸면 어댑터도 같이 고쳐야 합니다.
 - `fileType`은 서버가 화이트리스트로 받고, 업로드 카테고리별 버킷/키 규칙에 사용됩니다. **아무 값이나 써도 안 되고**, 서버 enum에 추가부터 해야 합니다.
 - `/presigned-url`, `/upload-file`은 경로가 도메인별로 갈라지지 않고 `fileType`으로 분기됩니다. 이 디자인을 유지해 주세요 (엔드포인트를 도메인마다 새로 파지 마세요).
 - 팩토리는 **모듈 최상위에서 한 번만** 호출해 `const`에 담아두면 충분합니다. `upload()` 부를 때마다 만들면 불필요한 할당이 생깁니다.
@@ -219,7 +221,7 @@ export async function uploadNoticeAttachment(file: File): Promise<NoticeFileUplo
 | `PUT` | 만료된 URL, 네트워크, CORS | axios 에러 throw | 재시도 |
 | `registerUploadedFiles` | 4xx/5xx | axios 에러 throw. S3에는 이미 올라간 상태 | 서버의 일일 `TEMPORARY` 정리 배치가 수거. 필요하면 사용자에게 재시도 버튼 |
 
-`ShelterReportModal`은 이미지 단위로 `uploading | done | failed` 상태를 로컬에 들고 있고, `failed`일 때 해당 이미지만 다시 `uploadShelterImage`를 호출하는 재시도 버튼을 노출합니다. 새 화면을 만들 때 같은 UX를 참고하세요.
+`AdminContentEditModal`은 이미지의 `uploading | done | failed` 상태를 로컬에 들고 있고, `failed`일 때 다시 `uploadContentImage`를 호출하는 재시도 버튼을 노출합니다. 새 화면을 만들 때 같은 UX를 참고하세요.
 
 ---
 
@@ -253,7 +255,7 @@ triggerDownload(url, fileName)
 
 - **페이지/모달 컴포넌트에서 `/presigned-url`, `/upload-file`을 직접 부르기.** → 기존 업로더를 재사용하거나 새 업로더를 `src/api/*.ts`에 추가하세요. 컴포넌트에는 `http`가 import되면 안 됩니다.
 - **PUT 요청에 `Content-Type: application/json`이 달려 있음.** → `createUploader.ts`의 `transformRequest`를 지우거나 axios 전역 인터셉터가 건드리면 이렇게 됩니다. PUT은 반드시 파일의 MIME을 그대로 달아야 S3 서명이 맞습니다.
-- **업로드 도중 모달을 닫을 수 있게 둠.** → 모달이 unmount돼도 업로드는 계속 진행되지만, 결과를 받을 상태가 사라져서 fileId가 유실됩니다. 업로드 중일 때는 닫기/submit을 disable하세요 (`ShelterReportModal`의 `pending` 체크 참고).
+- **업로드 도중 모달을 닫을 수 있게 둠.** → 모달이 unmount돼도 업로드는 계속 진행되지만, 결과를 받을 상태가 사라져서 fileId가 유실됩니다. 업로드 중일 때는 닫기/submit을 disable하세요 (`AdminContentEditModal`의 `isUploading` 체크 참고).
 - **여러 파일을 한 번에 presign하려고 `upload`를 고치려 함.** → 현재는 단일 파일만 지원합니다. 배치가 필요해지면 이 모듈에 `uploadMany`를 다시 붙이는 게 맞고, 그때 백엔드가 이미 배열 계약을 유지하고 있어 프론트만 고치면 됩니다.
 
 ---
