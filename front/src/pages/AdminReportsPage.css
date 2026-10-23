@@ -138,6 +138,30 @@
   white-space: nowrap;
 }
 
+/* 연속 검토 중 모달에 떠 있는 행 */
+.reports-table tbody tr.selected {
+  background: var(--ab-surface-strong);
+}
+
+/* 대피소 : 이름(굵게) + #id(흐리게) */
+.reports-table td.shelter-cell {
+  max-width: 200px;
+}
+
+.shelter-cell .shelter-name {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 500;
+}
+
+.shelter-cell .shelter-id {
+  display: block;
+  font-size: 11px;
+  color: var(--ab-muted);
+}
+
 .reports-table td.date {
   font-size: 12px;
   color: var(--ab-muted);

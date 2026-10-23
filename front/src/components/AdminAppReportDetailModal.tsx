@@ -16,7 +16,13 @@ import './AdminReportDetailModal.css'
 type Props = {
   reportId: number
   onClose: () => void
+  /** 승인·반려가 끝나면 호출한다. 페이지가 목록을 갱신하고 다음 대기 건을 연다. */
   onActionDone: () => void
+  /** 이전/다음 건으로 이동. 이웃 건이 없으면 undefined로 넘겨 버튼을 잠근다. */
+  onPrevious?: () => void
+  onNext?: () => void
+  /** 페이지가 이웃 건·다음 대기 건을 찾는 중. 처리·이동 버튼을 잠근다. */
+  navigating?: boolean
 }
 
 const CATEGORY_LABEL: Record<string, string> = {
@@ -40,15 +46,22 @@ export default function AdminAppReportDetailModal({
   reportId,
   onClose,
   onActionDone,
+  onPrevious,
+  onNext,
+  navigating = false,
 }: Props) {
   const { run } = useAdminRequest()
   const { toast, confirm } = useFeedback()
   // reportId가 바뀌면 새로 불러오고, 이전 id의 늦은 응답은 버린다(usePagedList 요청 순번).
   const fetchDetail = useCallback(() => fetchAppReportDetail(reportId), [reportId])
-  const { data: detail, loading, error } = usePagedList(fetchDetail, '상세 조회 실패')
+  const { data: loadedDetail, loading, error } = usePagedList(fetchDetail, '상세 조회 실패')
+  // usePagedList는 다시 불러오는 동안·실패했을 때 직전 값을 들고 있다. 이전/다음으로 id가 바뀐 직후
+  // 앞 건의 대피소 이름이나 승인 버튼이 남지 않게, 지금 id의 상세만 쓴다.
+  const detail = loadedDetail && loadedDetail.id === reportId ? loadedDetail : null
   const [processing, setProcessing] = useState(false)
   const [downloadingId, setDownloadingId] = useState<number | null>(null)
   const [zipping, setZipping] = useState(false)
+  const busy = processing || navigating
 
   useEffect(() => {
     const handleKeyDown = (keyboardEvent: KeyboardEvent) => {
@@ -125,17 +138,44 @@ export default function AdminAppReportDetailModal({
     <div className="detail-backdrop" onClick={onClose}>
       <div className="detail-modal" onClick={(clickEvent) => clickEvent.stopPropagation()}>
         <header className="detail-header">
-          <div>
+          <div className="detail-title">
             <h2>앱 제보 #{reportId}</h2>
             {detail && (
               <p className="detail-sub">
-                대피소 #{detail.shelterId} · {detail.shelterName ?? '-'}
-                <br />
-                {detail.shelterAddress ?? ''}
+                <span className="detail-shelter-name">{detail.shelterName ?? '이름 없는 대피소'}</span>
+                {' '}· 대피소 #{detail.shelterId}
+                {detail.shelterAddress && (
+                  <>
+                    <br />
+                    {detail.shelterAddress}
+                  </>
+                )}
               </p>
             )}
           </div>
-          <button type="button" className="detail-close" onClick={onClose}>✕</button>
+          <div className="detail-header-actions">
+            <button
+              type="button"
+              className="detail-nav"
+              aria-label="이전 건"
+              title="이전 건"
+              disabled={!onPrevious || busy}
+              onClick={onPrevious}
+            >
+              ‹ 이전
+            </button>
+            <button
+              type="button"
+              className="detail-nav"
+              aria-label="다음 건"
+              title="다음 건"
+              disabled={!onNext || busy}
+              onClick={onNext}
+            >
+              다음 ›
+            </button>
+            <button type="button" className="detail-close" aria-label="닫기" onClick={onClose}>✕</button>
+          </div>
         </header>
 
         <div className="detail-body">
@@ -206,12 +246,12 @@ export default function AdminAppReportDetailModal({
           )}
         </div>
 
-        {detail && detail.requestStatus === 'PENDING' && (
+        {detail && !loading && detail.requestStatus === 'PENDING' && (
           <footer className="detail-footer">
-            <button type="button" className="reject-btn" disabled={processing} onClick={handleReject}>
+            <button type="button" className="reject-btn" disabled={busy} onClick={handleReject}>
               반려
             </button>
-            <button type="button" className="approve-btn" disabled={processing} onClick={handleApprove}>
+            <button type="button" className="approve-btn" disabled={busy} onClick={handleApprove}>
               승인
             </button>
           </footer>

@@ -80,6 +80,48 @@
   background: var(--ab-hairline-soft);
 }
 
+.detail-title {
+  min-width: 0;
+}
+
+.detail-shelter-name {
+  color: var(--ab-ink);
+  font-weight: 600;
+}
+
+/* 이전/다음 + 닫기 묶음 */
+.detail-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+/* 연속 검토 이동 버튼 : small pill secondary */
+.detail-nav {
+  height: 32px;
+  padding: 0 12px;
+  background: var(--ab-canvas);
+  border: 1px solid var(--ab-hairline);
+  border-radius: var(--ab-radius-full);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ab-ink);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.12s ease;
+}
+
+.detail-nav:hover:not(:disabled) {
+  background: var(--ab-surface-soft);
+}
+
+.detail-nav:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 .detail-body {
   padding: 24px;
   flex: 1 1 auto;
@@ -384,6 +426,19 @@
 
   .detail-header {
     padding: 16px 20px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .detail-title {
+    flex: 1 1 100%;
+    order: 2;
+  }
+
+  .detail-header-actions {
+    order: 1;
+    width: 100%;
+    justify-content: flex-end;
   }
 
   .detail-header h2 {

@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useCallback } from 'react'
 import {
   fetchAppReports,
   type AdminAppReportFilter,
@@ -7,6 +7,7 @@ import AdminAppReportDetailModal from '@/components/AdminAppReportDetailModal'
 import Pagination from '@/components/common/Pagination'
 import { useUrlFilter, useUrlPage } from '@/hooks/useListQuery'
 import { usePagedList } from '@/hooks/usePagedList'
+import { useReviewNavigation } from '@/hooks/useReviewNavigation'
 import './AdminReportsPage.css'
 
 const PAGE_SIZE = 20
@@ -31,11 +32,17 @@ export default function AdminAppReportsPage() {
   // 필터·페이지는 URL 쿼리에 둔다(새로고침·뒤로가기·링크 공유 때 유지).
   const { filter, setFilter } = useUrlFilter(FILTER_VALUES, 'PENDING')
   const { page, setPage } = useUrlPage()
-  const [selectedId, setSelectedId] = useState<number | null>(null)
 
   // 조건이 바뀌면 fetcher가 새로 만들어지고, usePagedList가 그걸 새 요청으로 보고 다시 불러온다.
   const fetchPage = useCallback(() => fetchAppReports(filter, page, PAGE_SIZE), [filter, page])
   const { data, loading, error, reload } = usePagedList(fetchPage)
+
+  // 상세 모달의 이전/다음, 승인·반려 뒤 다음 대기 건. 페이지 밖 건은 같은 필터로 그 페이지를 받아 찾는다.
+  const fetchPageAt = useCallback(
+    (targetPage: number) => fetchAppReports(filter, targetPage, PAGE_SIZE),
+    [filter],
+  )
+  const review = useReviewNavigation({ list: data, page, setPage, reload, fetchPageAt })
 
   return (
     <div className="admin-reports-page">
@@ -73,7 +80,6 @@ export default function AdminAppReportsPage() {
                 <tr>
                   <th>ID</th>
                   <th>대피소</th>
-                  <th>시설명</th>
                   <th>안내문</th>
                   <th>화장실</th>
                   <th>경사로</th>
@@ -86,10 +92,16 @@ export default function AdminAppReportsPage() {
               </thead>
               <tbody>
                 {data.content.map((report) => (
-                  <tr key={report.id} className="clickable" onClick={() => setSelectedId(report.id)}>
+                  <tr
+                    key={report.id}
+                    className={report.id === review.selectedId ? 'clickable selected' : 'clickable'}
+                    onClick={() => review.open(report.id)}
+                  >
                     <td>{report.id}</td>
-                    <td>#{report.shelterId}</td>
-                    <td className="ellipsis">{report.shelterName ?? '-'}</td>
+                    <td className="shelter-cell" title={report.shelterName ?? undefined}>
+                      <span className="shelter-name">{report.shelterName ?? '이름 없음'}</span>
+                      <span className="shelter-id">#{report.shelterId}</span>
+                    </td>
                     <td className="ellipsis">{report.signageLanguage ?? '-'}</td>
                     <td className="center">{yn(report.accessibleToilet)}</td>
                     <td className="center">{yn(report.ramp)}</td>
@@ -106,7 +118,7 @@ export default function AdminAppReportsPage() {
                 ))}
                 {data.empty && (
                   <tr>
-                    <td colSpan={11} className="center">데이터 없음</td>
+                    <td colSpan={10} className="center">데이터 없음</td>
                   </tr>
                 )}
               </tbody>
@@ -117,14 +129,17 @@ export default function AdminAppReportsPage() {
         </>
       )}
 
-      {selectedId !== null && (
+      {review.selectedId !== null && (
         <AdminAppReportDetailModal
-          reportId={selectedId}
-          onClose={() => setSelectedId(null)}
+          reportId={review.selectedId}
+          onClose={review.close}
           onActionDone={() => {
-            setSelectedId(null)
-            reload()
+            const actedId = review.selectedId
+            if (actedId !== null) review.openNextPending(actedId)
           }}
+          onPrevious={review.hasPrevious ? review.goPrevious : undefined}
+          onNext={review.hasNext ? review.goNext : undefined}
+          navigating={review.navigating}
         />
       )}
     </div>
