@@ -1,16 +1,18 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { adminLogin, setAdminPassword } from '@/api/adminApi'
+import { useNavigate, useSearchParams } from 'react-router-dom'
+import { adminLogin, errorMessage, setAdminPassword } from '@/api/adminApi'
+import { ADMIN_HOME_PATH, safeAdminNext } from '@/lib/adminRedirect'
 import './AdminLoginPage.css'
 
 export default function AdminLoginPage() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const [password, setPassword] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSubmit = async (submitEvent: React.FormEvent) => {
+    submitEvent.preventDefault()
     setSubmitting(true)
     setError(null)
     try {
@@ -20,9 +22,10 @@ export default function AdminLoginPage() {
         return
       }
       setAdminPassword(password)
-      navigate('/admin/reports', { replace: true })
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : '로그인 실패')
+      // 인증이 끊겨 넘어온 경우 보던 화면으로 돌려보낸다. 관리자 내부 경로가 아니면 기본 화면으로.
+      navigate(safeAdminNext(searchParams.get('next')) ?? ADMIN_HOME_PATH, { replace: true })
+    } catch (loginError: unknown) {
+      setError(errorMessage(loginError, '로그인 실패'))
     } finally {
       setSubmitting(false)
     }
@@ -37,7 +40,7 @@ export default function AdminLoginPage() {
           type="password"
           placeholder="비밀번호"
           value={password}
-          onChange={(e) => setPassword(e.target.value)}
+          onChange={(changeEvent) => setPassword(changeEvent.target.value)}
           autoFocus
         />
         {error && <div className="login-error">{error}</div>}

@@ -1,17 +1,13 @@
 import { useEffect, useState } from 'react'
-import {
-  createAdminShelter,
-  UnauthorizedError,
-  type AdminShelterCreateRequest,
-} from '@/api/adminApi'
+import { createAdminShelter, type AdminShelterCreateRequest } from '@/api/adminApi'
 import { fetchRegions, type RegionOption } from '@/api/regionApi'
+import { useAdminRequest } from '@/hooks/useAdminRequest'
 import { SHELTER_TYPE_LABEL, type ShelterType } from '@/types/shelter'
 import './AdminShelterEditModal.css'
 
 type Props = {
   onClose: () => void
   onSaved: () => void
-  onUnauthorized: () => void
 }
 
 const TYPE_OPTIONS: { value: ShelterType; label: string }[] = (
@@ -21,7 +17,8 @@ const TYPE_OPTIONS: { value: ShelterType; label: string }[] = (
 const numberOrNull = (v: string): number | null => (v.trim() ? Number(v) : null)
 const textOrNull = (v: string): string | null => (v.trim() ? v.trim() : null)
 
-export default function AdminShelterCreateModal({ onClose, onSaved, onUnauthorized }: Props) {
+export default function AdminShelterCreateModal({ onClose, onSaved }: Props) {
+  const { run } = useAdminRequest()
   const [name, setName] = useState('')
   const [englishName, setEnglishName] = useState('')
   const [description, setDescription] = useState('')
@@ -47,13 +44,13 @@ export default function AdminShelterCreateModal({ onClose, onSaved, onUnauthoriz
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
+    const handleKeyDown = (keyboardEvent: KeyboardEvent) => {
+      if (keyboardEvent.key === 'Escape') onClose()
     }
-    document.addEventListener('keydown', onKey)
+    document.addEventListener('keydown', handleKeyDown)
     document.body.style.overflow = 'hidden'
     return () => {
-      document.removeEventListener('keydown', onKey)
+      document.removeEventListener('keydown', handleKeyDown)
       document.body.style.overflow = ''
     }
   }, [onClose])
@@ -94,8 +91,8 @@ export default function AdminShelterCreateModal({ onClose, onSaved, onUnauthoriz
   // 선택한 것 중 가장 하위 depth의 regionId를 사용한다.
   const selectedRegionId = eupmyeondongId || sigunguId || sidoId
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSubmit = async (submitEvent: React.FormEvent) => {
+    submitEvent.preventDefault()
     if (!name.trim()) {
       setError('대피소 이름은 필수입니다.')
       return
@@ -106,36 +103,31 @@ export default function AdminShelterCreateModal({ onClose, onSaved, onUnauthoriz
     }
     setSubmitting(true)
     setError(null)
-    try {
-      const body: AdminShelterCreateRequest = {
-        name: name.trim(),
-        englishName: textOrNull(englishName),
-        description: textOrNull(description),
-        regionId: selectedRegionId ? Number(selectedRegionId) : null,
-        address: textOrNull(address),
-        oldAddress: textOrNull(oldAddress),
-        englishAddress: textOrNull(englishAddress),
-        shelterType: shelterType || null,
-        area: numberOrNull(area),
-        capacity: numberOrNull(capacity),
-        builtYear: numberOrNull(builtYear),
-        safetyGrade: numberOrNull(safetyGrade),
-        managingAuthorityName: textOrNull(managingAuthorityName),
-        managingAuthorityTelNo: textOrNull(managingAuthorityTelNo),
-      }
-      await createAdminShelter(body)
-      onSaved()
-    } catch (err: unknown) {
-      if (err instanceof UnauthorizedError) onUnauthorized()
-      else setError(err instanceof Error ? err.message : '추가 실패')
-    } finally {
-      setSubmitting(false)
+    const body: AdminShelterCreateRequest = {
+      name: name.trim(),
+      englishName: textOrNull(englishName),
+      description: textOrNull(description),
+      regionId: selectedRegionId ? Number(selectedRegionId) : null,
+      address: textOrNull(address),
+      oldAddress: textOrNull(oldAddress),
+      englishAddress: textOrNull(englishAddress),
+      shelterType: shelterType || null,
+      area: numberOrNull(area),
+      capacity: numberOrNull(capacity),
+      builtYear: numberOrNull(builtYear),
+      safetyGrade: numberOrNull(safetyGrade),
+      managingAuthorityName: textOrNull(managingAuthorityName),
+      managingAuthorityTelNo: textOrNull(managingAuthorityTelNo),
     }
+    const result = await run(createAdminShelter(body), '추가 실패')
+    setSubmitting(false)
+    if (result.ok) onSaved()
+    else if (result.message) setError(result.message)
   }
 
   return (
     <div className="shelter-edit-backdrop">
-      <div className="shelter-edit-modal" onClick={(e) => e.stopPropagation()}>
+      <div className="shelter-edit-modal" onClick={(clickEvent) => clickEvent.stopPropagation()}>
         <header className="shelter-edit-header">
           <h2>대피소 추가</h2>
           <button type="button" className="shelter-edit-close" onClick={onClose}>✕</button>
@@ -148,41 +140,41 @@ export default function AdminShelterCreateModal({ onClose, onSaved, onUnauthoriz
         <form className="shelter-edit-body" onSubmit={handleSubmit}>
           <div className="field">
             <label>시설명 *</label>
-            <input value={name} onChange={(e) => setName(e.target.value)} />
+            <input value={name} onChange={(changeEvent) => setName(changeEvent.target.value)} />
           </div>
 
           <div className="field">
             <label>영문 시설명</label>
-            <input value={englishName} onChange={(e) => setEnglishName(e.target.value)} />
+            <input value={englishName} onChange={(changeEvent) => setEnglishName(changeEvent.target.value)} />
           </div>
 
           <div className="field">
             <label>행정구역</label>
             <div className="field-row">
-              <select value={sidoId} onChange={(e) => handleSidoChange(e.target.value)}>
+              <select value={sidoId} onChange={(changeEvent) => handleSidoChange(changeEvent.target.value)}>
                 <option value="">시/도</option>
-                {sido.map((r) => (
-                  <option key={r.regionId} value={r.regionId}>{r.name}</option>
+                {sido.map((region) => (
+                  <option key={region.regionId} value={region.regionId}>{region.name}</option>
                 ))}
               </select>
               <select
                 value={sigunguId}
-                onChange={(e) => handleSigunguChange(e.target.value)}
+                onChange={(changeEvent) => handleSigunguChange(changeEvent.target.value)}
                 disabled={!sidoId}
               >
                 <option value="">시/군/구</option>
-                {sigungu.map((r) => (
-                  <option key={r.regionId} value={r.regionId}>{r.name}</option>
+                {sigungu.map((region) => (
+                  <option key={region.regionId} value={region.regionId}>{region.name}</option>
                 ))}
               </select>
               <select
                 value={eupmyeondongId}
-                onChange={(e) => setEupmyeondongId(e.target.value)}
+                onChange={(changeEvent) => setEupmyeondongId(changeEvent.target.value)}
                 disabled={!sigunguId}
               >
                 <option value="">읍/면/동</option>
-                {eupmyeondong.map((r) => (
-                  <option key={r.regionId} value={r.regionId}>{r.name}</option>
+                {eupmyeondong.map((region) => (
+                  <option key={region.regionId} value={region.regionId}>{region.name}</option>
                 ))}
               </select>
             </div>
@@ -191,24 +183,24 @@ export default function AdminShelterCreateModal({ onClose, onSaved, onUnauthoriz
 
           <div className="field">
             <label>도로명 주소</label>
-            <input value={address} onChange={(e) => setAddress(e.target.value)} />
+            <input value={address} onChange={(changeEvent) => setAddress(changeEvent.target.value)} />
           </div>
 
           <div className="field">
             <label>구주소(지번)</label>
-            <input value={oldAddress} onChange={(e) => setOldAddress(e.target.value)} />
+            <input value={oldAddress} onChange={(changeEvent) => setOldAddress(changeEvent.target.value)} />
           </div>
 
           <div className="field">
             <label>영문 주소</label>
-            <input value={englishAddress} onChange={(e) => setEnglishAddress(e.target.value)} />
+            <input value={englishAddress} onChange={(changeEvent) => setEnglishAddress(changeEvent.target.value)} />
           </div>
 
           <div className="field">
             <label>대피소 타입</label>
             <select
               value={shelterType}
-              onChange={(e) => setShelterType((e.target.value || '') as ShelterType | '')}
+              onChange={(changeEvent) => setShelterType((changeEvent.target.value || '') as ShelterType | '')}
             >
               <option value="">선택 안 함</option>
               {TYPE_OPTIONS.map((opt) => (
@@ -220,22 +212,22 @@ export default function AdminShelterCreateModal({ onClose, onSaved, onUnauthoriz
           <div className="field-row">
             <div className="field">
               <label>면적(㎡)</label>
-              <input type="number" value={area} onChange={(e) => setArea(e.target.value)} />
+              <input type="number" value={area} onChange={(changeEvent) => setArea(changeEvent.target.value)} />
             </div>
             <div className="field">
               <label>수용 인원</label>
-              <input type="number" value={capacity} onChange={(e) => setCapacity(e.target.value)} />
+              <input type="number" value={capacity} onChange={(changeEvent) => setCapacity(changeEvent.target.value)} />
             </div>
           </div>
 
           <div className="field-row">
             <div className="field">
               <label>건축 연도</label>
-              <input type="number" value={builtYear} onChange={(e) => setBuiltYear(e.target.value)} />
+              <input type="number" value={builtYear} onChange={(changeEvent) => setBuiltYear(changeEvent.target.value)} />
             </div>
             <div className="field">
               <label>안전 등급 (내진설계)</label>
-              <input type="number" value={safetyGrade} onChange={(e) => setSafetyGrade(e.target.value)} />
+              <input type="number" value={safetyGrade} onChange={(changeEvent) => setSafetyGrade(changeEvent.target.value)} />
             </div>
           </div>
 
@@ -243,7 +235,7 @@ export default function AdminShelterCreateModal({ onClose, onSaved, onUnauthoriz
             <label>관리기관명</label>
             <input
               value={managingAuthorityName}
-              onChange={(e) => setManagingAuthorityName(e.target.value)}
+              onChange={(changeEvent) => setManagingAuthorityName(changeEvent.target.value)}
             />
           </div>
 
@@ -251,7 +243,7 @@ export default function AdminShelterCreateModal({ onClose, onSaved, onUnauthoriz
             <label>관리기관 전화번호</label>
             <input
               value={managingAuthorityTelNo}
-              onChange={(e) => setManagingAuthorityTelNo(e.target.value)}
+              onChange={(changeEvent) => setManagingAuthorityTelNo(changeEvent.target.value)}
             />
           </div>
 
@@ -259,7 +251,7 @@ export default function AdminShelterCreateModal({ onClose, onSaved, onUnauthoriz
             <label>설명</label>
             <textarea
               value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              onChange={(changeEvent) => setDescription(changeEvent.target.value)}
               rows={3}
             />
           </div>

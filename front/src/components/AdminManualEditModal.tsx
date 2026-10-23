@@ -4,7 +4,7 @@ import { lazy, Suspense, useEffect, useState } from 'react'
 const RichTextEditor = lazy(() => import('@/components/RichTextEditor'))
 import ManualMobilePreview from '@/components/ManualMobilePreview'
 import { createManual, fetchManualDetail, updateManual } from '@/api/manualApi'
-import { UnauthorizedError } from '@/api/adminApi'
+import { useAdminRequest } from '@/hooks/useAdminRequest'
 import {
   MANUAL_LANGUAGES,
   MANUAL_LANGUAGE_LABEL,
@@ -16,10 +16,10 @@ type Props = {
   manualId: number | null // null = 신규 작성
   onClose: () => void
   onSaved: () => void
-  onUnauthorized: () => void
 }
 
-export default function AdminManualEditModal({ manualId, onClose, onSaved, onUnauthorized }: Props) {
+export default function AdminManualEditModal({ manualId, onClose, onSaved }: Props) {
+  const { run } = useAdminRequest()
   const isEdit = manualId !== null
   const [language, setLanguage] = useState<ManualLanguage>('KO')
   const [title, setTitle] = useState('')
@@ -46,51 +46,39 @@ export default function AdminManualEditModal({ manualId, onClose, onSaved, onUna
     let cancelled = false
     setLoading(true)
     setLoadError(null)
-    fetchManualDetail(manualId)
-      .then((m) => {
-        if (cancelled) return
-        setLanguage(m.language)
-        setTitle(m.title)
-        setContentHtml(m.contentHtml)
-      })
-      .catch((e: unknown) => {
-        if (cancelled) return
-        if (e instanceof UnauthorizedError) {
-          onUnauthorized()
-          return
-        }
-        setLoadError(e instanceof Error ? e.message : '매뉴얼을 불러오지 못했습니다')
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false)
-      })
+    run(fetchManualDetail(manualId), '매뉴얼을 불러오지 못했습니다').then((result) => {
+      if (cancelled) return
+      if (result.ok) {
+        setLanguage(result.data.language)
+        setTitle(result.data.title)
+        setContentHtml(result.data.contentHtml)
+      } else if (result.message) {
+        setLoadError(result.message)
+      }
+      setLoading(false)
+    })
     return () => {
       cancelled = true
     }
-  }, [manualId, onUnauthorized])
+  }, [manualId, run])
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSubmit = async (submitEvent: React.FormEvent) => {
+    submitEvent.preventDefault()
     if (!title.trim()) {
       setError('제목을 입력해주세요')
       return
     }
     setSubmitting(true)
     setError(null)
-    try {
-      const body = { language, title: title.trim(), contentHtml }
-      if (isEdit && manualId !== null) {
-        await updateManual(manualId, body)
-      } else {
-        await createManual(body)
-      }
-      onSaved()
-    } catch (err: unknown) {
-      if (err instanceof UnauthorizedError) onUnauthorized()
-      else setError(err instanceof Error ? err.message : '저장 실패')
-    } finally {
-      setSubmitting(false)
-    }
+    const body = { language, title: title.trim(), contentHtml }
+    // 수정은 void, 등록은 새 id를 돌려준다. 여기선 성공 여부만 쓰므로 결과 타입을 unknown으로 맞춘다.
+    const result = await run<unknown>(
+      isEdit && manualId !== null ? updateManual(manualId, body) : createManual(body),
+      '저장 실패',
+    )
+    setSubmitting(false)
+    if (result.ok) onSaved()
+    else if (result.message) setError(result.message)
   }
 
   return (
@@ -121,7 +109,7 @@ export default function AdminManualEditModal({ manualId, onClose, onSaved, onUna
                 <select
                   id="manual-language"
                   value={language}
-                  onChange={(e) => setLanguage(e.target.value as ManualLanguage)}
+                  onChange={(changeEvent) => setLanguage(changeEvent.target.value as ManualLanguage)}
                 >
                   {MANUAL_LANGUAGES.map((lang) => (
                     <option key={lang} value={lang}>
@@ -136,7 +124,7 @@ export default function AdminManualEditModal({ manualId, onClose, onSaved, onUna
                 <input
                   id="manual-title"
                   value={title}
-                  onChange={(e) => setTitle(e.target.value)}
+                  onChange={(changeEvent) => setTitle(changeEvent.target.value)}
                   placeholder="매뉴얼 제목"
                   required
                 />

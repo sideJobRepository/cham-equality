@@ -1,15 +1,13 @@
 import { useCallback, useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import {
-  clearAdminPassword,
   fetchFeedbacks,
-  getAdminPassword,
-  UnauthorizedError,
   type AppFeedback,
   type AppFeedbackStatus,
 } from '@/api/adminApi'
-import AdminLayout from '@/components/AdminLayout'
 import AdminFeedbackDetailModal from '@/components/AdminFeedbackDetailModal'
+import Pagination from '@/components/common/Pagination'
+import { useAdminRequest } from '@/hooks/useAdminRequest'
+import { useFeedback } from '@/hooks/useFeedback'
 import type { PageResponse } from '@/types/shelter'
 import './AdminReportsPage.css'
 import './AdminFeedbacksPage.css'
@@ -40,7 +38,8 @@ const CATEGORY_LABEL: Record<string, string> = {
 }
 
 export default function AdminFeedbacksPage() {
-  const navigate = useNavigate()
+  const { run } = useAdminRequest()
+  const { toast } = useFeedback()
   const [filter, setFilter] = useState<Filter>('RECEIVED')
   const [page, setPage] = useState(0)
   const [data, setData] = useState<PageResponse<AppFeedback> | null>(null)
@@ -48,36 +47,20 @@ export default function AdminFeedbacksPage() {
   const [error, setError] = useState<string | null>(null)
   const [selectedId, setSelectedId] = useState<number | null>(null)
 
-  const handleUnauthorized = useCallback(() => {
-    clearAdminPassword()
-    navigate('/admin/login', { replace: true })
-  }, [navigate])
-
-  const load = useCallback(() => {
+  const load = useCallback(async () => {
     setLoading(true)
     setError(null)
-    fetchFeedbacks(filter, page, PAGE_SIZE)
-      .then(setData)
-      .catch((e: unknown) => {
-        if (e instanceof UnauthorizedError) {
-          handleUnauthorized()
-          return
-        }
-        setError(e instanceof Error ? e.message : '알 수 없는 오류')
-      })
-      .finally(() => setLoading(false))
-  }, [filter, page, handleUnauthorized])
+    const result = await run(fetchFeedbacks(filter, page, PAGE_SIZE), '목록을 불러오지 못했습니다')
+    if (result.ok) setData(result.data)
+    else if (result.message) setError(result.message)
+    setLoading(false)
+  }, [filter, page, run])
 
   useEffect(() => {
-    if (!getAdminPassword()) {
-      navigate('/admin/login', { replace: true })
-      return
-    }
     load()
-  }, [load, navigate])
+  }, [load])
 
   return (
-    <AdminLayout>
     <div className="admin-reports-page">
       <header className="admin-header">
         <div>
@@ -89,16 +72,16 @@ export default function AdminFeedbacksPage() {
       </header>
 
       <div className="filter-bar">
-        {FILTERS.map((f) => (
+        {FILTERS.map((filterOption) => (
           <button
-            key={f.value}
-            className={filter === f.value ? 'active' : ''}
+            key={filterOption.value}
+            className={filter === filterOption.value ? 'active' : ''}
             onClick={() => {
-              setFilter(f.value)
+              setFilter(filterOption.value)
               setPage(0)
             }}
           >
-            {f.label}
+            {filterOption.label}
           </button>
         ))}
       </div>
@@ -123,20 +106,20 @@ export default function AdminFeedbacksPage() {
                 </tr>
               </thead>
               <tbody>
-                {data.content.map((f) => (
-                  <tr key={f.id} className="clickable" onClick={() => setSelectedId(f.id)}>
-                    <td>{f.id}</td>
-                    <td>{f.category ? CATEGORY_LABEL[f.category] ?? f.category : '-'}</td>
-                    <td className="ellipsis">{f.content ?? '-'}</td>
-                    <td className="center">{f.platform ?? '-'}</td>
-                    <td className="center">{f.appVersion ?? '-'}</td>
-                    <td className="center">{f.memberId !== null ? `#${f.memberId}` : '익명'}</td>
+                {data.content.map((feedback) => (
+                  <tr key={feedback.id} className="clickable" onClick={() => setSelectedId(feedback.id)}>
+                    <td>{feedback.id}</td>
+                    <td>{feedback.category ? CATEGORY_LABEL[feedback.category] ?? feedback.category : '-'}</td>
+                    <td className="ellipsis">{feedback.content ?? '-'}</td>
+                    <td className="center">{feedback.platform ?? '-'}</td>
+                    <td className="center">{feedback.appVersion ?? '-'}</td>
+                    <td className="center">{feedback.memberId !== null ? `#${feedback.memberId}` : '익명'}</td>
                     <td>
-                      <span className={`badge badge-${f.status.toLowerCase()}`}>
-                        {STATUS_LABEL[f.status]}
+                      <span className={`badge badge-${feedback.status.toLowerCase()}`}>
+                        {STATUS_LABEL[feedback.status]}
                       </span>
                     </td>
-                    <td className="date">{f.createDate?.slice(0, 16).replace('T', ' ')}</td>
+                    <td className="date">{feedback.createDate?.slice(0, 16).replace('T', ' ')}</td>
                   </tr>
                 ))}
                 {data.empty && (
@@ -148,15 +131,7 @@ export default function AdminFeedbacksPage() {
             </table>
           </div>
 
-          {data.totalPages > 1 && (
-            <nav className="pagination">
-              <button disabled={page === 0} onClick={() => setPage(0)}>««</button>
-              <button disabled={page === 0} onClick={() => setPage(page - 1)}>«</button>
-              <span>{page + 1} / {data.totalPages}</span>
-              <button disabled={page >= data.totalPages - 1} onClick={() => setPage(page + 1)}>»</button>
-              <button disabled={page >= data.totalPages - 1} onClick={() => setPage(data.totalPages - 1)}>»»</button>
-            </nav>
-          )}
+          <Pagination page={page} totalPages={data.totalPages} onChange={setPage} />
         </>
       )}
 
@@ -166,12 +141,11 @@ export default function AdminFeedbacksPage() {
           onClose={() => setSelectedId(null)}
           onSaved={() => {
             setSelectedId(null)
+            toast('저장되었습니다')
             load()
           }}
-          onUnauthorized={handleUnauthorized}
         />
       )}
     </div>
-    </AdminLayout>
   )
 }

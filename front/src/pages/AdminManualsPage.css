@@ -61,18 +61,6 @@
   background: var(--ab-primary-active);
 }
 
-.manual-flash {
-  margin-bottom: 16px;
-  padding: 12px 16px;
-  background: var(--ab-surface-soft);
-  color: var(--ab-ink);
-  border: 1px solid var(--ab-hairline);
-  border-radius: var(--ab-radius-sm);
-  font-family: inherit;
-  font-size: 14px;
-  font-weight: 500;
-}
-
 .manual-state {
   padding: 48px 16px;
   text-align: center;

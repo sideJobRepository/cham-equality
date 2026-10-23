@@ -1,0 +1,198 @@
+/* 공통 토스트·확인창. Tokens (--ab-*) come from `.admin-layout`
+   (FeedbackProvider renders inside it — see RequireAdmin). See front/DESIGN.md.
+   상세 모달 backdrop이 z-index 1000이라 그보다 위에 둔다. */
+
+/* ── Toast stack : top-right, newest at the bottom ── */
+.feedback-toast-stack {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 2100;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  max-width: min(400px, calc(100vw - 32px));
+  pointer-events: none;
+}
+
+.feedback-toast {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 12px 12px 16px;
+  background: var(--ab-canvas);
+  color: var(--ab-ink);
+  border: 1px solid var(--ab-hairline);
+  border-left: 4px solid var(--ab-ink);
+  border-radius: var(--ab-radius-sm);
+  box-shadow: var(--ab-shadow-card);
+  font-family: var(--ab-font);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.43;
+  pointer-events: auto;
+  animation: feedback-toast-in 0.16s ease-out;
+}
+
+.feedback-toast-success {
+  border-left-color: var(--ab-ink);
+}
+
+.feedback-toast-info {
+  border-left-color: var(--ab-muted);
+}
+
+.feedback-toast-error {
+  border-left-color: var(--ab-error);
+  color: var(--ab-error);
+}
+
+.feedback-toast-message {
+  flex: 1;
+  min-width: 0;
+  white-space: pre-line;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+
+.feedback-toast-close {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  border-radius: var(--ab-radius-full);
+  background: transparent;
+  color: var(--ab-muted);
+  font-family: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.feedback-toast-close:hover {
+  background: var(--ab-surface-strong);
+  color: var(--ab-ink);
+}
+
+@keyframes feedback-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ── Confirm dialog : scrim + small card ── */
+.feedback-confirm-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.feedback-confirm {
+  width: 100%;
+  max-width: 420px;
+  padding: 24px;
+  background: var(--ab-canvas);
+  color: var(--ab-ink);
+  border-radius: var(--ab-radius-md);
+  box-shadow: var(--ab-shadow-card);
+  font-family: var(--ab-font);
+}
+
+/* display-sm */
+.feedback-confirm-title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.18px;
+}
+
+/* body-sm */
+.feedback-confirm-description {
+  margin: 12px 0 0;
+  font-size: 14px;
+  line-height: 1.43;
+  color: var(--ab-body);
+  white-space: pre-line;
+  word-break: keep-all;
+}
+
+.feedback-confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 24px;
+}
+
+.feedback-confirm-actions button {
+  padding: 11px 20px;
+  border-radius: var(--ab-radius-sm);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.29;
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+
+.feedback-confirm-cancel {
+  background: var(--ab-canvas);
+  color: var(--ab-ink);
+  border: 1px solid var(--ab-ink);
+}
+
+.feedback-confirm-cancel:hover {
+  background: var(--ab-surface-soft);
+}
+
+.feedback-confirm-ok {
+  background: var(--ab-primary);
+  color: var(--ab-on-primary);
+  border: 1px solid var(--ab-primary);
+}
+
+.feedback-confirm-ok:hover {
+  background: var(--ab-primary-active);
+  border-color: var(--ab-primary-active);
+}
+
+.feedback-confirm-ok.destructive {
+  background: var(--ab-error);
+  border-color: var(--ab-error);
+}
+
+.feedback-confirm-ok.destructive:hover {
+  background: #b32505; /* DESIGN.md primary-error-text-hover */
+  border-color: #b32505;
+}
+
+@media (max-width: 640px) {
+  .feedback-toast-stack {
+    top: 12px;
+    right: 16px;
+    left: 16px;
+    max-width: none;
+    align-items: stretch;
+  }
+
+  .feedback-confirm-actions button {
+    flex: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .feedback-toast {
+    animation: none;
+  }
+}

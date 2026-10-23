@@ -150,24 +150,6 @@
   display: none;
 }
 
-.admin-shelters-page .shelter-flash.error {
-  color: var(--ab-error);
-  border-color: var(--ab-error);
-  background: var(--ab-canvas);
-}
-
-.shelter-flash {
-  margin-bottom: 16px;
-  padding: 12px 16px;
-  background: var(--ab-surface-soft);
-  color: var(--ab-ink);
-  border: 1px solid var(--ab-hairline);
-  border-radius: var(--ab-radius-sm);
-  font-family: inherit;
-  font-size: 14px;
-  font-weight: 500;
-}
-
 /* Table : rounded card */
 .shelters-table-wrap {
   overflow-x: auto;
@@ -242,46 +224,6 @@
 
 .admin-shelters-page .edit-btn:hover {
   background: var(--ab-surface-soft);
-}
-
-/* Pagination */
-.admin-shelters-page .pagination {
-  margin-top: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-}
-
-.admin-shelters-page .pagination button {
-  min-width: 40px;
-  height: 40px;
-  padding: 0 12px;
-  border: 1px solid var(--ab-hairline);
-  background: var(--ab-canvas);
-  color: var(--ab-ink);
-  border-radius: var(--ab-radius-full);
-  cursor: pointer;
-  font-family: inherit;
-  font-size: 14px;
-  font-weight: 500;
-  transition: background 0.12s ease;
-}
-
-.admin-shelters-page .pagination button:hover:not(:disabled) {
-  background: var(--ab-surface-soft);
-}
-
-.admin-shelters-page .pagination button:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-.admin-shelters-page .pagination span {
-  margin: 0 12px;
-  font-family: inherit;
-  font-size: 14px;
-  color: var(--ab-muted);
 }
 
 .admin-shelters-page .state {

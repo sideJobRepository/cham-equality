@@ -1,16 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import {
-  bulkCreateAdminShelters,
-  clearAdminPassword,
-  errorMessage,
-  fetchAdminShelters,
-  getAdminPassword,
-  UnauthorizedError,
-} from '@/api/adminApi'
-import AdminLayout from '@/components/AdminLayout'
+import { bulkCreateAdminShelters, fetchAdminShelters } from '@/api/adminApi'
 import AdminShelterCreateModal from '@/components/AdminShelterCreateModal'
 import AdminShelterEditModal from '@/components/AdminShelterEditModal'
+import Pagination from '@/components/common/Pagination'
+import { useAdminRequest } from '@/hooks/useAdminRequest'
+import { useFeedback } from '@/hooks/useFeedback'
 import { SHELTER_TYPE_LABEL, type PageResponse, type Shelter } from '@/types/shelter'
 import './AdminSheltersPage.css'
 
@@ -18,7 +12,8 @@ const PAGE_SIZE = 20
 const SEARCH_DEBOUNCE_MS = 300
 
 export default function AdminSheltersPage() {
-  const navigate = useNavigate()
+  const { run } = useAdminRequest()
+  const { toast } = useFeedback()
   const [keyword, setKeyword] = useState('')
   const [debouncedKeyword, setDebouncedKeyword] = useState('')
   const [page, setPage] = useState(0)
@@ -28,78 +23,48 @@ export default function AdminSheltersPage() {
   const [editing, setEditing] = useState<Shelter | null>(null)
   const [creating, setCreating] = useState(false)
   const [uploading, setUploading] = useState(false)
-  const [uploadError, setUploadError] = useState<string | null>(null)
-  const [flash, setFlash] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const handleUnauthorized = useCallback(() => {
-    clearAdminPassword()
-    navigate('/admin/login', { replace: true })
-  }, [navigate])
-
   useEffect(() => {
-    const t = setTimeout(() => {
+    const debounceTimer = setTimeout(() => {
       setDebouncedKeyword(keyword)
       setPage(0)
     }, SEARCH_DEBOUNCE_MS)
-    return () => clearTimeout(t)
+    return () => clearTimeout(debounceTimer)
   }, [keyword])
 
-  const load = useCallback(() => {
+  const load = useCallback(async () => {
     setLoading(true)
     setError(null)
-    fetchAdminShelters(page, PAGE_SIZE, debouncedKeyword)
-      .then(setData)
-      .catch((e: unknown) => {
-        if (e instanceof UnauthorizedError) {
-          handleUnauthorized()
-          return
-        }
-        setError(e instanceof Error ? e.message : '알 수 없는 오류')
-      })
-      .finally(() => setLoading(false))
-  }, [page, debouncedKeyword, handleUnauthorized])
+    const result = await run(fetchAdminShelters(page, PAGE_SIZE, debouncedKeyword), '목록을 불러오지 못했습니다')
+    if (result.ok) setData(result.data)
+    else if (result.message) setError(result.message)
+    setLoading(false)
+  }, [page, debouncedKeyword, run])
 
   useEffect(() => {
-    if (!getAdminPassword()) {
-      navigate('/admin/login', { replace: true })
-      return
-    }
     load()
-  }, [load, navigate])
-
-  useEffect(() => {
-    if (!flash) return
-    const t = setTimeout(() => setFlash(null), 2500)
-    return () => clearTimeout(t)
-  }, [flash])
+  }, [load])
 
   // 엑셀 한 개를 그대로 서버에 넘겨 대량 등록한다. 파싱·검증은 전부 서버(ExcelMapper)가 담당.
-  const handleExcelSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
+  const handleExcelSelected = async (changeEvent: React.ChangeEvent<HTMLInputElement>) => {
+    const file = changeEvent.target.files?.[0]
     // 같은 파일을 다시 골라도 change가 발생하도록 값을 비운다.
-    e.target.value = ''
+    changeEvent.target.value = ''
     if (!file) return
 
     setUploading(true)
-    setUploadError(null)
-    try {
-      const ids = await bulkCreateAdminShelters(file)
-      setFlash(`${ids.length}건의 대피소가 추가되었습니다`)
+    const result = await run(bulkCreateAdminShelters(file), '엑셀 업로드에 실패했습니다')
+    setUploading(false)
+    if (result.ok) {
+      toast(`${result.data.length}건의 대피소가 추가되었습니다`)
       load()
-    } catch (err: unknown) {
-      if (err instanceof UnauthorizedError) {
-        handleUnauthorized()
-        return
-      }
-      setUploadError(errorMessage(err, '엑셀 업로드에 실패했습니다'))
-    } finally {
-      setUploading(false)
+    } else if (result.message) {
+      toast(result.message, 'error')
     }
   }
 
   return (
-    <AdminLayout>
     <div className="admin-shelters-page">
       <header className="admin-header">
         <div>
@@ -132,7 +97,7 @@ export default function AdminSheltersPage() {
         <input
           type="text"
           value={keyword}
-          onChange={(e) => setKeyword(e.target.value)}
+          onChange={(changeEvent) => setKeyword(changeEvent.target.value)}
           placeholder="시설명, 도로명, 구주소로 검색"
         />
         {keyword && (
@@ -140,8 +105,6 @@ export default function AdminSheltersPage() {
         )}
       </div>
 
-      {flash && <div className="shelter-flash">{flash}</div>}
-      {uploadError && <div className="shelter-flash error">{uploadError}</div>}
       {loading && <div className="state">불러오는 중…</div>}
       {error && <div className="state error">{error}</div>}
 
@@ -162,17 +125,17 @@ export default function AdminSheltersPage() {
                 </tr>
               </thead>
               <tbody>
-                {data.content.map((s) => (
-                  <tr key={s.id}>
-                    <td>{s.id}</td>
-                    <td className="ellipsis">{s.name}</td>
-                    <td className="ellipsis">{s.shelterType ? SHELTER_TYPE_LABEL[s.shelterType] : '-'}</td>
-                    <td className="num">{s.builtYear ?? '-'}</td>
-                    <td className="ellipsis">{s.address}</td>
-                    <td className="ellipsis">{s.oldAddress ?? '-'}</td>
-                    <td className="ellipsis">{s.managingAuthorityName ?? '-'}</td>
+                {data.content.map((shelter) => (
+                  <tr key={shelter.id}>
+                    <td>{shelter.id}</td>
+                    <td className="ellipsis">{shelter.name}</td>
+                    <td className="ellipsis">{shelter.shelterType ? SHELTER_TYPE_LABEL[shelter.shelterType] : '-'}</td>
+                    <td className="num">{shelter.builtYear ?? '-'}</td>
+                    <td className="ellipsis">{shelter.address}</td>
+                    <td className="ellipsis">{shelter.oldAddress ?? '-'}</td>
+                    <td className="ellipsis">{shelter.managingAuthorityName ?? '-'}</td>
                     <td>
-                      <button type="button" className="edit-btn" onClick={() => setEditing(s)}>편집</button>
+                      <button type="button" className="edit-btn" onClick={() => setEditing(shelter)}>편집</button>
                     </td>
                   </tr>
                 ))}
@@ -187,15 +150,7 @@ export default function AdminSheltersPage() {
             </table>
           </div>
 
-          {data.totalPages > 1 && (
-            <nav className="pagination">
-              <button disabled={page === 0} onClick={() => setPage(0)}>««</button>
-              <button disabled={page === 0} onClick={() => setPage(page - 1)}>«</button>
-              <span>{page + 1} / {data.totalPages}</span>
-              <button disabled={page >= data.totalPages - 1} onClick={() => setPage(page + 1)}>»</button>
-              <button disabled={page >= data.totalPages - 1} onClick={() => setPage(data.totalPages - 1)}>»»</button>
-            </nav>
-          )}
+          <Pagination page={page} totalPages={data.totalPages} onChange={setPage} />
         </>
       )}
 
@@ -204,10 +159,9 @@ export default function AdminSheltersPage() {
           onClose={() => setCreating(false)}
           onSaved={() => {
             setCreating(false)
-            setFlash('대피소가 추가되었습니다')
+            toast('대피소가 추가되었습니다')
             load()
           }}
-          onUnauthorized={handleUnauthorized}
         />
       )}
 
@@ -217,13 +171,11 @@ export default function AdminSheltersPage() {
           onClose={() => setEditing(null)}
           onSaved={() => {
             setEditing(null)
-            setFlash('수정되었습니다')
+            toast('수정되었습니다')
             load()
           }}
-          onUnauthorized={handleUnauthorized}
         />
       )}
     </div>
-    </AdminLayout>
   )
 }

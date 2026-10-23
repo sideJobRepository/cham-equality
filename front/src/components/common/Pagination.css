@@ -1,0 +1,40 @@
+/* 관리자 목록 공통 페이지 이동. Tokens (--ab-*) come from `.admin-layout`. See front/DESIGN.md. */
+.admin-pagination {
+  display: flex;
+  gap: 4px;
+  justify-content: center;
+  align-items: center;
+  margin-top: 24px;
+}
+
+/* pill secondary buttons */
+.admin-pagination button {
+  min-width: 40px;
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid var(--ab-hairline);
+  background: var(--ab-canvas);
+  color: var(--ab-ink);
+  border-radius: var(--ab-radius-full);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background 0.12s ease;
+}
+
+.admin-pagination button:hover:not(:disabled) {
+  background: var(--ab-surface-soft);
+}
+
+.admin-pagination button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.admin-pagination span {
+  margin: 0 12px;
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--ab-muted);
+}

@@ -45,15 +45,6 @@
   cursor: pointer;
 }
 
-.admin-members-page .flash {
-  margin: 0 0 16px;
-  padding: 12px 16px;
-  border-radius: var(--ab-radius-sm);
-  background: var(--ab-surface-strong);
-  color: var(--ab-ink);
-  font-size: 14px;
-}
-
 .admin-members-page .push-btn {
   padding: 6px 12px;
   border: 1px solid var(--ab-ink);

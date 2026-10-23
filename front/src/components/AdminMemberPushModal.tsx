@@ -1,10 +1,7 @@
 import { useEffect, useState } from 'react'
-import {
-  errorMessage,
-  sendMemberPush,
-  UnauthorizedError,
-  type AdminMember,
-} from '@/api/adminApi'
+import { sendMemberPush, type AdminMember } from '@/api/adminApi'
+import { useAdminRequest } from '@/hooks/useAdminRequest'
+import { useFeedback } from '@/hooks/useFeedback'
 import './AdminReportDetailModal.css'
 import '@/pages/AdminMembersPage.css'
 
@@ -16,49 +13,52 @@ type Props = {
   member: AdminMember
   onClose: () => void
   onSent: (sentDeviceCount: number) => void
-  onUnauthorized: () => void
 }
 
-export default function AdminMemberPushModal({ member, onClose, onSent, onUnauthorized }: Props) {
+export default function AdminMemberPushModal({ member, onClose, onSent }: Props) {
+  const { run } = useAdminRequest()
+  const { confirm } = useFeedback()
   const [title, setTitle] = useState('')
   const [body, setBody] = useState('')
   const [sending, setSending] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
+    const handleKeyDown = (keyboardEvent: KeyboardEvent) => {
+      if (keyboardEvent.key === 'Escape') onClose()
     }
-    document.addEventListener('keydown', onKey)
+    document.addEventListener('keydown', handleKeyDown)
     document.body.style.overflow = 'hidden'
     return () => {
-      document.removeEventListener('keydown', onKey)
+      document.removeEventListener('keydown', handleKeyDown)
       document.body.style.overflow = ''
     }
   }, [onClose])
 
   const canSend = title.trim().length > 0 && body.trim().length > 0 && !sending
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!canSend) return
-    if (!window.confirm(`${member.name ?? `#${member.id}`}님에게 알림을 보낼까요? 보낸 알림은 취소할 수 없어요.`)) return
+    const confirmed = await confirm({
+      title: '푸시 보내기',
+      description: `${member.name ?? `#${member.id}`}님에게 알림을 보낼까요? 보낸 알림은 취소할 수 없어요.`,
+      confirmLabel: '보내기',
+    })
+    if (!confirmed) return
     setSending(true)
     setError(null)
-    sendMemberPush(member.id, { title: title.trim(), body: body.trim() })
-      .then(onSent)
-      .catch((e: unknown) => {
-        if (e instanceof UnauthorizedError) {
-          onUnauthorized()
-          return
-        }
-        setError(errorMessage(e, '발송에 실패했어요.'))
-      })
-      .finally(() => setSending(false))
+    const result = await run(
+      sendMemberPush(member.id, { title: title.trim(), body: body.trim() }),
+      '발송에 실패했어요.',
+    )
+    setSending(false)
+    if (result.ok) onSent(result.data)
+    else if (result.message) setError(result.message)
   }
 
   return (
     <div className="detail-backdrop" onClick={onClose}>
-      <div className="detail-modal" onClick={(e) => e.stopPropagation()}>
+      <div className="detail-modal" onClick={(clickEvent) => clickEvent.stopPropagation()}>
         <header className="detail-header">
           <div>
             <h2>푸시 보내기</h2>
@@ -78,7 +78,7 @@ export default function AdminMemberPushModal({ member, onClose, onSent, onUnauth
               <input
                 value={title}
                 maxLength={TITLE_MAX}
-                onChange={(e) => setTitle(e.target.value)}
+                onChange={(changeEvent) => setTitle(changeEvent.target.value)}
                 placeholder="예: 제보가 반영되었어요"
               />
             </label>
@@ -89,7 +89,7 @@ export default function AdminMemberPushModal({ member, onClose, onSent, onUnauth
               <textarea
                 value={body}
                 maxLength={BODY_MAX}
-                onChange={(e) => setBody(e.target.value)}
+                onChange={(changeEvent) => setBody(changeEvent.target.value)}
                 placeholder="알림에 보일 내용을 입력하세요."
               />
             </label>

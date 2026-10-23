@@ -4,11 +4,12 @@ import {
   fetchFeedbackDetail,
   getDownloadUrl,
   updateFeedback,
-  UnauthorizedError,
   type AppFeedbackDetail,
   type AppFeedbackImageView,
   type AppFeedbackStatus,
 } from '@/api/adminApi'
+import { useAdminRequest } from '@/hooks/useAdminRequest'
+import { useFeedback } from '@/hooks/useFeedback'
 import { saveBlob, triggerDownload } from '@/lib/file'
 import './AdminReportDetailModal.css'
 import '@/pages/AdminFeedbacksPage.css'
@@ -17,7 +18,6 @@ type Props = {
   feedbackId: number
   onClose: () => void
   onSaved: () => void
-  onUnauthorized: () => void
 }
 
 const STATUS_OPTIONS: AppFeedbackStatus[] = ['RECEIVED', 'IN_PROGRESS', 'RESOLVED']
@@ -42,8 +42,9 @@ export default function AdminFeedbackDetailModal({
   feedbackId,
   onClose,
   onSaved,
-  onUnauthorized,
 }: Props) {
+  const { run } = useAdminRequest()
+  const { toast } = useFeedback()
   const [detail, setDetail] = useState<AppFeedbackDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -54,82 +55,71 @@ export default function AdminFeedbackDetailModal({
   const [zipping, setZipping] = useState(false)
 
   useEffect(() => {
+    let cancelled = false
     setLoading(true)
-    fetchFeedbackDetail(feedbackId)
-      .then((d) => {
-        setDetail(d)
-        setStatus(d.status)
-        setAdminNote(d.adminNote ?? '')
-      })
-      .catch((e: unknown) => {
-        if (e instanceof UnauthorizedError) {
-          onUnauthorized()
-          return
-        }
-        setError(e instanceof Error ? e.message : '상세 조회 실패')
-      })
-      .finally(() => setLoading(false))
-  }, [feedbackId, onUnauthorized])
+    run(fetchFeedbackDetail(feedbackId), '상세 조회 실패').then((result) => {
+      if (cancelled) return
+      if (result.ok) {
+        setDetail(result.data)
+        setStatus(result.data.status)
+        setAdminNote(result.data.adminNote ?? '')
+      } else if (result.message) {
+        setError(result.message)
+      }
+      setLoading(false)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [feedbackId, run])
 
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
+    const handleKeyDown = (keyboardEvent: KeyboardEvent) => {
+      if (keyboardEvent.key === 'Escape') onClose()
     }
-    document.addEventListener('keydown', onKey)
+    document.addEventListener('keydown', handleKeyDown)
     document.body.style.overflow = 'hidden'
     return () => {
-      document.removeEventListener('keydown', onKey)
+      document.removeEventListener('keydown', handleKeyDown)
       document.body.style.overflow = ''
     }
   }, [onClose])
 
   const handleSave = async () => {
     setSaving(true)
-    try {
-      await updateFeedback(feedbackId, { status, adminNote: adminNote.trim() || null })
-      onSaved()
-    } catch (e: unknown) {
-      if (e instanceof UnauthorizedError) onUnauthorized()
-      else alert(e instanceof Error ? e.message : '저장 실패')
-    } finally {
-      setSaving(false)
-    }
+    const result = await run(
+      updateFeedback(feedbackId, { status, adminNote: adminNote.trim() || null }),
+      '저장 실패',
+    )
+    setSaving(false)
+    if (result.ok) onSaved()
+    else if (result.message) toast(result.message, 'error')
   }
 
-  const handleDownload = async (img: AppFeedbackImageView) => {
-    setDownloadingId(img.fileId)
-    try {
-      const url = await getDownloadUrl(img.fileId)
-      triggerDownload(url, img.fileName)
-    } catch (e: unknown) {
-      if (e instanceof UnauthorizedError) onUnauthorized()
-      else alert(e instanceof Error ? e.message : '다운로드 실패')
-    } finally {
-      setDownloadingId(null)
-    }
+  const handleDownload = async (image: AppFeedbackImageView) => {
+    setDownloadingId(image.fileId)
+    const result = await run(getDownloadUrl(image.fileId), '다운로드 실패')
+    setDownloadingId(null)
+    if (result.ok) triggerDownload(result.data, image.fileName)
+    else if (result.message) toast(result.message, 'error')
   }
 
   const handleDownloadAll = async () => {
     if (!detail || detail.images.length === 0) return
     const zipName = `feedback-${detail.id}.zip`
     setZipping(true)
-    try {
-      const blob = await downloadFilesAsZip(
-        detail.images.map((img) => img.fileId),
-        zipName,
-      )
-      saveBlob(blob, zipName)
-    } catch (e: unknown) {
-      if (e instanceof UnauthorizedError) onUnauthorized()
-      else alert(e instanceof Error ? e.message : '일괄 다운로드 실패')
-    } finally {
-      setZipping(false)
-    }
+    const result = await run(
+      downloadFilesAsZip(detail.images.map((image) => image.fileId), zipName),
+      '일괄 다운로드 실패',
+    )
+    setZipping(false)
+    if (result.ok) saveBlob(result.data, zipName)
+    else if (result.message) toast(result.message, 'error')
   }
 
   return (
     <div className="detail-backdrop" onClick={onClose}>
-      <div className="detail-modal" onClick={(e) => e.stopPropagation()}>
+      <div className="detail-modal" onClick={(clickEvent) => clickEvent.stopPropagation()}>
         <header className="detail-header">
           <div>
             <h2>앱 피드백 #{feedbackId}</h2>
@@ -188,20 +178,20 @@ export default function AdminFeedbackDetailModal({
                   <p className="no-images">첨부된 스크린샷이 없습니다.</p>
                 ) : (
                   <div className="images-grid">
-                    {detail.images.map((img) => (
-                      <figure key={img.fileId} className="image-card">
-                        <a href={img.url} target="_blank" rel="noopener noreferrer">
-                          <img src={img.url} alt={img.fileName} />
+                    {detail.images.map((image) => (
+                      <figure key={image.fileId} className="image-card">
+                        <a href={image.url} target="_blank" rel="noopener noreferrer">
+                          <img src={image.url} alt={image.fileName} />
                         </a>
                         <figcaption>
-                          <span className="desc">{img.fileName}</span>
+                          <span className="desc">{image.fileName}</span>
                           <button
                             type="button"
                             className="download-btn"
-                            disabled={downloadingId === img.fileId}
-                            onClick={() => handleDownload(img)}
+                            disabled={downloadingId === image.fileId}
+                            onClick={() => handleDownload(image)}
                           >
-                            {downloadingId === img.fileId ? '받는 중…' : '다운로드'}
+                            {downloadingId === image.fileId ? '받는 중…' : '다운로드'}
                           </button>
                         </figcaption>
                       </figure>
@@ -216,10 +206,10 @@ export default function AdminFeedbackDetailModal({
                   상태
                   <select
                     value={status}
-                    onChange={(e) => setStatus(e.target.value as AppFeedbackStatus)}
+                    onChange={(changeEvent) => setStatus(changeEvent.target.value as AppFeedbackStatus)}
                   >
-                    {STATUS_OPTIONS.map((s) => (
-                      <option key={s} value={s}>{STATUS_LABEL[s]}</option>
+                    {STATUS_OPTIONS.map((statusOption) => (
+                      <option key={statusOption} value={statusOption}>{STATUS_LABEL[statusOption]}</option>
                     ))}
                   </select>
                 </label>
@@ -227,7 +217,7 @@ export default function AdminFeedbackDetailModal({
                   관리자 메모 (내부용, 테스터에게 보이지 않음)
                   <textarea
                     value={adminNote}
-                    onChange={(e) => setAdminNote(e.target.value)}
+                    onChange={(changeEvent) => setAdminNote(changeEvent.target.value)}
                     placeholder="처리 내용이나 담당자를 남겨두세요."
                   />
                 </label>

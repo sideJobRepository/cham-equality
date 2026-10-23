@@ -1,15 +1,12 @@
 import { useCallback, useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import {
-  clearAdminPassword,
   fetchReports,
-  getAdminPassword,
-  UnauthorizedError,
   type AdminReportFilter,
   type ShelterReport,
 } from '@/api/adminApi'
-import AdminLayout from '@/components/AdminLayout'
 import AdminReportDetailModal from '@/components/AdminReportDetailModal'
+import Pagination from '@/components/common/Pagination'
+import { useAdminRequest } from '@/hooks/useAdminRequest'
 import type { PageResponse } from '@/types/shelter'
 import './AdminReportsPage.css'
 
@@ -25,13 +22,13 @@ const FILTERS: { value: Filter; label: string }[] = [
   { value: 'ALL', label: '전체' },
 ]
 
-function yn(v: boolean | null): string {
-  if (v === null || v === undefined) return '-'
-  return v ? 'O' : 'X'
+function yn(value: boolean | null): string {
+  if (value === null || value === undefined) return '-'
+  return value ? 'O' : 'X'
 }
 
 export default function AdminReportsPage() {
-  const navigate = useNavigate()
+  const { run } = useAdminRequest()
   const [filter, setFilter] = useState<Filter>('PENDING')
   const [page, setPage] = useState(0)
   const [data, setData] = useState<PageResponse<ShelterReport> | null>(null)
@@ -39,36 +36,20 @@ export default function AdminReportsPage() {
   const [error, setError] = useState<string | null>(null)
   const [selectedId, setSelectedId] = useState<number | null>(null)
 
-  const handleUnauthorized = useCallback(() => {
-    clearAdminPassword()
-    navigate('/admin/login', { replace: true })
-  }, [navigate])
-
-  const load = useCallback(() => {
+  const load = useCallback(async () => {
     setLoading(true)
     setError(null)
-    fetchReports(filter, page, PAGE_SIZE)
-      .then(setData)
-      .catch((e: unknown) => {
-        if (e instanceof UnauthorizedError) {
-          handleUnauthorized()
-          return
-        }
-        setError(e instanceof Error ? e.message : '알 수 없는 오류')
-      })
-      .finally(() => setLoading(false))
-  }, [filter, page, handleUnauthorized])
+    const result = await run(fetchReports(filter, page, PAGE_SIZE), '목록을 불러오지 못했습니다')
+    if (result.ok) setData(result.data)
+    else if (result.message) setError(result.message)
+    setLoading(false)
+  }, [filter, page, run])
 
   useEffect(() => {
-    if (!getAdminPassword()) {
-      navigate('/admin/login', { replace: true })
-      return
-    }
     load()
-  }, [load, navigate])
+  }, [load])
 
   return (
-    <AdminLayout>
     <div className="admin-reports-page">
       <header className="admin-header">
         <div>
@@ -80,16 +61,16 @@ export default function AdminReportsPage() {
       </header>
 
       <div className="filter-bar">
-        {FILTERS.map((f) => (
+        {FILTERS.map((filterOption) => (
           <button
-            key={f.value}
-            className={filter === f.value ? 'active' : ''}
+            key={filterOption.value}
+            className={filter === filterOption.value ? 'active' : ''}
             onClick={() => {
-              setFilter(f.value)
+              setFilter(filterOption.value)
               setPage(0)
             }}
           >
-            {f.label}
+            {filterOption.label}
           </button>
         ))}
       </div>
@@ -119,25 +100,25 @@ export default function AdminReportsPage() {
                 </tr>
               </thead>
               <tbody>
-                {data.content.map((r) => (
-                  <tr key={r.id} className="clickable" onClick={() => setSelectedId(r.id)}>
-                    <td>{r.id}</td>
-                    <td className="ellipsis">{r.reporter ?? '-'}</td>
-                    <td>#{r.shelterId}</td>
-                    <td className="ellipsis">{r.shelterName ?? '-'}</td>
-                    <td className="ellipsis">{r.signageLanguage ?? '-'}</td>
-                    <td className="center">{yn(r.accessibleToilet)}</td>
-                    <td className="center">{yn(r.ramp)}</td>
-                    <td className="center">{yn(r.elevator)}</td>
-                    <td className="center">{yn(r.brailleBlock)}</td>
-                    <td className="ellipsis">{r.etcFacilities ?? '-'}</td>
-                    <td className="ellipsis">{r.requestNote ?? '-'}</td>
+                {data.content.map((report) => (
+                  <tr key={report.id} className="clickable" onClick={() => setSelectedId(report.id)}>
+                    <td>{report.id}</td>
+                    <td className="ellipsis">{report.reporter ?? '-'}</td>
+                    <td>#{report.shelterId}</td>
+                    <td className="ellipsis">{report.shelterName ?? '-'}</td>
+                    <td className="ellipsis">{report.signageLanguage ?? '-'}</td>
+                    <td className="center">{yn(report.accessibleToilet)}</td>
+                    <td className="center">{yn(report.ramp)}</td>
+                    <td className="center">{yn(report.elevator)}</td>
+                    <td className="center">{yn(report.brailleBlock)}</td>
+                    <td className="ellipsis">{report.etcFacilities ?? '-'}</td>
+                    <td className="ellipsis">{report.requestNote ?? '-'}</td>
                     <td>
-                      <span className={`badge badge-${r.requestStatus.toLowerCase()}`}>
-                        {r.requestStatus === 'PENDING' ? '대기' : r.requestStatus === 'APPROVED' ? '승인' : '반려'}
+                      <span className={`badge badge-${report.requestStatus.toLowerCase()}`}>
+                        {report.requestStatus === 'PENDING' ? '대기' : report.requestStatus === 'APPROVED' ? '승인' : '반려'}
                       </span>
                     </td>
-                    <td className="date">{r.createDate?.slice(0, 16).replace('T', ' ')}</td>
+                    <td className="date">{report.createDate?.slice(0, 16).replace('T', ' ')}</td>
                   </tr>
                 ))}
                 {data.empty && (
@@ -149,15 +130,7 @@ export default function AdminReportsPage() {
             </table>
           </div>
 
-          {data.totalPages > 1 && (
-            <nav className="pagination">
-              <button disabled={page === 0} onClick={() => setPage(0)}>««</button>
-              <button disabled={page === 0} onClick={() => setPage(page - 1)}>«</button>
-              <span>{page + 1} / {data.totalPages}</span>
-              <button disabled={page >= data.totalPages - 1} onClick={() => setPage(page + 1)}>»</button>
-              <button disabled={page >= data.totalPages - 1} onClick={() => setPage(data.totalPages - 1)}>»»</button>
-            </nav>
-          )}
+          <Pagination page={page} totalPages={data.totalPages} onChange={setPage} />
         </>
       )}
 
@@ -169,10 +142,8 @@ export default function AdminReportsPage() {
             setSelectedId(null)
             load()
           }}
-          onUnauthorized={handleUnauthorized}
         />
       )}
     </div>
-    </AdminLayout>
   )
 }

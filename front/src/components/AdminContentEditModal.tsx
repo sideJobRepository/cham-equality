@@ -4,7 +4,8 @@ import {
   updateContent,
   uploadContentImage,
 } from '@/api/contentApi'
-import { UnauthorizedError } from '@/api/adminApi'
+import { errorMessage } from '@/api/adminApi'
+import { useAdminRequest } from '@/hooks/useAdminRequest'
 import {
   CONTENT_TYPE_LABEL,
   type Content,
@@ -18,7 +19,6 @@ type Props = {
   defaultType?: ContentType
   onClose: () => void
   onSaved: () => void
-  onUnauthorized: () => void
 }
 
 type ImageUploadStatus = 'uploading' | 'done' | 'failed'
@@ -30,7 +30,8 @@ type ImageState =
   | { kind: 'new'; file: File; previewUrl: string; status: ImageUploadStatus; fileId: number | null; errorMessage: string | null }
   | null
 
-export default function AdminContentEditModal({ content, defaultType, onClose, onSaved, onUnauthorized }: Props) {
+export default function AdminContentEditModal({ content, defaultType, onClose, onSaved }: Props) {
+  const { run } = useAdminRequest()
   const isEdit = content !== null
   const [name, setName] = useState(content?.name ?? '')
   const type: ContentType = content?.type ?? defaultType ?? 'IN_APP_POPUP'
@@ -47,13 +48,13 @@ export default function AdminContentEditModal({ content, defaultType, onClose, o
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
+    const handleKeyDown = (keyboardEvent: KeyboardEvent) => {
+      if (keyboardEvent.key === 'Escape') onClose()
     }
-    document.addEventListener('keydown', onKey)
+    document.addEventListener('keydown', handleKeyDown)
     document.body.style.overflow = 'hidden'
     return () => {
-      document.removeEventListener('keydown', onKey)
+      document.removeEventListener('keydown', handleKeyDown)
       document.body.style.overflow = ''
     }
   }, [onClose])
@@ -74,19 +75,20 @@ export default function AdminContentEditModal({ content, defaultType, onClose, o
             : prev,
         )
       })
-      .catch((err: unknown) => {
-        const msg = err instanceof Error ? err.message : '업로드 실패'
-        setImage((prev) =>
-          prev?.kind === 'new' && prev.previewUrl === previewUrl
-            ? { ...prev, status: 'failed', errorMessage: msg }
-            : prev,
+      .catch((uploadError: unknown) => {
+        // 업로드는 presigned URL·S3 경로라 관리자 401이 나지 않는다. 문구만 errorMessage로 만든다.
+        const failureMessage = errorMessage(uploadError, '업로드 실패')
+        setImage((previous) =>
+          previous?.kind === 'new' && previous.previewUrl === previewUrl
+            ? { ...previous, status: 'failed', errorMessage: failureMessage }
+            : previous,
         )
       })
   }
 
-  const handleFilePick = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    e.target.value = ''
+  const handleFilePick = (changeEvent: React.ChangeEvent<HTMLInputElement>) => {
+    const file = changeEvent.target.files?.[0]
+    changeEvent.target.value = ''
     if (!file) return
     // 이전 새 파일이 있었으면 blob URL 해제
     if (image?.kind === 'new') URL.revokeObjectURL(image.previewUrl)
@@ -121,8 +123,8 @@ export default function AdminContentEditModal({ content, defaultType, onClose, o
       ? '종료일은 시작일 이후여야 합니다'
       : null
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSubmit = async (submitEvent: React.FormEvent) => {
+    submitEvent.preventDefault()
     if (!name.trim()) {
       setError('이름을 입력해주세요')
       return
@@ -141,39 +143,33 @@ export default function AdminContentEditModal({ content, defaultType, onClose, o
     }
     setSubmitting(true)
     setError(null)
-    try {
-      const imageFileId = image === null
-        ? null
-        : image.kind === 'existing'
-          ? image.fileId
-          : image.fileId // kind === 'new' && status === 'done'
-      const body: ContentUpsertRequest = {
-        name: name.trim(),
-        type,
-        imageFileId,
-        url: url.trim() || null,
-        // PUT은 전체 교체 — 모달이 다루지 않는 additionalInfo는 기존 값을 그대로 돌려보내 보존
-        additionalInfo: content?.additionalInfo ?? null,
-        displayStartDate: displayStartDate || null,
-        displayEndDate: displayEndDate || null,
-      }
-      if (isEdit && content) {
-        await updateContent(content.id, body)
-      } else {
-        await createContent(body)
-      }
-      onSaved()
-    } catch (err: unknown) {
-      if (err instanceof UnauthorizedError) onUnauthorized()
-      else setError(err instanceof Error ? err.message : '저장 실패')
-    } finally {
-      setSubmitting(false)
+    const imageFileId = image === null
+      ? null
+      : image.kind === 'existing'
+        ? image.fileId
+        : image.fileId // kind === 'new' && status === 'done'
+    const body: ContentUpsertRequest = {
+      name: name.trim(),
+      type,
+      imageFileId,
+      url: url.trim() || null,
+      // PUT은 전체 교체 — 모달이 다루지 않는 additionalInfo는 기존 값을 그대로 돌려보내 보존
+      additionalInfo: content?.additionalInfo ?? null,
+      displayStartDate: displayStartDate || null,
+      displayEndDate: displayEndDate || null,
     }
+    const result = await run(
+      isEdit && content ? updateContent(content.id, body) : createContent(body),
+      '저장 실패',
+    )
+    setSubmitting(false)
+    if (result.ok) onSaved()
+    else if (result.message) setError(result.message)
   }
 
   return (
     <div className="content-edit-backdrop" onClick={onClose}>
-      <div className="content-edit-modal" onClick={(e) => e.stopPropagation()}>
+      <div className="content-edit-modal" onClick={(clickEvent) => clickEvent.stopPropagation()}>
         <header className="content-edit-header">
           <h2>{isEdit ? `컨텐츠 #${content?.id} 편집` : '컨텐츠 신규 등록'}</h2>
           <button type="button" className="content-edit-close" onClick={onClose}>✕</button>
@@ -182,7 +178,7 @@ export default function AdminContentEditModal({ content, defaultType, onClose, o
         <form className="content-edit-body" onSubmit={handleSubmit}>
           <div className="field">
             <label>이름 *</label>
-            <input value={name} onChange={(e) => setName(e.target.value)} required />
+            <input value={name} onChange={(changeEvent) => setName(changeEvent.target.value)} required />
           </div>
 
           <div className="field">
@@ -209,7 +205,7 @@ export default function AdminContentEditModal({ content, defaultType, onClose, o
                   <img
                     src={image.kind === 'new' ? image.previewUrl : image.url}
                     alt=""
-                    onError={(e) => (e.currentTarget.style.visibility = 'hidden')}
+                    onError={(errorEvent) => (errorEvent.currentTarget.style.visibility = 'hidden')}
                   />
                   {isUploading && <div className="content-image-overlay">업로드 중…</div>}
                   {isFailed && <div className="content-image-overlay error">실패</div>}
@@ -257,7 +253,7 @@ export default function AdminContentEditModal({ content, defaultType, onClose, o
             <label>URL</label>
             <input
               value={url}
-              onChange={(e) => setUrl(e.target.value)}
+              onChange={(changeEvent) => setUrl(changeEvent.target.value)}
               placeholder="https://..."
             />
           </div>
@@ -269,7 +265,7 @@ export default function AdminContentEditModal({ content, defaultType, onClose, o
                 <input
                   type="date"
                   value={displayStartDate}
-                  onChange={(e) => setDisplayStartDate(e.target.value)}
+                  onChange={(changeEvent) => setDisplayStartDate(changeEvent.target.value)}
                   aria-label="시작일"
                 />
                 <span className="date-input-display">{displayStartDate || 'YYYY-MM-DD'}</span>
@@ -279,7 +275,7 @@ export default function AdminContentEditModal({ content, defaultType, onClose, o
                 <input
                   type="date"
                   value={displayEndDate}
-                  onChange={(e) => setDisplayEndDate(e.target.value)}
+                  onChange={(changeEvent) => setDisplayEndDate(changeEvent.target.value)}
                   aria-label="종료일"
                 />
                 <span className="date-input-display">{displayEndDate || 'YYYY-MM-DD'}</span>

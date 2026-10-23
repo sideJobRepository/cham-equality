@@ -1,8 +1,6 @@
 import { useEffect, useState } from 'react'
-import {
-  updateAdminShelter,
-  UnauthorizedError,
-} from '@/api/adminApi'
+import { updateAdminShelter } from '@/api/adminApi'
+import { useAdminRequest } from '@/hooks/useAdminRequest'
 import { SHELTER_TYPE_LABEL, type Shelter, type ShelterType } from '@/types/shelter'
 import './AdminShelterEditModal.css'
 
@@ -10,14 +8,14 @@ type Props = {
   shelter: Shelter
   onClose: () => void
   onSaved: () => void
-  onUnauthorized: () => void
 }
 
 const TYPE_OPTIONS: { value: ShelterType; label: string }[] = (
   Object.entries(SHELTER_TYPE_LABEL) as [ShelterType, string][]
 ).map(([value, label]) => ({ value, label }))
 
-export default function AdminShelterEditModal({ shelter, onClose, onSaved, onUnauthorized }: Props) {
+export default function AdminShelterEditModal({ shelter, onClose, onSaved }: Props) {
+  const { run } = useAdminRequest()
   const [name, setName] = useState(shelter.name ?? '')
   const [builtYear, setBuiltYear] = useState<string>(shelter.builtYear?.toString() ?? '')
   const [shelterType, setShelterType] = useState<ShelterType | ''>(shelter.shelterType ?? '')
@@ -26,40 +24,38 @@ export default function AdminShelterEditModal({ shelter, onClose, onSaved, onUna
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
+    const handleKeyDown = (keyboardEvent: KeyboardEvent) => {
+      if (keyboardEvent.key === 'Escape') onClose()
     }
-    document.addEventListener('keydown', onKey)
+    document.addEventListener('keydown', handleKeyDown)
     document.body.style.overflow = 'hidden'
     return () => {
-      document.removeEventListener('keydown', onKey)
+      document.removeEventListener('keydown', handleKeyDown)
       document.body.style.overflow = ''
     }
   }, [onClose])
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSubmit = async (submitEvent: React.FormEvent) => {
+    submitEvent.preventDefault()
     setSubmitting(true)
     setError(null)
-    try {
-      await updateAdminShelter(shelter.id, {
+    const result = await run(
+      updateAdminShelter(shelter.id, {
         name: name.trim() || null,
         builtYear: builtYear ? Number(builtYear) : null,
         shelterType: shelterType || null,
         safetyGrade: safetyGrade ? Number(safetyGrade) : null,
-      })
-      onSaved()
-    } catch (err: unknown) {
-      if (err instanceof UnauthorizedError) onUnauthorized()
-      else setError(err instanceof Error ? err.message : '저장 실패')
-    } finally {
-      setSubmitting(false)
-    }
+      }),
+      '저장 실패',
+    )
+    setSubmitting(false)
+    if (result.ok) onSaved()
+    else if (result.message) setError(result.message)
   }
 
   return (
     <div className="shelter-edit-backdrop" onClick={onClose}>
-      <div className="shelter-edit-modal" onClick={(e) => e.stopPropagation()}>
+      <div className="shelter-edit-modal" onClick={(clickEvent) => clickEvent.stopPropagation()}>
         <header className="shelter-edit-header">
           <h2>대피소 #{shelter.id} 편집</h2>
           <button type="button" className="shelter-edit-close" onClick={onClose}>✕</button>
@@ -73,19 +69,19 @@ export default function AdminShelterEditModal({ shelter, onClose, onSaved, onUna
         <form className="shelter-edit-body" onSubmit={handleSubmit}>
           <div className="field">
             <label>시설명</label>
-            <input value={name} onChange={(e) => setName(e.target.value)} />
+            <input value={name} onChange={(changeEvent) => setName(changeEvent.target.value)} />
           </div>
 
           <div className="field">
             <label>건축 연도</label>
-            <input type="number" value={builtYear} onChange={(e) => setBuiltYear(e.target.value)} />
+            <input type="number" value={builtYear} onChange={(changeEvent) => setBuiltYear(changeEvent.target.value)} />
           </div>
 
           <div className="field">
             <label>대피소 타입</label>
             <select
               value={shelterType}
-              onChange={(e) => setShelterType((e.target.value || '') as ShelterType | '')}
+              onChange={(changeEvent) => setShelterType((changeEvent.target.value || '') as ShelterType | '')}
             >
               <option value="">선택 안 함</option>
               {TYPE_OPTIONS.map((opt) => (
@@ -99,7 +95,7 @@ export default function AdminShelterEditModal({ shelter, onClose, onSaved, onUna
             <input
               type="number"
               value={safetyGrade}
-              onChange={(e) => setSafetyGrade(e.target.value)}
+              onChange={(changeEvent) => setSafetyGrade(changeEvent.target.value)}
             />
           </div>
 

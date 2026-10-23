@@ -1,14 +1,9 @@
 import { useCallback, useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import {
-  clearAdminPassword,
-  fetchMembers,
-  getAdminPassword,
-  UnauthorizedError,
-  type AdminMember,
-} from '@/api/adminApi'
-import AdminLayout from '@/components/AdminLayout'
+import { fetchMembers, type AdminMember } from '@/api/adminApi'
 import AdminMemberPushModal from '@/components/AdminMemberPushModal'
+import Pagination from '@/components/common/Pagination'
+import { useAdminRequest } from '@/hooks/useAdminRequest'
+import { useFeedback } from '@/hooks/useFeedback'
 import type { PageResponse } from '@/types/shelter'
 import './AdminReportsPage.css'
 import './AdminMembersPage.css'
@@ -23,7 +18,8 @@ const SOCIAL_LABEL: Record<string, string> = {
 }
 
 export default function AdminMembersPage() {
-  const navigate = useNavigate()
+  const { run } = useAdminRequest()
+  const { toast } = useFeedback()
   const [keyword, setKeyword] = useState('')
   const [debouncedKeyword, setDebouncedKeyword] = useState('')
   const [page, setPage] = useState(0)
@@ -31,52 +27,29 @@ export default function AdminMembersPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [target, setTarget] = useState<AdminMember | null>(null)
-  const [flash, setFlash] = useState<string | null>(null)
-
-  const handleUnauthorized = useCallback(() => {
-    clearAdminPassword()
-    navigate('/admin/login', { replace: true })
-  }, [navigate])
 
   useEffect(() => {
-    const t = setTimeout(() => {
+    const debounceTimer = setTimeout(() => {
       setDebouncedKeyword(keyword)
       setPage(0)
     }, SEARCH_DEBOUNCE_MS)
-    return () => clearTimeout(t)
+    return () => clearTimeout(debounceTimer)
   }, [keyword])
 
-  const load = useCallback(() => {
+  const load = useCallback(async () => {
     setLoading(true)
     setError(null)
-    fetchMembers(debouncedKeyword, page, PAGE_SIZE)
-      .then(setData)
-      .catch((e: unknown) => {
-        if (e instanceof UnauthorizedError) {
-          handleUnauthorized()
-          return
-        }
-        setError(e instanceof Error ? e.message : '알 수 없는 오류')
-      })
-      .finally(() => setLoading(false))
-  }, [debouncedKeyword, page, handleUnauthorized])
+    const result = await run(fetchMembers(debouncedKeyword, page, PAGE_SIZE), '목록을 불러오지 못했습니다')
+    if (result.ok) setData(result.data)
+    else if (result.message) setError(result.message)
+    setLoading(false)
+  }, [debouncedKeyword, page, run])
 
   useEffect(() => {
-    if (!getAdminPassword()) {
-      navigate('/admin/login', { replace: true })
-      return
-    }
     load()
-  }, [load, navigate])
-
-  useEffect(() => {
-    if (!flash) return
-    const t = setTimeout(() => setFlash(null), 2500)
-    return () => clearTimeout(t)
-  }, [flash])
+  }, [load])
 
   return (
-    <AdminLayout>
     <div className="admin-reports-page admin-members-page">
       <header className="admin-header">
         <div>
@@ -90,7 +63,7 @@ export default function AdminMembersPage() {
       <div className="search-bar">
         <input
           value={keyword}
-          onChange={(e) => setKeyword(e.target.value)}
+          onChange={(changeEvent) => setKeyword(changeEvent.target.value)}
           placeholder="이름 또는 이메일로 검색"
         />
         {keyword && (
@@ -98,7 +71,6 @@ export default function AdminMembersPage() {
         )}
       </div>
 
-      {flash && <div className="flash">{flash}</div>}
       {loading && <div className="state">불러오는 중…</div>}
       {error && <div className="state error">{error}</div>}
 
@@ -118,24 +90,23 @@ export default function AdminMembersPage() {
                 </tr>
               </thead>
               <tbody>
-                {data.content.map((m) => (
-                  <tr key={m.id}>
-                    <td>{m.id}</td>
-                    <td>{m.name ?? '-'}</td>
-                    <td className="ellipsis">{m.email || '-'}</td>
-                    <td className="center">{m.socialType ? SOCIAL_LABEL[m.socialType] ?? m.socialType : '-'}</td>
-                    <td className="center">{m.pushDeviceCount > 0 ? `${m.pushDeviceCount}대` : '없음'}</td>
-                    <td className="date">{m.createDate?.slice(0, 10)}</td>
+                {data.content.map((member) => (
+                  <tr key={member.id}>
+                    <td>{member.id}</td>
+                    <td>{member.name ?? '-'}</td>
+                    <td className="ellipsis">{member.email || '-'}</td>
+                    <td className="center">
+                      {member.socialType ? SOCIAL_LABEL[member.socialType] ?? member.socialType : '-'}
+                    </td>
+                    <td className="center">{member.pushDeviceCount > 0 ? `${member.pushDeviceCount}대` : '없음'}</td>
+                    <td className="date">{member.createDate?.slice(0, 10)}</td>
                     <td className="center">
                       <button
                         type="button"
                         className="push-btn"
-                        disabled={m.pushDeviceCount === 0}
-                        title={m.pushDeviceCount === 0 ? '앱에 로그인해 알림을 등록한 기기가 없어요' : undefined}
-                        onClick={() => {
-                          setFlash(null)
-                          setTarget(m)
-                        }}
+                        disabled={member.pushDeviceCount === 0}
+                        title={member.pushDeviceCount === 0 ? '앱에 로그인해 알림을 등록한 기기가 없어요' : undefined}
+                        onClick={() => setTarget(member)}
                       >
                         푸시 보내기
                       </button>
@@ -151,15 +122,7 @@ export default function AdminMembersPage() {
             </table>
           </div>
 
-          {data.totalPages > 1 && (
-            <nav className="pagination">
-              <button disabled={page === 0} onClick={() => setPage(0)}>««</button>
-              <button disabled={page === 0} onClick={() => setPage(page - 1)}>«</button>
-              <span>{page + 1} / {data.totalPages}</span>
-              <button disabled={page >= data.totalPages - 1} onClick={() => setPage(page + 1)}>»</button>
-              <button disabled={page >= data.totalPages - 1} onClick={() => setPage(data.totalPages - 1)}>»»</button>
-            </nav>
-          )}
+          <Pagination page={page} totalPages={data.totalPages} onChange={setPage} />
         </>
       )}
 
@@ -167,15 +130,13 @@ export default function AdminMembersPage() {
         <AdminMemberPushModal
           member={target}
           onClose={() => setTarget(null)}
-          onSent={(sent) => {
-            setFlash(`${target.name ?? `#${target.id}`}님의 기기 ${sent}대에 보냈어요.`)
+          onSent={(sentDeviceCount) => {
+            toast(`${target.name ?? `#${target.id}`}님의 기기 ${sentDeviceCount}대에 보냈어요.`)
             setTarget(null)
             load()
           }}
-          onUnauthorized={handleUnauthorized}
         />
       )}
     </div>
-    </AdminLayout>
   )
 }

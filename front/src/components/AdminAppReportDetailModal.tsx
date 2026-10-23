@@ -5,10 +5,11 @@ import {
   fetchAppReportDetail,
   getDownloadUrl,
   rejectAppReport,
-  UnauthorizedError,
   type ShelterAppReportDetail,
   type ShelterReportImageView,
 } from '@/api/adminApi'
+import { useAdminRequest } from '@/hooks/useAdminRequest'
+import { useFeedback } from '@/hooks/useFeedback'
 import { saveBlob, triggerDownload } from '@/lib/file'
 import './AdminReportDetailModal.css'
 
@@ -16,7 +17,6 @@ type Props = {
   reportId: number
   onClose: () => void
   onActionDone: () => void
-  onUnauthorized: () => void
 }
 
 const CATEGORY_LABEL: Record<string, string> = {
@@ -31,17 +31,18 @@ const CATEGORY_LABEL: Record<string, string> = {
   ETC: '기타',
 }
 
-function yn(v: boolean | null): string {
-  if (v === null || v === undefined) return '-'
-  return v ? 'O' : 'X'
+function yn(value: boolean | null): string {
+  if (value === null || value === undefined) return '-'
+  return value ? 'O' : 'X'
 }
 
 export default function AdminAppReportDetailModal({
   reportId,
   onClose,
   onActionDone,
-  onUnauthorized,
 }: Props) {
+  const { run } = useAdminRequest()
+  const { toast, confirm } = useFeedback()
   const [detail, setDetail] = useState<ShelterAppReportDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -50,93 +51,93 @@ export default function AdminAppReportDetailModal({
   const [zipping, setZipping] = useState(false)
 
   useEffect(() => {
+    let cancelled = false
     setLoading(true)
-    fetchAppReportDetail(reportId)
-      .then(setDetail)
-      .catch((e: unknown) => {
-        if (e instanceof UnauthorizedError) {
-          onUnauthorized()
-          return
-        }
-        setError(e instanceof Error ? e.message : '상세 조회 실패')
-      })
-      .finally(() => setLoading(false))
-  }, [reportId, onUnauthorized])
+    run(fetchAppReportDetail(reportId), '상세 조회 실패').then((result) => {
+      if (cancelled) return
+      if (result.ok) setDetail(result.data)
+      else if (result.message) setError(result.message)
+      setLoading(false)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [reportId, run])
 
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
+    const handleKeyDown = (keyboardEvent: KeyboardEvent) => {
+      if (keyboardEvent.key === 'Escape') onClose()
     }
-    document.addEventListener('keydown', onKey)
+    document.addEventListener('keydown', handleKeyDown)
     document.body.style.overflow = 'hidden'
     return () => {
-      document.removeEventListener('keydown', onKey)
+      document.removeEventListener('keydown', handleKeyDown)
       document.body.style.overflow = ''
     }
   }, [onClose])
 
-  const handleApprove = async () => {
-    if (!confirm('이 앱 제보를 승인하고 대피소 정보에 반영할까요?')) return
+  // 확인 → 처리 → 성공 토스트 → 목록 갱신. 실패는 오류 토스트로 알리고 모달은 그대로 둔다.
+  const runAction = async (
+    request: () => Promise<unknown>,
+    successMessage: string,
+    fallbackMessage: string,
+  ) => {
     setProcessing(true)
-    try {
-      await approveAppReport(reportId)
+    const result = await run(request(), fallbackMessage)
+    setProcessing(false)
+    if (result.ok) {
+      toast(successMessage)
       onActionDone()
-    } catch (e: unknown) {
-      if (e instanceof UnauthorizedError) onUnauthorized()
-      else alert(e instanceof Error ? e.message : '승인 실패')
-    } finally {
-      setProcessing(false)
+    } else if (result.message) {
+      toast(result.message, 'error')
     }
+  }
+
+  const handleApprove = async () => {
+    const confirmed = await confirm({
+      title: '앱 제보 승인',
+      description: '이 앱 제보를 승인하고 대피소 정보에 반영할까요?',
+      confirmLabel: '승인',
+    })
+    if (!confirmed) return
+    await runAction(() => approveAppReport(reportId), '승인했습니다', '승인 실패')
   }
 
   const handleReject = async () => {
-    if (!confirm('반려 시 첨부된 사진은 삭제 대상으로 전환됩니다. 계속할까요?')) return
-    setProcessing(true)
-    try {
-      await rejectAppReport(reportId)
-      onActionDone()
-    } catch (e: unknown) {
-      if (e instanceof UnauthorizedError) onUnauthorized()
-      else alert(e instanceof Error ? e.message : '반려 실패')
-    } finally {
-      setProcessing(false)
-    }
+    const confirmed = await confirm({
+      title: '앱 제보 반려',
+      description: '반려 시 첨부된 사진은 삭제 대상으로 전환됩니다. 계속할까요?',
+      confirmLabel: '반려',
+      destructive: true,
+    })
+    if (!confirmed) return
+    await runAction(() => rejectAppReport(reportId), '반려했습니다', '반려 실패')
   }
 
-  const handleDownload = async (img: ShelterReportImageView) => {
-    setDownloadingId(img.fileId)
-    try {
-      const url = await getDownloadUrl(img.fileId)
-      triggerDownload(url, img.fileName)
-    } catch (e: unknown) {
-      if (e instanceof UnauthorizedError) onUnauthorized()
-      else alert(e instanceof Error ? e.message : '다운로드 실패')
-    } finally {
-      setDownloadingId(null)
-    }
+  const handleDownload = async (image: ShelterReportImageView) => {
+    setDownloadingId(image.fileId)
+    const result = await run(getDownloadUrl(image.fileId), '다운로드 실패')
+    setDownloadingId(null)
+    if (result.ok) triggerDownload(result.data, image.fileName)
+    else if (result.message) toast(result.message, 'error')
   }
 
   const handleDownloadAll = async () => {
     if (!detail || detail.images.length === 0) return
     const zipName = `app-report-${detail.id}.zip`
     setZipping(true)
-    try {
-      const blob = await downloadFilesAsZip(
-        detail.images.map((img) => img.fileId),
-        zipName,
-      )
-      saveBlob(blob, zipName)
-    } catch (e: unknown) {
-      if (e instanceof UnauthorizedError) onUnauthorized()
-      else alert(e instanceof Error ? e.message : '일괄 다운로드 실패')
-    } finally {
-      setZipping(false)
-    }
+    const result = await run(
+      downloadFilesAsZip(detail.images.map((image) => image.fileId), zipName),
+      '일괄 다운로드 실패',
+    )
+    setZipping(false)
+    if (result.ok) saveBlob(result.data, zipName)
+    else if (result.message) toast(result.message, 'error')
   }
 
   return (
     <div className="detail-backdrop" onClick={onClose}>
-      <div className="detail-modal" onClick={(e) => e.stopPropagation()}>
+      <div className="detail-modal" onClick={(clickEvent) => clickEvent.stopPropagation()}>
         <header className="detail-header">
           <div>
             <h2>앱 제보 #{reportId}</h2>
@@ -191,23 +192,23 @@ export default function AdminAppReportDetailModal({
                   <p className="no-images">첨부된 사진이 없습니다.</p>
                 ) : (
                   <div className="images-grid">
-                    {detail.images.map((img) => (
-                      <figure key={img.fileId} className="image-card">
-                        <a href={img.url} target="_blank" rel="noopener noreferrer">
-                          <img src={img.url} alt={img.fileName} />
+                    {detail.images.map((image) => (
+                      <figure key={image.fileId} className="image-card">
+                        <a href={image.url} target="_blank" rel="noopener noreferrer">
+                          <img src={image.url} alt={image.fileName} />
                         </a>
                         <figcaption>
-                          {img.category && (
-                            <span className="cat-tag">{CATEGORY_LABEL[img.category] ?? img.category}</span>
+                          {image.category && (
+                            <span className="cat-tag">{CATEGORY_LABEL[image.category] ?? image.category}</span>
                           )}
-                          {img.description && <span className="desc">{img.description}</span>}
+                          {image.description && <span className="desc">{image.description}</span>}
                           <button
                             type="button"
                             className="download-btn"
-                            disabled={downloadingId === img.fileId}
-                            onClick={() => handleDownload(img)}
+                            disabled={downloadingId === image.fileId}
+                            onClick={() => handleDownload(image)}
                           >
-                            {downloadingId === img.fileId ? '받는 중…' : '다운로드'}
+                            {downloadingId === image.fileId ? '받는 중…' : '다운로드'}
                           </button>
                         </figcaption>
                       </figure>
