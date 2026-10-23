@@ -5,7 +5,8 @@ import AdminShelterEditModal from '@/components/AdminShelterEditModal'
 import Pagination from '@/components/common/Pagination'
 import { useAdminRequest } from '@/hooks/useAdminRequest'
 import { useFeedback } from '@/hooks/useFeedback'
-import { SHELTER_TYPE_LABEL, type PageResponse, type Shelter } from '@/types/shelter'
+import { usePagedList } from '@/hooks/usePagedList'
+import { SHELTER_TYPE_LABEL, type Shelter } from '@/types/shelter'
 import './AdminSheltersPage.css'
 
 const PAGE_SIZE = 20
@@ -17,9 +18,6 @@ export default function AdminSheltersPage() {
   const [keyword, setKeyword] = useState('')
   const [debouncedKeyword, setDebouncedKeyword] = useState('')
   const [page, setPage] = useState(0)
-  const [data, setData] = useState<PageResponse<Shelter> | null>(null)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
   const [editing, setEditing] = useState<Shelter | null>(null)
   const [creating, setCreating] = useState(false)
   const [uploading, setUploading] = useState(false)
@@ -33,18 +31,9 @@ export default function AdminSheltersPage() {
     return () => clearTimeout(debounceTimer)
   }, [keyword])
 
-  const load = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-    const result = await run(fetchAdminShelters(page, PAGE_SIZE, debouncedKeyword), '목록을 불러오지 못했습니다')
-    if (result.ok) setData(result.data)
-    else if (result.message) setError(result.message)
-    setLoading(false)
-  }, [page, debouncedKeyword, run])
-
-  useEffect(() => {
-    load()
-  }, [load])
+  // 조건이 바뀌면 fetcher가 새로 만들어지고, usePagedList가 그걸 새 요청으로 보고 다시 불러온다.
+  const fetchPage = useCallback(() => fetchAdminShelters(page, PAGE_SIZE, debouncedKeyword), [page, debouncedKeyword])
+  const { data, loading, error, reload } = usePagedList(fetchPage)
 
   // 엑셀 한 개를 그대로 서버에 넘겨 대량 등록한다. 파싱·검증은 전부 서버(ExcelMapper)가 담당.
   const handleExcelSelected = async (changeEvent: React.ChangeEvent<HTMLInputElement>) => {
@@ -58,7 +47,7 @@ export default function AdminSheltersPage() {
     setUploading(false)
     if (result.ok) {
       toast(`${result.data.length}건의 대피소가 추가되었습니다`)
-      load()
+      reload()
     } else if (result.message) {
       toast(result.message, 'error')
     }
@@ -160,7 +149,7 @@ export default function AdminSheltersPage() {
           onSaved={() => {
             setCreating(false)
             toast('대피소가 추가되었습니다')
-            load()
+            reload()
           }}
         />
       )}
@@ -172,7 +161,7 @@ export default function AdminSheltersPage() {
           onSaved={() => {
             setEditing(null)
             toast('수정되었습니다')
-            load()
+            reload()
           }}
         />
       )}

@@ -41,11 +41,11 @@ export default function AdminManualEditModal({ manualId, onClose, onSaved }: Pro
   }, [])
 
   // 편집 모드: 본문 포함 상세 로드
+  // loading 초기값(isEdit)·loadError 초기값(null)이 이미 맞춰져 있어 여기서 다시 설정하지 않는다.
+  // 다른 매뉴얼을 열면 호출부가 key를 바꿔 모달을 새로 마운트한다.
   useEffect(() => {
     if (manualId === null) return
     let cancelled = false
-    setLoading(true)
-    setLoadError(null)
     run(fetchManualDetail(manualId), '매뉴얼을 불러오지 못했습니다').then((result) => {
       if (cancelled) return
       if (result.ok) {

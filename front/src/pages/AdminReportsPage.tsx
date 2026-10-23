@@ -1,13 +1,11 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 import {
   fetchReports,
   type AdminReportFilter,
-  type ShelterReport,
 } from '@/api/adminApi'
 import AdminReportDetailModal from '@/components/AdminReportDetailModal'
 import Pagination from '@/components/common/Pagination'
-import { useAdminRequest } from '@/hooks/useAdminRequest'
-import type { PageResponse } from '@/types/shelter'
+import { usePagedList } from '@/hooks/usePagedList'
 import './AdminReportsPage.css'
 
 const PAGE_SIZE = 20
@@ -28,26 +26,13 @@ function yn(value: boolean | null): string {
 }
 
 export default function AdminReportsPage() {
-  const { run } = useAdminRequest()
   const [filter, setFilter] = useState<Filter>('PENDING')
   const [page, setPage] = useState(0)
-  const [data, setData] = useState<PageResponse<ShelterReport> | null>(null)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
   const [selectedId, setSelectedId] = useState<number | null>(null)
 
-  const load = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-    const result = await run(fetchReports(filter, page, PAGE_SIZE), '목록을 불러오지 못했습니다')
-    if (result.ok) setData(result.data)
-    else if (result.message) setError(result.message)
-    setLoading(false)
-  }, [filter, page, run])
-
-  useEffect(() => {
-    load()
-  }, [load])
+  // 조건이 바뀌면 fetcher가 새로 만들어지고, usePagedList가 그걸 새 요청으로 보고 다시 불러온다.
+  const fetchPage = useCallback(() => fetchReports(filter, page, PAGE_SIZE), [filter, page])
+  const { data, loading, error, reload } = usePagedList(fetchPage)
 
   return (
     <div className="admin-reports-page">
@@ -140,7 +125,7 @@ export default function AdminReportsPage() {
           onClose={() => setSelectedId(null)}
           onActionDone={() => {
             setSelectedId(null)
-            load()
+            reload()
           }}
         />
       )}

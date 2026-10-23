@@ -54,9 +54,10 @@ export default function AdminFeedbackDetailModal({
   const [downloadingId, setDownloadingId] = useState<number | null>(null)
   const [zipping, setZipping] = useState(false)
 
+  // loading 초기값이 true라 여기서 다시 켤 필요가 없다.
+  // 다른 피드백을 열면 호출부가 key를 바꿔 모달을 새로 마운트하므로 상태는 항상 처음부터 시작한다.
   useEffect(() => {
     let cancelled = false
-    setLoading(true)
     run(fetchFeedbackDetail(feedbackId), '상세 조회 실패').then((result) => {
       if (cancelled) return
       if (result.ok) {

@@ -1,15 +1,15 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import {
   approveAppReport,
   downloadFilesAsZip,
   fetchAppReportDetail,
   getDownloadUrl,
   rejectAppReport,
-  type ShelterAppReportDetail,
   type ShelterReportImageView,
 } from '@/api/adminApi'
 import { useAdminRequest } from '@/hooks/useAdminRequest'
 import { useFeedback } from '@/hooks/useFeedback'
+import { usePagedList } from '@/hooks/usePagedList'
 import { saveBlob, triggerDownload } from '@/lib/file'
 import './AdminReportDetailModal.css'
 
@@ -43,26 +43,12 @@ export default function AdminAppReportDetailModal({
 }: Props) {
   const { run } = useAdminRequest()
   const { toast, confirm } = useFeedback()
-  const [detail, setDetail] = useState<ShelterAppReportDetail | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  // reportId가 바뀌면 새로 불러오고, 이전 id의 늦은 응답은 버린다(usePagedList 요청 순번).
+  const fetchDetail = useCallback(() => fetchAppReportDetail(reportId), [reportId])
+  const { data: detail, loading, error } = usePagedList(fetchDetail, '상세 조회 실패')
   const [processing, setProcessing] = useState(false)
   const [downloadingId, setDownloadingId] = useState<number | null>(null)
   const [zipping, setZipping] = useState(false)
-
-  useEffect(() => {
-    let cancelled = false
-    setLoading(true)
-    run(fetchAppReportDetail(reportId), '상세 조회 실패').then((result) => {
-      if (cancelled) return
-      if (result.ok) setDetail(result.data)
-      else if (result.message) setError(result.message)
-      setLoading(false)
-    })
-    return () => {
-      cancelled = true
-    }
-  }, [reportId, run])
 
   useEffect(() => {
     const handleKeyDown = (keyboardEvent: KeyboardEvent) => {

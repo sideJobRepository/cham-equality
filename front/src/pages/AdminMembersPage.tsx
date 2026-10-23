@@ -2,9 +2,8 @@ import { useCallback, useEffect, useState } from 'react'
 import { fetchMembers, type AdminMember } from '@/api/adminApi'
 import AdminMemberPushModal from '@/components/AdminMemberPushModal'
 import Pagination from '@/components/common/Pagination'
-import { useAdminRequest } from '@/hooks/useAdminRequest'
 import { useFeedback } from '@/hooks/useFeedback'
-import type { PageResponse } from '@/types/shelter'
+import { usePagedList } from '@/hooks/usePagedList'
 import './AdminReportsPage.css'
 import './AdminMembersPage.css'
 
@@ -18,14 +17,10 @@ const SOCIAL_LABEL: Record<string, string> = {
 }
 
 export default function AdminMembersPage() {
-  const { run } = useAdminRequest()
   const { toast } = useFeedback()
   const [keyword, setKeyword] = useState('')
   const [debouncedKeyword, setDebouncedKeyword] = useState('')
   const [page, setPage] = useState(0)
-  const [data, setData] = useState<PageResponse<AdminMember> | null>(null)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
   const [target, setTarget] = useState<AdminMember | null>(null)
 
   useEffect(() => {
@@ -36,18 +31,9 @@ export default function AdminMembersPage() {
     return () => clearTimeout(debounceTimer)
   }, [keyword])
 
-  const load = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-    const result = await run(fetchMembers(debouncedKeyword, page, PAGE_SIZE), '목록을 불러오지 못했습니다')
-    if (result.ok) setData(result.data)
-    else if (result.message) setError(result.message)
-    setLoading(false)
-  }, [debouncedKeyword, page, run])
-
-  useEffect(() => {
-    load()
-  }, [load])
+  // 조건이 바뀌면 fetcher가 새로 만들어지고, usePagedList가 그걸 새 요청으로 보고 다시 불러온다.
+  const fetchPage = useCallback(() => fetchMembers(debouncedKeyword, page, PAGE_SIZE), [debouncedKeyword, page])
+  const { data, loading, error, reload } = usePagedList(fetchPage)
 
   return (
     <div className="admin-reports-page admin-members-page">
@@ -133,7 +119,7 @@ export default function AdminMembersPage() {
           onSent={(sentDeviceCount) => {
             toast(`${target.name ?? `#${target.id}`}님의 기기 ${sentDeviceCount}대에 보냈어요.`)
             setTarget(null)
-            load()
+            reload()
           }}
         />
       )}

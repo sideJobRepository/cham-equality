@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useState } from 'react'
 import { deleteContent, fetchContents } from '@/api/contentApi'
 import AdminContentEditModal from '@/components/AdminContentEditModal'
 import { useAdminRequest } from '@/hooks/useAdminRequest'
 import { useFeedback } from '@/hooks/useFeedback'
+import { usePagedList } from '@/hooks/usePagedList'
 import {
   CONTENT_TYPE_LABEL,
   type Content,
@@ -17,33 +18,20 @@ type ModalState =
   | { mode: 'create'; defaultType?: ContentType }
   | { mode: 'edit'; content: Content }
 
+// 목록을 타입별로 묶어 둔다. 모듈 수준 함수라 참조가 고정돼 usePagedList가 마운트 때 한 번만 부른다.
+async function fetchContentsByType(): Promise<Record<ContentType, Content[]>> {
+  const contents = await fetchContents()
+  return TYPES.reduce((accumulator, contentType) => {
+    accumulator[contentType] = contents.filter((content) => content.type === contentType)
+    return accumulator
+  }, {} as Record<ContentType, Content[]>)
+}
+
 export default function AdminContentsPage() {
   const { run } = useAdminRequest()
   const { toast, confirm } = useFeedback()
-  const [byType, setByType] = useState<Record<ContentType, Content[]> | null>(null)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const { data: byType, loading, error, reload } = usePagedList(fetchContentsByType, '컨텐츠를 불러오지 못했습니다')
   const [modal, setModal] = useState<ModalState>({ mode: 'closed' })
-
-  const load = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-    const result = await run(fetchContents(), '컨텐츠를 불러오지 못했습니다')
-    if (result.ok) {
-      const grouped = TYPES.reduce((accumulator, contentType) => {
-        accumulator[contentType] = result.data.filter((content) => content.type === contentType)
-        return accumulator
-      }, {} as Record<ContentType, Content[]>)
-      setByType(grouped)
-    } else if (result.message) {
-      setError(result.message)
-    }
-    setLoading(false)
-  }, [run])
-
-  useEffect(() => {
-    load()
-  }, [load])
 
   const handleDelete = async (content: Content) => {
     const confirmed = await confirm({
@@ -56,7 +44,7 @@ export default function AdminContentsPage() {
     const result = await run(deleteContent(content.id), '삭제 실패')
     if (result.ok) {
       toast('삭제되었습니다')
-      load()
+      reload()
     } else if (result.message) {
       toast(result.message, 'error')
     }
@@ -175,7 +163,7 @@ export default function AdminContentsPage() {
             const wasEdit = modal.mode === 'edit'
             setModal({ mode: 'closed' })
             toast(wasEdit ? '수정되었습니다' : '등록되었습니다')
-            load()
+            reload()
           }}
         />
       )}

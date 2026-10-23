@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useState } from 'react'
 import { deleteManual, fetchManuals } from '@/api/manualApi'
 import AdminManualEditModal from '@/components/AdminManualEditModal'
 import { useAdminRequest } from '@/hooks/useAdminRequest'
 import { useFeedback } from '@/hooks/useFeedback'
+import { usePagedList } from '@/hooks/usePagedList'
 import { MANUAL_LANGUAGE_LABEL, type ManualListItem } from '@/types/manual'
 import './AdminManualsPage.css'
 
@@ -14,23 +15,9 @@ type ModalState =
 export default function AdminManualsPage() {
   const { run } = useAdminRequest()
   const { toast, confirm } = useFeedback()
-  const [manuals, setManuals] = useState<ManualListItem[] | null>(null)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  // fetchManuals는 모듈 수준 함수라 참조가 고정돼 마운트 때 한 번만 부른다(갱신은 reload).
+  const { data: manuals, loading, error, reload } = usePagedList(fetchManuals, '매뉴얼을 불러오지 못했습니다')
   const [modal, setModal] = useState<ModalState>({ mode: 'closed' })
-
-  const load = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-    const result = await run(fetchManuals(), '매뉴얼을 불러오지 못했습니다')
-    if (result.ok) setManuals(result.data)
-    else if (result.message) setError(result.message)
-    setLoading(false)
-  }, [run])
-
-  useEffect(() => {
-    load()
-  }, [load])
 
   const handleDelete = async (manual: ManualListItem) => {
     const confirmed = await confirm({
@@ -43,7 +30,7 @@ export default function AdminManualsPage() {
     const result = await run(deleteManual(manual.id), '삭제 실패')
     if (result.ok) {
       toast('삭제되었습니다')
-      load()
+      reload()
     } else if (result.message) {
       toast(result.message, 'error')
     }
@@ -114,13 +101,14 @@ export default function AdminManualsPage() {
 
       {modal.mode !== 'closed' && (
         <AdminManualEditModal
+          key={modal.mode === 'edit' ? modal.id : 'new'}
           manualId={modal.mode === 'edit' ? modal.id : null}
           onClose={() => setModal({ mode: 'closed' })}
           onSaved={() => {
             const wasEdit = modal.mode === 'edit'
             setModal({ mode: 'closed' })
             toast(wasEdit ? '수정되었습니다' : '등록되었습니다')
-            load()
+            reload()
           }}
         />
       )}
