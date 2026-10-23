@@ -4,7 +4,7 @@ Front-end module. See the repo-root `CLAUDE.md` for how this module fits into th
 
 ## Stack
 
-React 19 + TypeScript 6.0 + Vite 8 + react-router-dom 7 + axios. No Tailwind, no CSS Modules — plain `.css` files imported per component. No state library, no React Query — each page manages its own `useState` + effect calls. No i18n on the web; only `chamApp/` has multi-language.
+React 19 + TypeScript 6.0 + Vite 8 + react-router-dom 7 + axios. No Tailwind, no CSS Modules — plain `.css` files imported per component. No state library, no React Query — pages load data through the small hooks in `src/hooks/` (`usePagedList`, `useListQuery`, …) and keep the rest in local `useState`. No i18n on the web; only `chamApp/` has multi-language.
 
 ## Scripts
 
@@ -29,16 +29,17 @@ src/
 ├─ index.css                        # Global styles
 ├─ api/
 │  ├─ http.ts                       # axios instance, admin-password injection, UnauthorizedError, errorMessage
-│  ├─ adminApi.ts                   # /api/admin/* (reports, app-reports, feedbacks, members, shelters,
-│  │                                #   app-bundles, places/boundaries, push/test), downloads
-│  ├─ contentApi.ts                 # /api/admin/contents/*, uploadContentImage
-│  ├─ manualApi.ts                  # /api/admin/manuals/*
-│  └─ regionApi.ts                  # region options for shelter create
+│  ├─ adminApi.ts                   # login + /api/admin/* (reports, app-reports, feedbacks, members, shelters,
+│  │                                #   app-bundles, places/boundaries, push/test), /download-file;
+│  │                                #   re-exports the password helpers / errorMessage / UnauthorizedError from http.ts
+│  ├─ contentApi.ts                 # /api/admin/contents/*, uploadContentImage (CONTENT_IMAGE presign)
+│  ├─ manualApi.ts                  # /api/admin/manuals/* (detail reads the public /api/manuals/{id})
+│  └─ regionApi.ts                  # fetchRegions (/api/regions) for the shelter create modal
 ├─ types/                           # shelter.ts (PageResponse, ApiResponse), content.ts, manual.ts, file.ts
 ├─ lib/
 │  ├─ adminRedirect.ts              # ADMIN_HOME_PATH, buildLoginPath / safeAdminNext (login ?next=)
 │  ├─ pendingCounts.ts              # pending-count sources shared by dashboard cards and sidebar badges
-│  └─ file/                         # presignedUpload (uploader factory), download (saveBlob, downloadFile)
+│  └─ file/                         # presignedUpload (uploader factory), download (saveBlob, triggerDownload); see its README.md
 ├─ hooks/
 │  ├─ useAdminRequest.ts            # run(promise) -> {ok,data} | {ok:false,message}; 401 -> login with next
 │  ├─ usePagedList.ts               # list/detail loading with request sequencing (late responses dropped)
@@ -52,6 +53,8 @@ src/
    ├─ AdminLayout.tsx               # Sidebar shell (MENU)
    ├─ AdminMaintenanceSection.tsx   # Dashboard maintenance: place-boundary fill loop, push test send
    ├─ Admin*Modal.tsx               # Detail / edit modals
+   ├─ RichTextEditor.tsx            # Manual body editor (used by AdminManualEditModal)
+   ├─ ManualMobilePreview.tsx       # Phone-frame preview of a manual body
    └─ common/                       # Pagination, Feedback (toast + confirm Provider), PendingCountsProvider
 ```
 
@@ -73,11 +76,11 @@ src/
 | `/admin/manuals`       | `AdminManualsPage`     |
 | `/admin/app-bundles`   | `AdminAppBundlesPage` (OTA bundles: promote, enable/disable) |
 
-Every route except login sits under `<Route element={<RequireAdmin/>}>`.
+Every `/admin` route except login sits under `<Route element={<RequireAdmin/>}>`.
 
 ## API layer
 
-`src/api/http.ts` is the single axios instance. `baseURL: '/api'`, so always call paths as `/shelters`, `/admin/reports`, etc. — never hardcode the host.
+`src/api/http.ts` is the single axios instance. `baseURL: '/api'`, so always call paths as `/admin/reports`, `/regions`, etc. — never hardcode the host.
 
 ### Admin password header
 
@@ -91,17 +94,21 @@ The backend has no session/JWT in the browser; admin calls are authenticated by 
 
 Keep all HTTP calls inside `src/api/*.ts`. Pages should not import `axios` or call `http` directly — they call the typed wrappers. Response types mirror the backend DTO records (read them in `chamApi` before adding a wrapper).
 
-- `contentApi.ts`: `updateContent` is **full replacement**, not PATCH — pass every field, including ones the caller doesn't edit (e.g. preserve `additionalInfo`), or they get nulled out. The wrapper maps server `contentType`/`displayStartDate/EndDate` (`LocalDateTime`) to `type` + `YYYY-MM-DD`.
+- `adminApi.ts`: `adminLogin`; web reports `fetchReports` / `fetchReportDetail` / `approveReport` / `rejectReport` / `requestReInvestigation`; app reports `fetchAppReports` / `fetchAppReportDetail` / `approveAppReport` / `rejectAppReport`; feedbacks `fetchFeedbacks` / `fetchFeedbackDetail` / `updateFeedback`; shelters `fetchAdminShelters` / `updateAdminShelter` / `createAdminShelter` / `bulkCreateAdminShelters`; members `fetchMembers` / `sendMemberPush`; OTA `fetchAppBundles` / `promoteAppBundles` / `setAppBundleEnabled`; maintenance `fillPlaceBoundaries` / `sendTestPush`; files `getDownloadUrl` / `downloadFilesAsZip`.
+- `contentApi.ts`: `fetchContents` / `createContent` / `updateContent` / `deleteContent` / `uploadContentImage`. `updateContent` is **full replacement**, not PATCH — pass every field, including ones the caller doesn't edit (e.g. preserve `additionalInfo`), or they get nulled out. The wrapper maps server `contentType`/`displayStartDate/EndDate` (`LocalDateTime`) to `type` + `YYYY-MM-DD`.
+
+- `manualApi.ts`: `fetchManuals` / `fetchManualDetail` / `createManual` / `updateManual` / `deleteManual`.
+- `regionApi.ts`: `fetchRegions(depth, parentId?)`.
 
 Response envelope from the API is `ApiResponse<T> = { code, success, message, data }`. Wrappers unwrap `.data.data` and return just `T`; pages should not see the envelope. Paged endpoints return `PageResponse<T>`.
 
 ## Presigned-URL upload
 
-`src/lib/file/presignedUpload/createUploader.ts` exposes a generic `createPresignedUploader<Presign, Registered>(adapter)` factory. The adapter supplies two API calls (`requestPresignedUrls`, `registerUploadedFiles`) and optionally `putToRemote` (defaults to `axios.put`). The returned object has `upload(file)` and `uploadMany(files)` which run:
+`src/lib/file/presignedUpload/createUploader.ts` exposes a generic `createPresignedUploader<Presign, Registered>(adapter)` factory. The adapter supplies two API calls (`requestPresignedUrls`, `registerUploadedFiles`) and optionally `putToRemote` (defaults to `axios.put`). The returned object has a single `upload(file)` (one file per call — callers loop or `Promise.all` for several) which runs:
 
-1. POST presign-URL request for all files
-2. PUT each file to its presigned URL in parallel
-3. POST register (transitions the file row from `UPLOADING` → `COMPLETE` on the server), returning the backend file records
+1. POST `/presigned-url` for the file
+2. PUT the file to its presigned URL
+3. POST `/upload-file` to register (transitions the file row from `UPLOADING` → `COMPLETE` on the server), returning the backend file records
 
 Current uploader: `contentImageUploader` — `fileType: 'CONTENT_IMAGE'`, exposed via `contentApi.uploadContentImage(file)`.
 
@@ -109,7 +116,7 @@ If you add another upload kind, build a new uploader with the same factory — d
 
 ## Download / ZIP
 
-- `src/lib/file/download/index.ts` — generic helpers: `saveBlob(blob, name)`, `downloadFile(url, name)`.
+- `src/lib/file/download/index.ts` — generic helpers: `saveBlob(blob, name)`, `triggerDownload(url, name)`.
 - `adminApi.ts#downloadFilesAsZip(ids, name)` — calls `POST /download-file/zip` with `responseType: 'blob'`. **The server returns a ready-made ZIP**; pass the result straight to `saveBlob`. There is no client-side zipping anywhere in the app — `jszip` was removed from dependencies. If you ever need to bundle files the server didn't zip, add `jszip` back and a helper, but check whether the server endpoint can do it first.
 
 ## Admin page shell
